@@ -7,7 +7,7 @@
 
 PONGLIB = ../fw/sound
 
-cflags = -I$(PONGLIB) -I.
+cflags = -I$(PONGLIB) -I. -g
 lib.name = pongsynth~
 
 pongsynth~.class.sources = pongsynth~.cpp $(PONGLIB)/osc.cpp

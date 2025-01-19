@@ -20,11 +20,11 @@ public:
 		step = _step;
 	}
 	void setFreq(int f) { // 
-	    setStep(((float)f * 2048 * 0x10000) / AUDIO_SAMPLE_RATE);
+	    setStep(((float)f * sin_table_len * 0x10000) / AUDIO_SAMPLE_RATE);
 	}
 
 	void setFreq8(int f8) { // 16.8 fixed point in Hz
-	    setStep(((int64_t)f8 * (2048 * 0x10000 / 256)) / AUDIO_SAMPLE_RATE);
+	    setStep(((int64_t)f8 * (sin_table_len * 0x10000 / 256)) / AUDIO_SAMPLE_RATE);
 	}
 
 	void setVol(int _vol) { vol = _vol; }
@@ -47,8 +47,8 @@ public:
 	uint16_t release;
 	uint16_t lfoamp;
 	uint16_t lfofreq;
-	uint32_t lfopos;
-	int32_t lfoval;
+	uint32_t lfopos = 0;
+	int32_t lfoval = 0;
 };
 
 class Patch {

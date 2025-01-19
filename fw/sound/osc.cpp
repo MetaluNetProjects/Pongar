@@ -13,7 +13,7 @@ int16_t Osc::getSample() {
 	pos += step + lfoval;
 	if (pos >= pos_max) pos -= pos_max;
 	else if(pos < 0) pos += pos_max;
-	return ((vol * sine_wave_table[pos >> 16u]) >> 16u);
+	return ((vol * sine_wave_table[(pos >> 16u)%sin_table_len]]) >> 16u);
 }
 
 void Osc::dsp_sin(int16_t *buffer) {
@@ -21,7 +21,7 @@ void Osc::dsp_sin(int16_t *buffer) {
         pos += step + lfoval;
         if (pos >= pos_max) pos -= pos_max;
         else if(pos < 0) pos += pos_max;
-        *buffer++ = ((vol * sine_wave_table[pos >> 16u]) >> 16u);
+        *buffer++ = ((vol * sine_wave_table[(pos >> 16u)%sin_table_len]]) >> 16u);
     }
 }
 
@@ -39,7 +39,7 @@ void Osc::mix_sin(int32_t *buffer) {
         pos += step + lfoval;
         if (pos >= pos_max) pos -= pos_max;
         else if(pos < 0) pos += pos_max;
-        *buffer++ += ((vol * sine_wave_table[pos >> 16u]) >> 16u);
+        *buffer++ += ((vol * sine_wave_table[(pos >> 16u)%sin_table_len]) >> 16u);
     }
 }
 
@@ -58,7 +58,7 @@ bool Osc::update() {
 	}
 	lfopos += lfofreq << 12;
 	if (lfopos >= pos_max) lfopos -= pos_max;
-	lfoval = ((int32_t)lfoamp * sine_wave_table[lfopos >> 16u]) >> 8u;
+	lfoval = ((int32_t)lfoamp * sine_wave_table[(lfopos >> 16u)%sin_table_len]]) >> 8u;
 	return (vol > 64);
 }
 
