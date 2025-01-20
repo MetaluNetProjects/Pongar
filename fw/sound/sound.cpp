@@ -7,8 +7,6 @@
 #include "osc.h"
 #include "../config.h"
 
-//#define SAMPLES_PER_BUFFER 256
-
 struct audio_buffer_pool *producer_pool;
 
 void sound_init(uint sample_freq, int buffer_size, int nb_buffers, int pin) {
@@ -55,7 +53,6 @@ void AudioLayer::init(int audio_pin, int tx_pin) {
 
 void AudioLayer::receivebytes(const char* data, uint8_t len) {
     char c = data[0];
-    //printf("audio rcv %d\n", c);
     if(c > 9) {
         player.receivebytes(data, len);
         return;
@@ -81,23 +78,12 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
     }
 }
 
-//extern Osc osc1;
-
 void AudioLayer::audio_task() {
     struct audio_buffer *buffer = take_audio_buffer(producer_pool, true);
     int16_t *samples = (int16_t *) buffer->buffer->bytes;
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
     absolute_time_t start = get_absolute_time();
-    //int32_t s;
-    //for (uint i = 0; i < buffer->max_sample_count; i++) {
-        /*s = ((int32_t)vol * voice_getSample()) >> 8u; s = clip(s);
-        s = s + echo1.getSample(s); s = clip(s);
-        s = s + echo2.getSample(s); s = clip(s);
-        samples[i] = s;*/
-        //s = osc1.getSample();
-        /*samples[i] = osc1.getSample(); //clip(s);
-    }*/
-    //osc1.mix_sin(int_samples);
+
     main_patch.mix(int_samples, 0);
     for (uint i = 0; i < buffer->max_sample_count; i++) {
         samples[i] = clip(int_samples[i]);
