@@ -26,9 +26,6 @@ const uint AUDIO_GND_PIN = 11;
 
 const uint BUTTON_PIN = 14;
 
-/*const uint LIDAR_TX_PIN = 4;
-const uint LIDAR_RX_PIN = 5;
-uart_inst_t *LIDAR_UART = uart1;*/
 const uint LIDAR_TX_PIN = 12;
 const uint LIDAR_RX_PIN = 13;
 uart_inst_t *LIDAR_UART = uart0;
@@ -41,25 +38,17 @@ unsigned char dmxBuf[DMX_CHAN_COUNT];
 DmxMaster dmx;
 
 const int MP3_TX_PIN = 8;
-/*const uint MP3_TX_PIN = 4;
-const uint MP3_RX_PIN = 5;
-uart_inst_t *MP3_UART = uart1;*/
 
 bool button, button_last;
 int button_count;
 
-//int total_leds = 35;
-//int leds_angle_offset = 112;
-
-Osc osc1;
+//Osc osc1;
 
 void setup() {
-    //sound_init(AUDIO_SR, 256, 3, AUDIO_PWM_PIN);
-    //WavPlayer::getPlayer()->init(MP3_TX_PIN);
     game.init(AUDIO_PWM_PIN, MP3_TX_PIN);
     Osc::setup();
-    osc1.setFreq(440);
-    osc1.setVol(0);
+    /*osc1.setFreq(440);
+    osc1.setVol(0);*/
 
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
@@ -74,12 +63,10 @@ void setup() {
     gpio_set_dir(DMX_DRV_PIN, GPIO_OUT);
     gpio_put(DMX_DRV_PIN, 0);
 
-    //sleep_ms(100);
-    //setup_mp3(MP3_TX_PIN);
-
     pixel_setup();
 
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
+    sleep_ms(200);
     lidar_state = START;
 
     eeprom_load();
@@ -123,9 +110,6 @@ void loop(){
     if(dmx.transfer_finished()) {
         dmx.transfer_frame(dmxBuf, DMX_CHAN_COUNT);
     }
-
-    /*sound_update();
-    WavPlayer::getPlayer()->update();*/
 }
 
 void fraise_receivebytes(const char *data, uint8_t len){
@@ -180,24 +164,22 @@ void fraise_receivebytes(const char *data, uint8_t len){
         case 20: config.receivebytes(data + 1, len - 1); break;
 
         case 30: game.receivebytes(data + 1, len - 1); break; //mp3_play(fraise_get_uint16()); break;
-        case 40: {
+        /*case 40: {
                 for(int i = 0; i < 32; i++) printf("s %d\n", osc1.getSample());
             }
             break;
         case 41: osc1.setFreq(fraise_get_uint16()); break;
         case 42: osc1.setVol(fraise_get_uint16()); break;
-        case 43: osc1.setStep(fraise_get_uint32()); break;
+        case 43: osc1.setStep(fraise_get_uint32()); break;*/
 
 	    case 100 : fraise_print_status(); break;
-	    //case 100: distance_high = fraise_get_uint16(); break;
-	    //case 101: distance_low = fraise_get_uint16(); break;
 	    case 102: bg_substract = fraise_get_uint16(); break;
 	    case 103: bg_min_width = fraise_get_uint16(); break;
 	    case 104: snap_smooth = fraise_get_uint16(); break;
 	    case 150: game.stop(); break;
 	    case 151: game.start(); break;
 	    case 152: game.set_period_ms(fraise_get_uint16()); break;
-	    //case 153: game.set_pan_offset(fraise_get_int16()); break;
+	    case 153: game.prepare(); break;
 
 	    case 200:
 	        {

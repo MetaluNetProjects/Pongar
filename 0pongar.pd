@@ -1,4 +1,4 @@
-#N canvas 205 19 1279 479 12;
+#N canvas 116 19 1279 479 12;
 #X declare -path Fraise;
 #X declare -path pdlua -lib pdlua;
 #X declare -path moonlib;
@@ -9,7 +9,7 @@
 #X obj 26 34 pied/pied 1;
 #X obj 34 350 fruit/send2 fruit0;
 #X obj 173 5 declare -path pdlua -lib pdlua;
-#N canvas 504 19 1389 465 test-dmx 1;
+#N canvas 504 19 1389 465 test-dmx 0;
 #X obj 331 16 hsl 170 20 0 65535 0 0 empty empty pan -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X msg 342 130 1 \$1;
 #X msg 402 130 2 \$1;
@@ -240,7 +240,7 @@
 #X connect 10 0 9 0;
 #X connect 11 0 0 0;
 #X restore 46 226 pd test_pixels;
-#N canvas 118 382 1104 515 config 1;
+#N canvas 118 382 1104 515 config 0;
 #X msg 79 223 0 45;
 #X obj 79 248 s DMXpos;
 #X msg 170 223 8 128;
@@ -421,7 +421,7 @@
 #X connect 12 0 11 0;
 #X connect 14 0 0 0;
 #X restore 156 224 pd pio_sm_dma;
-#N canvas 938 228 847 663 mp3_test 1;
+#N canvas 102 292 847 663 mp3_test 1;
 #X obj 209 484 list prepend 33;
 #X obj 209 345 t a a, f 6;
 #X obj 209 375 list split 1;
@@ -468,6 +468,11 @@
 #X msg 518 176 1 \, 2 \, 3 \, -500 \, 4 \, 5 \, 6 \, -500 \, 7 \, 8 \, 9 \, 10;
 #X obj 62 578 list prepend 30 1;
 #X obj 62 603 outlet;
+#X msg 292 537 50;
+#X text 213 516 cpu;
+#X obj 410 531 b;
+#X obj 410 556 del 100;
+#X text 287 519 isplaying;
 #X connect 0 0 44 0;
 #X connect 1 0 2 0;
 #X connect 2 0 4 0;
@@ -504,11 +509,15 @@
 #X connect 39 0 40 0;
 #X connect 40 0 37 0;
 #X connect 41 0 40 0;
+#X connect 41 0 48 0;
 #X connect 42 0 40 0;
 #X connect 43 0 40 0;
 #X connect 44 0 45 0;
+#X connect 46 0 44 0;
+#X connect 48 0 49 0;
+#X connect 49 0 46 0;
 #X restore 34 200 pd mp3_test;
-#N canvas 242 191 1444 773 audio_test 1;
+#N canvas 242 191 1444 773 audio_test 0;
 #X obj 56 639 outlet;
 #X msg 58 183 40;
 #X msg 116 199 41 i \$1;
@@ -873,7 +882,7 @@
 #X connect 41 2 2 0;
 #X connect 42 0 22 0;
 #X restore 280 81 pd wavs_duration;
-#N canvas 232 33 1473 979 lidar_analys 0;
+#N canvas 420 531 1473 979 lidar_analys 0;
 #X obj 740 42 print from_fruit0;
 #X obj 293 20 fruit/receive fruit0;
 #X msg 325 271 4 \$1;
@@ -1064,6 +1073,7 @@
 #X obj 811 917 s pongarGui;
 #X msg 34 478 \; pdluax reload;
 #X obj 439 895 outlet;
+#X obj 902 541 s Players;
 #X connect 1 0 61 0;
 #X connect 2 0 122 0;
 #X connect 3 0 2 0;
@@ -1139,6 +1149,7 @@
 #X connect 77 0 79 0;
 #X connect 78 0 80 0;
 #X connect 78 0 77 0;
+#X connect 78 0 123 0;
 #X connect 80 0 81 0;
 #X connect 81 0 88 0;
 #X connect 82 0 83 0;
@@ -1192,6 +1203,12 @@
 #X floatatom 520 177 5 0 0 0 - - - 0;
 #X obj 776 0 pongarGui;
 #X obj 404 3 pongsynth/pongsynth~-help;
+#X msg 524 269 153;
+#X text 521 249 prepare;
+#X msg 517 326 151;
+#X text 514 306 start;
+#X msg 452 333 4 4;
+#X text 453 316 snap;
 #X connect 1 0 5 1;
 #X connect 2 0 5 0;
 #X connect 3 0 2 0;
@@ -1212,3 +1229,6 @@
 #X connect 24 0 5 0;
 #X connect 25 0 5 0;
 #X connect 26 0 10 0;
+#X connect 29 0 25 0;
+#X connect 31 0 25 0;
+#X connect 33 0 25 0;

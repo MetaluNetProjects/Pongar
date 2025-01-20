@@ -32,6 +32,8 @@ class WavPlayer {
     void init(int tx_pin);
     void play(uint8_t folder, uint8_t track);
     void silence(uint16_t ms);
+    void clear();
+    bool is_playing();
     void update();
     void receivebytes(const char* data, uint8_t len);
 };

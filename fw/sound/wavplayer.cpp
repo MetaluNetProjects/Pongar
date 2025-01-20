@@ -79,6 +79,14 @@ void WavPlayer::silence(uint16_t ms) {
     waiting.push_back(0xff000000 + ms);
 }
 
+void WavPlayer::clear() {
+    waiting.clear();
+}
+
+bool WavPlayer::is_playing() {
+    return !(time_reached(end_of_play) && waiting.empty());
+}
+
 void WavPlayer::update() {
     if((!time_reached(end_of_play)) || waiting.empty()) return;
     uint32_t next = waiting.front();
@@ -137,5 +145,6 @@ void WavPlayer::receivebytes(const char* data, uint8_t len) {
                 else play(folder, track);
             }
             break;
+        case 50: printf("l playing %d\n", is_playing()); break;
     }
 }

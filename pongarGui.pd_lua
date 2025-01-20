@@ -97,22 +97,24 @@ function Scan:paint(g)
 
     -- draw lidar detection
     local t = pd.Table:new():sync("lidar_distance_masked")
-    local l = t:length()
-    --local a = 2 * pi * (359/360)
-    g:set_color(220, 250, 0, 1)
-    local path = nil
-    for i = 0, l-1 do
-        local a = 2 * pi * (i / l)
-        local p = t:get(i) < 4000
-        local x, y = (self.radius - self.border / 2) * cos(a) + self.center, (self.radius - self.border / 2) * sin(a) + self.center
-        if(p) then 
-            if(path) then path:line_to(x, y)
-            else path = Path(x, y)
+    if(t) then
+        local l = t:length()
+        --local a = 2 * pi * (359/360)
+        g:set_color(220, 250, 0, 1)
+        local path = nil
+        for i = 0, l-1 do
+            local a = 2 * pi * (i / l)
+            local p = t:get(i) < 4000
+            local x, y = (self.radius - self.border / 2) * cos(a) + self.center, (self.radius - self.border / 2) * sin(a) + self.center
+            if(p) then 
+                if(path) then path:line_to(x, y)
+                else path = Path(x, y)
+                end
+            else if(path) then g:stroke_path(path, self.border); path = nil; end
             end
-        else if(path) then g:stroke_path(path, self.border); path = nil; end
         end
+        if(path) then g:stroke_path(path, self.border); path = nil; end
     end
-    if(path) then g:stroke_path(path, self.border); path = nil; end
 end
 
 function Scan:in_1_bang()

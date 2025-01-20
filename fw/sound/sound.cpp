@@ -81,7 +81,7 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
     }
 }
 
-extern Osc osc1;
+//extern Osc osc1;
 
 void AudioLayer::audio_task() {
     struct audio_buffer *buffer = take_audio_buffer(producer_pool, true);
@@ -97,7 +97,7 @@ void AudioLayer::audio_task() {
         //s = osc1.getSample();
         /*samples[i] = osc1.getSample(); //clip(s);
     }*/
-    osc1.mix_sin(int_samples);
+    //osc1.mix_sin(int_samples);
     main_patch.mix(int_samples, 0);
     for (uint i = 0; i < buffer->max_sample_count; i++) {
         samples[i] = clip(int_samples[i]);
@@ -120,6 +120,29 @@ void AudioLayer::print_cpu() {
         cpu_avg,
         (1000000 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE
     );
-    //printf("cpu %.2f%% a:%d m:%d M:%d\n", cpu_avg * (100.0 * 1.0e-6 * AUDIO_SAMPLE_RATE / AUDIO_SAMPLES_PER_BUFFER / 16.0), cpu_avg / 16, cpu_min, cpu_max);
-    //cpu_max = cpu_min = cpu_avg / 16;
+}
+
+bool AudioLayer::player_is_playing() {
+    return player.is_playing();
+}
+
+void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
+    switch(c) {
+        case SoundCommand::say:
+            player.play(1, p1);
+            break;
+        case SoundCommand::saypause:
+            player.silence(p1);
+            break;
+        case SoundCommand::sayclear:
+            player.clear();
+            break;
+        case SoundCommand::buzz:
+            main_patch.buzz();
+            break;
+        case SoundCommand::bounce:
+            main_patch.bounce(p1 > 0);
+            break;
+        default: ;
+    }
 }
