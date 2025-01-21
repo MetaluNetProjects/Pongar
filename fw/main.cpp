@@ -102,9 +102,9 @@ void loop(){
         fraise_put_uint8(100);
         for(int i = 0; i < players_count; i++) fraise_put_uint16(players_pos[i]);
         fraise_put_send();
-        pixel_update_players(players_count, players_pos, players_separation);
+        //pixel_update_players(players_count, players_pos, players_separation);
+        game.pixel_update_players();
     }
-
     game.update();
 
     if(dmx.transfer_finished()) {
@@ -178,7 +178,7 @@ void fraise_receivebytes(const char *data, uint8_t len){
 	    case 104: snap_smooth = fraise_get_uint16(); break;
 	    case 150: game.stop(); break;
 	    case 151: game.start(); break;
-	    case 152: game.set_period_ms(fraise_get_uint16()); break;
+	    //case 152: game.set_period_ms(fraise_get_uint16()); break;
 	    case 153: game.prepare(); break;
 
 	    case 200:
@@ -192,7 +192,7 @@ void fraise_receivebytes(const char *data, uint8_t len){
 	        {
 	            float pan = fraise_get_uint16() / 32.0;
 	            float tilt = fraise_get_int16() / 32.0;
-	            proj_goto(pan, tilt);
+	            proj.move(pan, tilt);
 	        }
 	        break;
 	    case 202:

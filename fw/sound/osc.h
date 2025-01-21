@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include "config.h"
+#include "sound_command.h"
 
 class Osc {
 public:
@@ -160,5 +161,12 @@ class MainPatch : public Patch {
     void bounce(bool way = true) {
         if(way) bouncer.bounce(120, 200, 5000);
         else bouncer.bounce(120, 1000, -5000);
+    }
+    void command(SoundCommand c, int p1, int p2, int p3) {
+        switch(c) {
+            case SoundCommand::buzz: buzz(); break;
+            case SoundCommand::bounce: bounce(p1 > 0); break;
+            default: ;
+        }
     }
 };

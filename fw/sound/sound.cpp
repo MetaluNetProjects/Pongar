@@ -44,21 +44,14 @@ static void core1_task() {
     while(1) core1_layer->audio_task();
 }
 
-void AudioLayer::init(int audio_pin, int tx_pin) {
+void AudioLayer::init(int audio_pin) {
     sound_init(AUDIO_SAMPLE_RATE, AUDIO_SAMPLES_PER_BUFFER, 3, audio_pin);
-    player.init(tx_pin);
     core1_layer = this;
     multicore_launch_core1(core1_task);
 }
 
 void AudioLayer::receivebytes(const char* data, uint8_t len) {
-    char c = data[0];
-    if(c > 9) {
-        player.receivebytes(data, len);
-        return;
-    }
-
-    c = fraise_get_uint8();
+    uint8_t c = fraise_get_uint8();
     switch(c) {
         case 1: print_cpu(); break;
         case 2: {
@@ -96,10 +89,6 @@ void AudioLayer::audio_task() {
     give_audio_buffer(producer_pool, buffer);
 }
 
-void AudioLayer::update() {
-    player.update();
-}
-
 void AudioLayer::print_cpu() {
     printf("cpu %.2f%% (%.2f / %d us)\n",
         cpu_avg * ((100.0 * 1.0e-6 * AUDIO_SAMPLE_RATE) / AUDIO_SAMPLES_PER_BUFFER),
@@ -108,21 +97,8 @@ void AudioLayer::print_cpu() {
     );
 }
 
-bool AudioLayer::player_is_playing() {
-    return player.is_playing();
-}
-
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    switch(c) {
-        case SoundCommand::say:
-            player.play(1, p1);
-            break;
-        case SoundCommand::saypause:
-            player.silence(p1);
-            break;
-        case SoundCommand::sayclear:
-            player.clear();
-            break;
+    /*switch(c) {
         case SoundCommand::buzz:
             main_patch.buzz();
             break;
@@ -130,5 +106,6 @@ void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
             main_patch.bounce(p1 > 0);
             break;
         default: ;
-    }
+    }*/
+    main_patch.command(c, p1, p2, p3);
 }

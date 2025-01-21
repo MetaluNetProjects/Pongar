@@ -3,12 +3,14 @@
 #pragma once
 
 class PongarConfig {
+  private:
+    void pixel_show(int from, int to);
   public:
     void eeprom_declare();
     void receivebytes(const char* data, uint8_t len);
   // data:
-    uint16_t total_leds = 35;
-    int16_t leds_angle_offset = 112;
+    uint16_t total_leds = 212;
+    int16_t leds_angle_offset = 0; //112;
 
     int16_t distance_max = 1500;
     int16_t distance_min = 400;

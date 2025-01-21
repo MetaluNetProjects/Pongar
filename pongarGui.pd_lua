@@ -58,7 +58,6 @@ function Scan:in_1_players(d)
     --pd.post("nb players " .. #(self.players))
     end
 
-
 local pi = math.pi
 local sin = math.sin
 local cos = math.cos
@@ -114,6 +113,22 @@ function Scan:paint(g)
             end
         end
         if(path) then g:stroke_path(path, self.border); path = nil; end
+    end
+
+    -- draw lidar detection
+    local pixels = pd.Table:new():sync("pixelsRGB")
+    if(pixels) then
+        local l = pixels:length() / 3
+        local diam = 8
+        local R = self.radius -- + diam / 2
+        for i = 0, l-1 do
+            local a = 2 * pi * (i / l)
+            --local r = pixels:get(i * 3), g = pixels:get(i * 3 + 1), b = pixels:get(i * 3 + 2)
+            local red, green, blue = pixels:get(i * 3), pixels:get(i * 3 + 1), pixels:get(i * 3 + 2)
+            local x, y = R * cos(a) + self.center, R * sin(a) + self.center
+            g:set_color(red, green, blue, 1)
+            g:fill_ellipse(x - diam / 2, y - diam / 2, diam, diam);
+        end
     end
 end
 

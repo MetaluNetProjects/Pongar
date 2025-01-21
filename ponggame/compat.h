@@ -20,21 +20,3 @@ extern absolute_time_t at_the_end_of_time;
 
 uint8_t fraise_get_uint8();
 
-/*class PongarConfig {
-  public:
-    void eeprom_declare();
-    void receivebytes(const char* data, uint8_t len);
-  // data:
-    uint16_t total_leds = 35;
-    int16_t leds_angle_offset = 112;
-
-    int16_t distance_max = 1500;
-    int16_t distance_min = 400;
-    int16_t lidar_angle_offset = 0;
-
-    int16_t proj_tilt_amp = 45;
-    uint16_t proj_pan_amp = 44850;
-};
-
-extern PongarConfig config;*/
-

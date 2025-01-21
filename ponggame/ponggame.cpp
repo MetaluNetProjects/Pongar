@@ -21,12 +21,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "m_pd.h"
 #include "math.h"
 #include <stdlib.h>
+
+#include "compat.h"
 #include "config.h"
 #include "players.h"
 #include "game.h"
+#include "proj.h"
 
 PongarConfig config;
-
+Movobeam100 proj;
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
     struct timeval tv;
@@ -95,7 +98,7 @@ static void ponggame_anything(t_ponggame *x, t_symbol *s, int argc, t_atom *argv
     }
 }
 
-char *SoundCommandString[] = {"say", "saypause", "sayclear", "buzz", "bounce"};
+char *SoundCommandString[] = {/*"say", "saypause", "sayclear", */"buzz", "bounce"};
 
 /*char *WordsString[] =  {"zero", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze",
                   partie = 101, joueur, perdu, gagné};*/
@@ -109,6 +112,69 @@ void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
     outlet_anything(instance->x_msgout, gensym("sound_command"), 4, at);
 }
 
+void WavPlayer::play(uint8_t folder, uint8_t track) {
+    t_atom at[2];
+    SETFLOAT(&at[0], folder);
+    SETFLOAT(&at[1], track);
+    outlet_anything(instance->x_msgout, gensym("say"), 2, at);
+}
+void WavPlayer::silence(uint16_t ms){
+    t_atom at[1];
+    SETFLOAT(&at[0], ms);
+    outlet_anything(instance->x_msgout, gensym("saysilence"), 1, at);
+}
+void WavPlayer::clear(){
+    outlet_anything(instance->x_msgout, gensym("sayclear"), 0, NULL);
+}
+
+void Movobeam100::move(float pan, float tilt) {
+    t_atom at[2];
+    SETFLOAT(&at[0], pan);
+    SETFLOAT(&at[1], tilt);
+    outlet_anything(instance->x_msgout, gensym("proj_goto"), 2, at);
+}
+
+void Movobeam100::dimmer(uint8_t l) {
+    t_atom at[1];
+    SETFLOAT(&at[0], l);
+    outlet_anything(instance->x_msgout, gensym("proj_dim"), 1, at);
+}
+
+void Movobeam100::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+    t_atom at[4];
+    SETFLOAT(&at[0], r);
+    SETFLOAT(&at[1], g);
+    SETFLOAT(&at[2], b);
+    SETFLOAT(&at[3], w);
+    outlet_anything(instance->x_msgout, gensym("proj_col"), 4, at);
+}
+
+void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b){
+    t_atom at[4];
+    SETFLOAT(&at[0], n);
+    SETFLOAT(&at[1], r);
+    SETFLOAT(&at[2], g);
+    SETFLOAT(&at[3], b);
+    outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);
+}
+
+void Players::update() {
+    if(steady_count == players_count) {
+        steady_timeout = at_the_end_of_time;
+        pre_steady_count = -1;
+        return;
+    }
+    if(pre_steady_count != players_count) {
+        pre_steady_count = players_count;
+        steady_timeout = make_timeout_time_ms(STEADY_MS);
+        return;
+    }
+    if(time_reached(steady_timeout)) {
+        steady_count = pre_steady_count;
+        steady_timeout = at_the_end_of_time;
+    }
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -120,7 +186,7 @@ void ponggame_setup(void)
     class_addanything(ponggame_class, ponggame_anything);
 }
 
-void proj_goto(float pan, float tilt) {
+/*void proj_goto(float pan, float tilt) {
     t_atom at[2];
     SETFLOAT(&at[0], pan);
     SETFLOAT(&at[1], tilt);
@@ -128,7 +194,7 @@ void proj_goto(float pan, float tilt) {
 }
 
 void proj_set_light(uint8_t l) {
-}
+}*/
 
 #ifdef __cplusplus
 }

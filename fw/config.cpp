@@ -11,19 +11,27 @@ void PongarConfig::eeprom_declare() {
     eeprom_declare_data((char*)this, sizeof(PongarConfig));
 }
 
+void PongarConfig::pixel_show(int from, int to) {
+    from = from % total_leds;
+    to = to % total_leds;
+    for(int i = 0; i < NUM_PIXELS - 1; i++) {
+        if(i >= from || i <= to) set_pixel(i, 255, 255, 255);
+        else set_pixel(i, 0, 0, 0);
+    }
+}
+
 void PongarConfig::receivebytes(const char* data, uint8_t len) {
 	char command = fraise_get_uint8();
 	switch(command) {
 		case 1: {
 		        total_leds = fraise_get_uint16();
-		        uint16_t fake_pos[1] = {180};
-		        pixel_update_players(1, fake_pos, 360);
+		        pixel_show(0, total_leds - 1);
 	        }
 	        break;
 		case 2: {
 		        leds_angle_offset = fraise_get_int16();
-		        uint16_t fake_pos[1] = {0};
-		        pixel_update_players(1, fake_pos, 10);
+		        int led = (leds_angle_offset * total_leds) / 360;
+		        pixel_show(led, led);
 	        }
 	        break;
 		case 3: distance_max = fraise_get_int16(); break;

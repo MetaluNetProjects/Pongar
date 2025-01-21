@@ -48,4 +48,20 @@ void players_find(const uint16_t *distance_array){
     }
 }
 
+void Players::update() {
+    if(steady_count == players_count) {
+        steady_timeout = at_the_end_of_time;
+        pre_steady_count = -1;
+        return;
+    }
+    if(pre_steady_count != players_count) {
+        pre_steady_count = players_count;
+        steady_timeout = make_timeout_time_ms(STEADY_MS);
+        return;
+    }
+    if(time_reached(steady_timeout)) {
+        steady_count = pre_steady_count;
+        steady_timeout = at_the_end_of_time;
+    }
+}
 

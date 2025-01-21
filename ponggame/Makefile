@@ -7,7 +7,7 @@
 
 PONGLIB = ../fw/
 
-cflags = -I$(PONGLIB) -I$(PONGLIB)/hw -I. -g -Wno-unused-parameter
+cflags = -I. -I$(PONGLIB) -I$(PONGLIB)/hw -g -Wno-unused-parameter
 lib.name = ponggame
 
 ponggame.class.sources = ponggame.cpp $(PONGLIB)/game.cpp
