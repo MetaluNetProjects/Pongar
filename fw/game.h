@@ -6,7 +6,7 @@
 #include "players.h"
 #include "sound_command.h"
 #include "words.h"
-
+#include "gfx/gfx.h"
 /*class Players {
   private:
     static const int STEADY_MS = 1500;
@@ -31,6 +31,7 @@ class Game {
     GameMode *game_mode;
     AudioLayer audio;
     WavPlayer wavplayer;
+    Chaser chaser;
     int say_mode = 1;
 
     void change_players_count(int count);
@@ -48,7 +49,7 @@ class Game {
     inline void sayclear() { wavplayer.clear(); }
     inline bool is_saying() { return wavplayer.is_playing();}
     inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {audio.command(c, p1, p2, p3);}
-    void pixel_update_players();
+    void pixels_update();
 };
 
 extern Game game;

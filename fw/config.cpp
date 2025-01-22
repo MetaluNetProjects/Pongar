@@ -12,10 +12,10 @@ void PongarConfig::eeprom_declare() {
 }
 
 void PongarConfig::pixel_show(int from, int to) {
-    from = from % total_leds;
-    to = to % total_leds;
+    //from = from % total_leds;
+    //to = to % total_leds;
     for(int i = 0; i < NUM_PIXELS - 1; i++) {
-        if(i >= from || i <= to) set_pixel(i, 255, 255, 255);
+        if(i >= from && i <= to) set_pixel(i, 255, 255, 255);
         else set_pixel(i, 0, 0, 0);
     }
 }
@@ -30,7 +30,7 @@ void PongarConfig::receivebytes(const char* data, uint8_t len) {
 	        break;
 		case 2: {
 		        leds_angle_offset = fraise_get_int16();
-		        int led = (leds_angle_offset * total_leds) / 360;
+		        int led = (((leds_angle_offset + 360) % 360) * total_leds) / 360;
 		        pixel_show(led, led);
 	        }
 	        break;

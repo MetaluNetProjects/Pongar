@@ -11,35 +11,18 @@ Game game;
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
-//int Players::get_steady_count(){return steady_count;}
-//int Players::get_count(){return players_count;}
-
-/*void Players::update() {
-    if(steady_count == players_count) {
-        steady_timeout = at_the_end_of_time;
-        pre_steady_count = -1;
-        return;
-    }
-    if(pre_steady_count != players_count) {
-        pre_steady_count = players_count;
-        steady_timeout = make_timeout_time_ms(STEADY_MS);
-        return;
-    }
-    if(time_reached(steady_timeout)) {
-        steady_count = pre_steady_count;
-        steady_timeout = at_the_end_of_time;
-    }
-}*/
-
 //------------------------------------------------------------
 class SimpleMode : public GameMode {
     static const int INIT_PERIOD = 5000;
     static const int MIN_PERIOD = 1200;
     static const int SCORE_MAX = 12;
+    static const int INIT_PAN = 30;
+    static const int MAX_PAN = 90;
     int period_ms = INIT_PERIOD;
     float pan, tilt;
     float pan_change_amp = 45.0;
     float pan_delta = 0, tilt_delta = 0;
+    int new_pan;
     int score;
     void say_score() {
         say(Words((int)Words::_0 + score));
@@ -61,9 +44,10 @@ class SimpleMode : public GameMode {
         period_ms = INIT_PERIOD;
         score = 0;
         tilt = 0;
-        pan = (random() % 360) - 180;
+        pan = random() % 360;
         pan_delta = 0;
         tilt_delta = (2.0 * config.proj_tilt_amp * game.update_ms) / period_ms;
+        pan_change_amp = INIT_PAN;
         proj.color(0, 0, 0, 255);
         proj.dimmer(128);
         say(Words::partie);
@@ -73,15 +57,16 @@ class SimpleMode : public GameMode {
     }
 
     virtual void update() {
-        //pixel_update_players();
         pan += pan_delta;
+        if(pan_delta < 0 && pan < new_pan) pan = new_pan;
+        if(pan_delta > 0 && pan > new_pan) pan = new_pan;
         tilt += tilt_delta;
         if((tilt_delta > 0 && tilt >= config.proj_tilt_amp) || (tilt_delta < 0 && tilt <= -config.proj_tilt_amp)) {
             int p = (int)pan;
             bool touched = false;
             if(tilt < 0) p = (p + 180) % 360;
             for(int i = 0; i < game.players.get_count(); i++) {
-                if(abs(((players_pos[i] - p + 180) % 360) - 180) <= (players_separation / 2)) {
+                if(abs(((players_pos[i] - p + 180 + 360) % 360) - 180) <= (players_separation / 2)) {
                     touched = true;
                     break;
                 }
@@ -91,8 +76,11 @@ class SimpleMode : public GameMode {
             else sfx(SoundCommand::buzz);
             saysilence(300); // waits end of sfx before saying smth
 
-            if(touched) period_ms = period_ms * 0.85;
-            if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
+            if(touched) {
+                period_ms = period_ms * 0.85;
+                if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
+                pan_change_amp = CLIP(pan_change_amp + 5, INIT_PAN, MAX_PAN);
+            }
 
             if(touched) score++;
             else score--;
@@ -102,9 +90,10 @@ class SimpleMode : public GameMode {
 
             if(tilt_delta > 0) tilt_delta = -(2.0 * config.proj_tilt_amp * game.update_ms) / period_ms;
             else tilt_delta = (2.0 * config.proj_tilt_amp * game.update_ms) / period_ms;
-            int new_pan = pan + ((random() % 2048) - 1024) * (pan_change_amp / 1024);
+
+            new_pan = pan + ((random() % 2048) - 1024) * (pan_change_amp / 1024);
             new_pan = CLIP(new_pan, 0.0, 360.0);
-            pan_delta = ((new_pan - pan) * game.update_ms) / period_ms;
+            pan_delta = 2.0 * ((new_pan - pan) * game.update_ms) / period_ms;
         }
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
     }
@@ -116,6 +105,7 @@ void Game::init(int audio_pin, int tx_pin) {
     wavplayer.init(tx_pin);
     prepare();
     game_mode = &simple_mode;
+    chaser.set_mode(0);
 }
 
 void Game::prepare() {
@@ -144,9 +134,14 @@ void Game::change_players_count(int count) {
     }
 }
 
-void Game::pixel_update_players() {
-    //uint8_t col[][3] = {{255, 0, 0}, {0, 255, 0}, {0, 0, 255}};
+void Game::pixels_update() {
     int total_leds = MIN(config.total_leds, NUM_PIXELS);
+    if(mode == STOP) return;
+    if(mode == PREPARE && players.get_steady_count() == 0) {
+        chaser.update();
+        return;
+    }
+    
     for(int i = 0; i < total_leds; i++) {
         set_pixel(i, 30, 0, 0);
     }

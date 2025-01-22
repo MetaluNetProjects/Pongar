@@ -86,7 +86,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     //post("pongaremul rvc %s", s->s_name);
     if(s == &s_bang) {
         game.update();
-        game.pixel_update_players();
+        game.pixels_update();
     }
     else if(s == gensym("players")){
         players_count = argc;

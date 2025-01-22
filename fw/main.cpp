@@ -45,6 +45,8 @@ int button_count;
 //Osc osc1;
 
 void setup() {
+    eeprom_load();
+
     game.init(AUDIO_PWM_PIN, MP3_TX_PIN);
     Osc::setup();
     /*osc1.setFreq(440);
@@ -68,9 +70,9 @@ void setup() {
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
     sleep_ms(200);
     lidar_state = START;
-
-    eeprom_load();
 }
+
+void game_pixels_update() { game.pixels_update();}
 
 void loop(){
 	static absolute_time_t nextLed;
@@ -103,9 +105,12 @@ void loop(){
         for(int i = 0; i < players_count; i++) fraise_put_uint16(players_pos[i]);
         fraise_put_send();
         //pixel_update_players(players_count, players_pos, players_separation);
-        game.pixel_update_players();
+        //game.pixels_update();
+        //printf("pixel_update\n");
     }
     game.update();
+    //if(pixel_update()) game.pixels_update();
+    pixel_update(game_pixels_update);
 
     if(dmx.transfer_finished()) {
         dmx.transfer_frame(dmxBuf, DMX_CHAN_COUNT);

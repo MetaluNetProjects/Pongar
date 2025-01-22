@@ -8,7 +8,8 @@ uint32_t all_color0 = 0x00000000;
 uint32_t all_color1 = 0xFFFFFFFF;
 
 
-static repeating_timer_t tick_timer;
+//static repeating_timer_t tick_timer;
+static absolute_time_t next_time;
 
 //static int pat;
 //static int dir;
@@ -50,16 +51,24 @@ void pixel_receivebytes(const char* data, uint8_t len) {
 	}
 }
 
-static bool tick_callback(repeating_timer_t *rt)
+/*static bool tick_callback(repeating_timer_t *rt)
 {
 	ws2812_dma_transfer(framebuffer, NUM_PIXELS);
 	return true;
-}
+}*/
 
 void pixel_setup() {
     gpio_set_drive_strength(WS2812_PIN, GPIO_DRIVE_STRENGTH_2MA);
     ws2812_setup(WS2812_PIN, IS_RGBW);
-    add_repeating_timer_ms(20, tick_callback, NULL, &tick_timer);
+    //add_repeating_timer_ms(10, tick_callback, NULL, &tick_timer);
+}
+
+bool pixel_update(void (*callback)(void)) {
+    if(!time_reached(next_time)) return false;
+    next_time = make_timeout_time_ms(10);
+    callback();
+    ws2812_dma_transfer(framebuffer, NUM_PIXELS);
+    return true;
 }
 
 /*void pixel_update_players(int players_count, const uint16_t *players_pos, int players_separation) {

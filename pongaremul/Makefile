@@ -10,7 +10,7 @@ PONGLIB = ../fw/
 cflags = -I. -I$(PONGLIB) -I$(PONGLIB)/hw -g -Wno-unused-parameter
 lib.name = pongaremul
 
-pongaremul.class.sources = pongaremul.cpp $(PONGLIB)/game.cpp $(PONGLIB)/sound/osc.cpp
+pongaremul.class.sources = pongaremul.cpp $(PONGLIB)/game.cpp $(PONGLIB)/sound/osc.cpp $(PONGLIB)/gfx/gfx.cpp
 
 PDLIBBUILDER_DIR ?= .
 include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder
