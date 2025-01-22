@@ -45,43 +45,48 @@ bool time_reached(absolute_time_t t) {
     return timercmp(&t, &tv, <);
 }
 
-absolute_time_t at_the_end_of_time { .tv_sec = (long)1e6};
+absolute_time_t at_the_end_of_time { .tv_sec = (long)1e6, .tv_usec = 0};
 
 uint8_t fraise_get_uint8() { return 0;}
-/* -------------------------- ponggame ------------------------------ */
-static t_class *ponggame_class;
+/* -------------------------- pongaremul ------------------------------ */
+static t_class *pongaremul_class;
 
 int players_separation = 30;
 int players_count = 0;
 uint16_t players_pos[PLAYERS_MAX];
 
-typedef struct _ponggame
+typedef struct _pongaremul
 {
     t_object x_obj;
     t_float x_f;
     t_outlet *x_msgout;
-} t_ponggame;
+    MainPatch *x_patch;
+    bool x_wav_is_playing;
+} t_pongaremul;
 
-t_ponggame *instance;
+t_pongaremul *instance;
 
-static void *ponggame_new(void)
+static void *pongaremul_new(void)
 {
-    t_ponggame *x = (t_ponggame *)pd_new(ponggame_class);
+    t_pongaremul *x = (t_pongaremul *)pd_new(pongaremul_class);
+    outlet_new(&x->x_obj, gensym("signal"));
     x->x_msgout = outlet_new(&x->x_obj, &s_anything);
     instance = x;
+    x->x_wav_is_playing = false;
     game.init(0, 0);
     return (x);
 }
 
-static void ponggame_free(t_ponggame *x)
+static void pongaremul_free(t_pongaremul *x)
 {
 }
 
-static void ponggame_anything(t_ponggame *x, t_symbol *s, int argc, t_atom *argv)
+static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *argv)
 {
-    //post("ponggame rvc %s", s->s_name);
+    //post("pongaremul rvc %s", s->s_name);
     if(s == &s_bang) {
         game.update();
+        game.pixel_update_players();
     }
     else if(s == gensym("players")){
         players_count = argc;
@@ -96,7 +101,38 @@ static void ponggame_anything(t_ponggame *x, t_symbol *s, int argc, t_atom *argv
     else if(s == gensym("stop")){
         game.stop();
     }
+    else if(s == gensym("wav_playing")){
+        x->x_wav_is_playing = argc > 0 ? atom_getfloat(&argv[0]) : 0;
+    }
+    else if(s == gensym("buzz")) x->x_patch->buzz();
+    else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
 }
+
+#define CLIP(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
+static t_int *pongaremul_perform(t_int *w)
+{
+    t_pongaremul *x = (t_pongaremul *)(w[1]);
+    t_float *out = (t_float *)(w[2]);
+    int n = (int)(w[3]);
+    int i;
+    int32_t intbuf[AUDIO_SAMPLES_PER_BUFFER] = {0};
+
+    x->x_patch->mix(intbuf, 0);
+    for (i = 0; i < n; i++)
+        //while (n--)
+    {
+        *out++ = CLIP(intbuf[i] / 32768.0);
+        //*out++ = CLIP(((random() % 0xFFFF) -32768.0) / 32768.0);
+    }
+    return (w+4);
+}
+
+static void pongaremul_dsp(t_pongaremul *x, t_signal **sp)
+{
+    dsp_add(pongaremul_perform, 3, x, sp[0]->s_vec, sp[0]->s_n);
+}
+
+/* -------------------------- audio layer ------------------------------ */
 
 char *SoundCommandString[] = {/*"say", "saypause", "sayclear", */"buzz", "bounce"};
 
@@ -104,13 +140,20 @@ char *SoundCommandString[] = {/*"say", "saypause", "sayclear", */"buzz", "bounce
                   partie = 101, joueur, perdu, gagné};*/
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    t_atom at[4];
+    /*t_atom at[4];
     SETSYMBOL(&at[0], gensym(SoundCommandString[(int)c]));
     SETFLOAT(&at[1], p1);
     SETFLOAT(&at[2], p2);
     SETFLOAT(&at[3], p3);
-    outlet_anything(instance->x_msgout, gensym("sound_command"), 4, at);
+    outlet_anything(instance->x_msgout, gensym("sound_command"), 4, at);*/
+    main_patch.command(c, p1, p2, p3);
 }
+
+void AudioLayer::init(int audio_pin) {
+    instance->x_patch = &main_patch;
+}
+
+/* -------------------------- wav player ------------------------------ */
 
 void WavPlayer::play(uint8_t folder, uint8_t track) {
     t_atom at[2];
@@ -127,10 +170,16 @@ void WavPlayer::clear(){
     outlet_anything(instance->x_msgout, gensym("sayclear"), 0, NULL);
 }
 
+bool WavPlayer::is_playing(){
+    return instance->x_wav_is_playing;
+}
+
+/* -------------------------- projector ------------------------------ */
+
 void Movobeam100::move(float pan, float tilt) {
     t_atom at[2];
     SETFLOAT(&at[0], pan);
-    SETFLOAT(&at[1], tilt);
+    SETFLOAT(&at[1], tilt / config.proj_tilt_amp);
     outlet_anything(instance->x_msgout, gensym("proj_goto"), 2, at);
 }
 
@@ -175,26 +224,20 @@ void Players::update() {
     }
 }
 
+/* -------------------------- setup ------------------------------ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void ponggame_setup(void)
+void pongaremul_setup(void)
 {
-    ponggame_class = class_new(gensym("ponggame"), (t_newmethod)ponggame_new,
-        (t_method)ponggame_free, sizeof(t_ponggame), 0, A_NULL);
-    class_addanything(ponggame_class, ponggame_anything);
+    Osc::setup();
+    pongaremul_class = class_new(gensym("pongaremul"), (t_newmethod)pongaremul_new,
+        (t_method)pongaremul_free, sizeof(t_pongaremul), 0, A_NULL);
+    class_addanything(pongaremul_class, pongaremul_anything);
+    class_addmethod(pongaremul_class, (t_method)pongaremul_dsp, gensym("dsp"), A_NULL);
 }
-
-/*void proj_goto(float pan, float tilt) {
-    t_atom at[2];
-    SETFLOAT(&at[0], pan);
-    SETFLOAT(&at[1], tilt);
-    outlet_anything(instance->x_msgout, gensym("proj_goto"), 2, at);
-}
-
-void proj_set_light(uint8_t l) {
-}*/
 
 #ifdef __cplusplus
 }

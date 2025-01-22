@@ -160,7 +160,7 @@ class MainPatch : public Patch {
     }
     void bounce(bool way = true) {
         if(way) bouncer.bounce(120, 200, 5000);
-        else bouncer.bounce(120, 1000, -5000);
+        else bouncer.bounce(120, 1000, -3000);
     }
     void command(SoundCommand c, int p1, int p2, int p3) {
         switch(c) {

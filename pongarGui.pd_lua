@@ -72,7 +72,7 @@ function Scan:paint(g)
     g:fill_ellipse(0, 0, self.size, self.size, 1)
 
     -- dmx spot position
-    local r = (self.radius - self.pdiam / 2 - 2 * self.border) * self.tilt / 45
+    local r = (self.radius - self.pdiam / 2 - 0 * self.border) * self.tilt
     local x = self.center + r * cos(self.pan / 180 * pi) - self.pdiam / 2
     local y = self.center + r * sin(self.pan / 180 * pi) - self.pdiam / 2
     g:set_color(255, 50, 0, 0.3)

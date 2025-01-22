@@ -1,2 +1,0 @@
-#N canvas 561 442 450 300 12;
-#X obj 90 110 pongsynth~;

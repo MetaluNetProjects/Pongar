@@ -5,12 +5,12 @@
 #
 # make install pdincludepath=../pure-data/src/ objectsdir=./build
 
-PONGLIB = ../fw/sound
+PONGLIB = ../fw/
 
-cflags = -I$(PONGLIB) -I. -g
-lib.name = pongsynth~
+cflags = -I. -I$(PONGLIB) -I$(PONGLIB)/hw -g -Wno-unused-parameter
+lib.name = pongaremul
 
-pongsynth~.class.sources = pongsynth~.cpp $(PONGLIB)/osc.cpp
+pongaremul.class.sources = pongaremul.cpp $(PONGLIB)/game.cpp $(PONGLIB)/sound/osc.cpp
 
 PDLIBBUILDER_DIR ?= .
 include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder
