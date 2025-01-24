@@ -47,13 +47,23 @@ bool time_reached(absolute_time_t t) {
 
 absolute_time_t at_the_end_of_time { .tv_sec = (long)1e6, .tv_usec = 0};
 
+absolute_time_t get_absolute_time() {
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    return tv;
+}
+
+absolute_time_t boot_time = get_absolute_time();
+
+uint32_t to_ms_since_boot (absolute_time_t t) {
+    struct timeval tv;
+    timersub(&t, &boot_time, &tv);
+    return tv.tv_sec * 1000U + tv.tv_usec / 1000U;
+}
+
 uint8_t fraise_get_uint8() { return 0;}
 /* -------------------------- pongaremul ------------------------------ */
 static t_class *pongaremul_class;
-
-int players_separation = 30;
-int players_count = 0;
-uint16_t players_pos[PLAYERS_MAX];
 
 typedef struct _pongaremul
 {
@@ -89,8 +99,19 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         game.pixels_update();
     }
     else if(s == gensym("players")){
-        players_count = argc;
-        for(int i = 0; i < argc; i++) players_pos[i] = atom_getfloat(&argv[i]);
+        /*players_count = argc;
+        for(int i = 0; i < argc; i++) players_pos[i] = atom_getfloat(&argv[i]);*/
+        int count = argc;
+        uint16_t pos[Players::PLAYERS_MAX];
+        for(int i = 0; i < argc; i++) pos[i] = atom_getfloat(&argv[i]);
+        game.players.set_raw_pos(pos, count);
+
+        t_atom at[2 * Players::PLAYERS_MAX];
+        for(int i = 0; i < game.players.get_count(); i++) {
+            SETFLOAT(&at[i], game.players.get_pos(i));
+            SETFLOAT(&at[i], game.players.get_pos(i));
+        }
+        outlet_anything(instance->x_msgout, gensym("fplayers"), game.players.get_count(), at);
     }
     else if(s == gensym("prepare")){
         game.prepare();
@@ -207,7 +228,7 @@ void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b){
     outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);
 }
 
-void Players::update() {
+/*void Players::update() {
     if(steady_count == players_count) {
         steady_timeout = at_the_end_of_time;
         pre_steady_count = -1;
@@ -222,7 +243,7 @@ void Players::update() {
         steady_count = pre_steady_count;
         steady_timeout = at_the_end_of_time;
     }
-}
+}*/
 
 /* -------------------------- setup ------------------------------ */
 
