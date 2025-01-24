@@ -99,15 +99,15 @@ void loop(){
 	}
 
 	if(lidar_update()) {
-        players_find(lidar_distance_masked);
+          // update players
+        game.players.find_players(lidar_distance_masked);
+          // send debug to Pd
         fraise_put_init();
         fraise_put_uint8(100);
-        for(int i = 0; i < players_count; i++) fraise_put_uint16(players_pos[i]);
+        for(int i: game.players.get_set()) if(game.players.is_visible(i)) fraise_put_uint16(game.players.get_pos(i));
         fraise_put_send();
-        //pixel_update_players(players_count, players_pos, players_separation);
-        //game.pixels_update();
-        //printf("pixel_update\n");
     }
+
     game.update();
     //if(pixel_update()) game.pixels_update();
     pixel_update(game_pixels_update);

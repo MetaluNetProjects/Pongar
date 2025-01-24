@@ -72,11 +72,13 @@ class FlashyMode : public ChaserMode {
             points_speed[i] = 0;
         }
 
+        static rgb_t cols[3] = {0x200000, 0x002000, 0x000020};
         for(int i = 0; i < total_leds; i++) {
             //pixels[i] = rgb_mulf(col_points[(i * NPOINTS) / total_leds], 0.15);
-            int n = (i * 6 * 2) / total_leds;
-            if (n % 2) pixels[i] = 0x3f0000;
-            else pixels[i] = 0;
+            int n = (i * 3 * 2) / total_leds;
+            /*if (n % 2) pixels[i] = 0x3f0000;
+            else pixels[i] = 0;*/
+            pixels[i] = cols[n % 3];
         }
     }
     virtual void update() {
@@ -89,13 +91,19 @@ class FlashyMode : public ChaserMode {
             int n = (int(i + rot)) % total_leds;
             set_pixel_rgb(i, pixels[n]);
         }
-        for(int i = 0; i < NPOINTS; i++) {
-            points_speed[i] += (random() % 2000 - 1000) / (20 * 1000.0);
-            points_speed[i] = CLIP(points_speed[i], -2, 2);
-            points[i] += points_speed[i];
+        for(int i = 0; i < 5; i++) {
+            points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
+            points_speed[i] = CLIP(points_speed[i], -1.4, 1.4);
+            points[i] += points_speed[i] * points_speed[i] * points_speed[i];
             points_lop[i] += (points[i] - points_lop[i]) * 0.1;
-            /*if(points[i] >= total_leds) points[i] -= total_leds;
-            if(points[i] < 0) points[i] += total_leds;*/
+            if(points[i] >= total_leds) {
+                points[i] -= total_leds;
+                points_lop[i] -= total_leds;
+            }
+            if(points[i] < 0) {
+                points[i] += total_leds;
+                points_lop[i] += total_leds;
+            }
             int incr;
             if(points[i] < points_lop[i]) incr = 1;
             else incr = -1;

@@ -7,17 +7,8 @@
 #include "sound_command.h"
 #include "words.h"
 #include "gfx/gfx.h"
-/*class Players {
-  private:
-    static const int STEADY_MS = 1500;
-    int steady_count = 0;
-    int pre_steady_count = 0;
-    absolute_time_t steady_timeout;
-  public:
-    void update();
-    inline int get_steady_count(){return steady_count;}
-    inline int get_count(){return players_count;}
-};*/
+
+#define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
 class GameMode;
 class Game {
@@ -33,11 +24,11 @@ class Game {
     WavPlayer wavplayer;
     Chaser chaser;
     int say_mode = 1;
-
+    float dim;
     void change_players_count(int count);
   public:
     Players players;
-    const int update_ms = 40;
+    static const int PERIOD_MS = 40;
     void init(int audio_pin, int tx_pin);
     void prepare();
     void start();
@@ -47,8 +38,8 @@ class Game {
     inline void say(Words w) { wavplayer.play(say_mode, (int)w); }
     inline void saysilence(int ms) { wavplayer.silence(ms); }
     inline void sayclear() { wavplayer.clear(); }
-    inline bool is_saying() { return wavplayer.is_playing();}
-    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {audio.command(c, p1, p2, p3);}
+    inline bool is_saying() { return wavplayer.is_playing(); }
+    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) { audio.command(c, p1, p2, p3); }
     void pixels_update();
 };
 
@@ -59,11 +50,12 @@ class GameMode {
     virtual ~GameMode() {};
     virtual void init() = 0;
     virtual void update() = 0;
+    virtual void pixels_update() { game.pixels_update(); }
     inline void say(Words w) { game.say(w);}
-    inline void saysilence(int ms) {game.saysilence(ms);}
-    inline bool is_saying() {return game.is_saying();}
-    inline void sayclear() {game.sayclear();}
-    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {game.sfx(c, p1, p2, p3);}
+    inline void saysilence(int ms) { game.saysilence(ms); }
+    inline bool is_saying() { return game.is_saying(); }
+    inline void sayclear() { game.sayclear(); }
+    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) { game.sfx(c, p1, p2, p3); }
 };
 
 
