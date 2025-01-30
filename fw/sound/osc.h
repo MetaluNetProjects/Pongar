@@ -68,8 +68,26 @@ class Buzzer : public Patch {
         if(time_reached(stop_time)) return;
         osc1.mix_saw(out_buffer);
         osc2.mix_saw(out_buffer);
+        osc1.setFreq(85 + random()%3);
+        osc2.setFreq(88 + random()%3);
     }
     void buzz(uint ms) {
+        stop_time = make_timeout_time_ms(ms);
+    }
+};
+
+class Tut : public Patch {
+  private:
+  public:
+    Osc osc1;
+    absolute_time_t stop_time;
+    Tut() : osc1(1000, 20000) {}
+    virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
+        if(time_reached(stop_time)) return;
+        osc1.mix_saw(out_buffer);
+    }
+    void tut(uint f, uint ms) {
+        osc1.setFreq(f);
         stop_time = make_timeout_time_ms(ms);
     }
 };
@@ -151,9 +169,11 @@ class MainPatch : public Patch {
   public:
     Buzzer buzzer;
     Bouncer bouncer;
+    Tut tut;
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         buzzer.mix(out_buffer);
         bouncer.mix(out_buffer);
+        tut.mix(out_buffer);
     }
     void buzz() {
         buzzer.buzz(400);
@@ -162,10 +182,13 @@ class MainPatch : public Patch {
         if(way) bouncer.bounce(120, 200, 5000);
         else bouncer.bounce(120, 1000, -3000);
     }
+
     void command(SoundCommand c, int p1, int p2, int p3) {
+        //printf("mainpatch cmd %d %d %d %d\n", (int)c, p1, p2, p3);
         switch(c) {
             case SoundCommand::buzz: buzz(); break;
             case SoundCommand::bounce: bounce(p1 > 0); break;
+            case SoundCommand::tut: tut.tut(p1, p2); break;
             default: ;
         }
     }

@@ -38,6 +38,10 @@ void Game::stop() {
     proj.dimmer(0);
 }
 
+void Game::standby() {
+    mode = STANDBY;
+}
+
 void Game::change_players_count(int count) {
     game_players_count = count;
     if(game_players_count > 0) {
@@ -48,37 +52,43 @@ void Game::change_players_count(int count) {
 }
 
 void Game::pixels_update() {
+    if(mode == STANDBY) return;
     if(mode == PLAYING) {
         game_mode->pixels_update();
         return;
     }
     int total_leds = MIN(config.total_leds, NUM_PIXELS);
-    //if(mode == STOP) return;
     if(mode == PREPARE && players.get_steady_count() == 0) {
         chaser.update();
         return;
     }
-    
+
+#if 0
     for(int i = 0; i < total_leds; i++) {
         set_pixel(i, 30, 0, 0);
     }
 
-    auto pset = game.players.get_set();
-    for(int player: pset) {
+    for(int player: game.players.get_set()) {
         if(!game.players.is_visible(player)) continue;
         int width = 50;
-        int startled = ((game.players.get_pos(player) - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
-        int stopled =  ((game.players.get_pos(player) + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
-        int r, g, b;
-        switch(player) {
+        int startled = ((game.players.get_pos(player).angle - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
+        int stopled =  ((game.players.get_pos(player).angle + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
+        int r = 255, g = 255, b = 255;
+        /*switch(player) {
             case 0: r = 0; g = 255; b = 0; break;
             case 1: r = 0; g = 0; b = 255; break;
             case 2: r = 255; g = 0; b = 255; break;
             default: r = 255; g = 255; b = 0;
-        }
+        }*/
         for(int led = startled + 1; led < stopled; led++) set_pixel((led + total_leds) % total_leds, r, g, b);
         set_pixel((startled + total_leds) % total_leds, 0, 0, 0);
         set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
+    }
+#endif
+    for(int i = 0; i < total_leds; i++) {
+        int angle = (360 * i) / total_leds - config.leds_angle_offset;
+        if(game.players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
+        else set_pixel(i, 0, 0, 0);
     }
 }
 
@@ -88,17 +98,16 @@ void Game::update() {
     if(!time_reached(update_time)) return;
     update_time = make_timeout_time_ms(PERIOD_MS);
     switch(mode) {
-        case STOP: return; break;
+        case STOP: break;
         case WAIT_SAYING:
             if(!is_saying()) mode = PREPARE;
-            return;
             break;
         case PREPARE:
             if(game_players_count != players.get_steady_count()) {
                 players_ready_timeout = make_timeout_time_ms(3000);
                 change_players_count(players.get_steady_count());
                 players_ready_okcount = 0;
-                return;
+                break;
             }
             proj.dimmer(dim = dim * 0.5);
             if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) {
@@ -107,14 +116,13 @@ void Game::update() {
                     say((Words)((int)Words::_0 + PLAYERS_READY_SECONDS - players_ready_okcount));
                     players_ready_timeout = make_timeout_time_ms(1000);
                     proj.dimmer(dim = 255.0);
-                    return;
+                    break;
                 }
                 else start();
-            } else return;
-            break;
+            }break;
         case PLAYING: game_mode->update(); break;
+        case STANDBY: break;
     }
-    
 }
 
 void Game::receivebytes(const char* data, uint8_t len) {

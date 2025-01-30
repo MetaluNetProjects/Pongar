@@ -14,7 +14,7 @@ class GameMode;
 class Game {
   private:
     static const int PLAYERS_READY_SECONDS = 4;
-    enum {STOP, WAIT_SAYING, PREPARE, PLAYING} mode = STOP;
+    enum {STOP, WAIT_SAYING, PREPARE, PLAYING, STANDBY} mode = STOP;
     absolute_time_t update_time;
     int game_players_count;
     absolute_time_t players_ready_timeout;
@@ -33,8 +33,10 @@ class Game {
     void prepare();
     void start();
     void stop();
+    void standby();
     void update();
     void receivebytes(const char* data, uint8_t len);
+    inline int get_players_count() { return game_players_count; }
     inline void say(Words w) { wavplayer.play(say_mode, (int)w); }
     inline void saysilence(int ms) { wavplayer.silence(ms); }
     inline void sayclear() { wavplayer.clear(); }

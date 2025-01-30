@@ -117,7 +117,52 @@ class FlashyMode : public ChaserMode {
 };
 const rgb_t FlashyMode::col_points[NPOINTS] = {0xff0000, 0xffff00, 0xffffff, 0x00ff00, 0x0000ff, 0x00ffff, 0xff00ff};
 
-Chaser::Chaser() : mode(0), modes{ new FlashyMode()} {}
+class BallsMode : public ChaserMode {
+  private:
+    static const int NPOINTS = 7;
+    float points[NPOINTS];
+    float points_lop[NPOINTS];
+    float points_speed[NPOINTS];
+    int total_leds;
+  public:
+    virtual void init() {
+        total_leds = config.total_leds;
+        for(int i = 0; i < NPOINTS; i++) {
+            points_lop[i] = points[i] = random() % total_leds;
+            points_speed[i] = 0;
+        }
+    }
+    virtual void update() {
+        for(int i = 0; i < total_leds; i++) {
+            set_pixel_rgb(i, 0);
+        }
+        for(int i = 0; i < 5; i++) {
+            points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
+            points_speed[i] = CLIP(points_speed[i], -1.4, 1.4);
+            points[i] += points_speed[i] * points_speed[i] * points_speed[i];
+            points_lop[i] += (points[i] - points_lop[i]) * 0.1;
+            if(points[i] >= total_leds) {
+                points[i] -= total_leds;
+                points_lop[i] -= total_leds;
+            }
+            if(points[i] < 0) {
+                points[i] += total_leds;
+                points_lop[i] += total_leds;
+            }
+            int incr;
+            if(points[i] < points_lop[i]) incr = 1;
+            else incr = -1;
+            int n = abs(points_lop[i] - points[i]) + 1;
+            for(int j = 0; j < n; j++) {
+                float l = 1.0 - (float)j / n;
+                set_pixel_rgb(modulo(points[i] + j * incr, total_leds), rgb_mulf(0xffffff, l * l));
+            }
+        }
+    }
+};
+
+
+Chaser::Chaser() : mode(0), modes{ new BallsMode()} {}
 
 void Chaser::set_mode(int m) {
     mode = m;

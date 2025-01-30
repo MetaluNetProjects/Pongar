@@ -50,7 +50,7 @@ class Collab : public GameMode {
         saysilence(100);
         say(Words::_1);
         saysilence(500);
-        pad_width = 50;
+        pad_width = 30;
         tilt_bounce = 1000;
     }
 
@@ -59,12 +59,14 @@ class Collab : public GameMode {
         bool touched = false;
         if(tilt < 0) p = (p + 180) % 360;
         //for(int i = 0; i < game.players.get_count(); i++) {
-        for(int i: game.players.get_set()) {
-            if(abs(((game.players.get_pos(i) - p + 180 + 360) % 360) - 180) <= (pad_width / 2)) {
+        /*for(int i: game.players.get_set()) {
+            if(game.players.is_visible(i) && abs(((game.players.get_pos(i).angle - p + 180 + 360) % 360) - 180) <= (pad_width / 2)) {
                 touched = true;
                 break;
             }
-        }
+        }*/
+        touched = game.players.presence_at(p, pad_width / 2 + 1);
+        if(game.get_players_count() == 1) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
         //printf("touched %d\n", touched);
         if(touched) sfx(SoundCommand::bounce, tilt > 0);
         else sfx(SoundCommand::buzz);
@@ -82,6 +84,8 @@ class Collab : public GameMode {
     }
 
     virtual void update() {
+        if(game.get_players_count() == 1) {
+        }
         pan += pan_delta;
         if(pan_delta < 0 && pan < new_pan) pan = new_pan;
         if(pan_delta > 0 && pan > new_pan) pan = new_pan;
@@ -114,39 +118,69 @@ class Collab : public GameMode {
             if(tilt_bounce != 1000) proj.color(255, 0, 0, 0);
             else proj.color(0, 0, 0, 255);
         }
+        if(tilt_bounce != 1000) {
+            static int x = 0;
+            if(x++ % 4) game.sfx(SoundCommand::tut, 1500, 50);
+        }
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
     }
 
     virtual void pixels_update() {
         int total_leds = MIN(config.total_leds, NUM_PIXELS);
 
-        uint8_t col[3][3] = {{10, 0, 0}, {200, 0, 0}, {0, 0, 0}};
+        uint8_t col[3][3] = {{0, 0, 0}, {255, 0, 0}, {255, 255, 255}};
         uint8_t c = 0;
         if(score > 8) {
             flash_count++;
             c = (flash_count / 8) % 2 + 1;
         }
         for(int i = 0; i < total_leds; i++) {
-            set_pixel(i, col[c][0], col[c][1], col[c][2]);
+            set_pixel(i, col[0][0], col[0][1], col[0][2]);
         }
 
-        auto pset = game.players.get_set();
-        for(int player: pset) {
+        c = 2;
+        if(score > 8) {
+            flash_count++;
+            c = (flash_count / 8) % 2 + 1;
+        }
+        int r = 255, g = 255, b = 255;
+        r = col[c][0];
+        g = col[c][1];
+        b = col[c][2];
+        
+        int width = pad_width / 2;
+        if(game.get_players_count() == 1) { // double the pad
+            for(int i = 0; i < total_leds; i++) {
+                int angle = (360 * i) / total_leds - config.leds_angle_offset;
+                if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);
+                else if(game.players.presence_at(angle + 180, width)) set_pixel(i, r, g, b);
+                else set_pixel(i, 0, 0, 0);
+            }
+        } else {
+            for(int i = 0; i < total_leds; i++) {
+                int angle = (360 * i) / total_leds - config.leds_angle_offset;
+                if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);
+                else set_pixel(i, 0, 0, 0);
+            }
+        }
+
+#if 0
+        for(int player: game.players.get_set()) {
             if(!game.players.is_visible(player)) continue;
             int width = pad_width;
-            int startled = ((game.players.get_pos(player) - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
-            int stopled =  ((game.players.get_pos(player) + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
-            int r, g, b;
-            switch(player) {
+            int startled = ((game.players.get_pos(player).angle - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
+            int stopled =  ((game.players.get_pos(player).angle + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
+            /*switch(player) {
                 case 0: r = 0; g = 255; b = 0; break;
                 case 1: r = 0; g = 0; b = 255; break;
                 case 2: r = 255; g = 0; b = 255; break;
                 default: r = 255; g = 255; b = 0;
-            }
-            for(int led = startled + 1; led < stopled; led++) set_pixel((led + total_leds) % total_leds, r, g, b);
-            set_pixel((startled + total_leds) % total_leds, 0, 0, 0);
-            set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
+            }*/
+            for(int led = startled; led <= stopled; led++) set_pixel((led + total_leds) % total_leds, r, g, b);
+            //set_pixel((startled + total_leds) % total_leds, 0, 0, 0);
+            //set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
         }
+#endif
     }
 };
 

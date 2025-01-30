@@ -12,7 +12,7 @@ class PongarConfig {
     uint16_t total_leds = 212;
     int16_t leds_angle_offset = 0; //112;
 
-    int16_t distance_max = 1500;
+    int16_t distance_max = 1700;
     int16_t distance_min = 400;
     int16_t lidar_angle_offset = 0;
 

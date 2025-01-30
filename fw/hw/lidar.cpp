@@ -1,20 +1,25 @@
 // RPlidar C1-M1
 
 #include "fraise.h"
-//#include "players.h"
-#define EXTERN_L
 #include "lidar.h"
 #include "string.h"
 #include "../config.h"
 
+lidar_state_t lidar_state;
+bool lidar_maxing;
+uint16_t lidar_distance[360];
+uint16_t lidar_background[360];
+uint16_t lidar_distance_masked[360];
+uint8_t lidar_written[360];
 bool lidar_header_ok;
 uint8_t lidar_buffer[10];
 uint8_t lidar_bufcount;
 const uint8_t lidar_header_ref[] = {0xA5, 0x5A, 0x05, 0x00, 0x00, 0x40, 0x81};
 uart_inst_t *lidar_uart;
 
-//int distance_high = 1500;
-//int distance_low = 800;
+int distance_max = 7000;
+#define DISTANCE_FAR 12000
+
 int bg_substract = 100;
 float bg_compress = 0.9;
 int bg_min_width = 1;
@@ -34,7 +39,6 @@ void lidar_irq() {
 			) {
 				lidar_header_ok = true;
 				lidar_bufcount = 0;
-				//printf("l lidar scan started\n");
 			}
 		} else {
 			if(lidar_bufcount == 5) {
@@ -107,7 +111,6 @@ void setup_lidar(int tx_pin, int rx_pin, uart_inst_t *uart) {
 
 bool lidar_update() {
 	static absolute_time_t update_time;
-	//static int volume;
 	if(!time_reached(update_time)) return false;
 	update_time = make_timeout_time_ms(100);
 	switch(lidar_state) {
@@ -119,27 +122,25 @@ bool lidar_update() {
 			break;
 		case RUN:
 			{
-				int min_distance = 12000;
 				// mask the distance map with the background map
 				for(int a = 0; a < 360; a++) {
 					if(lidar_written[a] && lidar_distance[a] > 0 && lidar_distance[a] < lidar_background[a]) {
 						lidar_distance_masked[a] = lidar_distance[a];
-					} else lidar_distance_masked[a] = 12000;
+					} else lidar_distance_masked[a] = DISTANCE_FAR;
 				}
+				// acknowledge the reading of data, we don't need lidar_distance[] anymore
 				memset(lidar_written, 0, sizeof(lidar_written));
-				// discard objects that are too narrow, and find the smaller distance
+				// discard objects that are too narrow:
 				for(int a = 0; a < 360; a++) {
 					if(lidar_distance_masked[a] < config.distance_max) {
 						for(int o = 0; o < bg_min_width; o++) {
 							if(lidar_distance_masked[(a + o) % 360] > config.distance_max) {
-								lidar_distance_masked[a] = 12000;
+								lidar_distance_masked[a] = DISTANCE_FAR;
 								break;
 							}
 						}
 					}
-					if(lidar_distance_masked[a] < min_distance) min_distance = lidar_distance_masked[a];
 				}
-				//players_find(lidar_distance_masked);
 				return true;
 			}
 			break;
@@ -157,10 +158,6 @@ bool lidar_update() {
 		case SNAP_POST:
 			lidar_background_snap();
 			lidar_maxing = false;
-			lidar_stop();
-			sleep_ms(500);
-			//eeprom_save();
-			lidar_start();
 			lidar_state = RUN;
 			printf("l snap done\n");
 			break;
@@ -170,3 +167,8 @@ bool lidar_update() {
 }
 
 void lidar_print_status() {}
+
+void lidar_change_state(lidar_state_t s) {
+    lidar_state = s;
+}
+

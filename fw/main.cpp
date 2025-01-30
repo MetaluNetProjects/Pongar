@@ -69,10 +69,42 @@ void setup() {
 
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
     sleep_ms(200);
-    lidar_state = START;
+    lidar_change_state(START);
 }
 
 void game_pixels_update() { game.pixels_update();}
+
+void send_positions() {
+    fraise_put_init();
+    fraise_put_uint8(100);
+    fraise_put_send();
+    for(int i: game.players.get_object_set()) {
+        if(!game.players.is_object_visible(i)) continue;
+        Position &p = game.players.get_object_pos(i);
+        if(&p != &null_position) {
+            fraise_put_init();
+            fraise_put_uint8(110);
+            fraise_put_uint8(i);
+            fraise_put_uint16(p.angle);
+            fraise_put_uint16(p.distance);
+            fraise_put_uint16(p.size);
+            fraise_put_send();
+        }
+    }
+    for(int i: game.players.get_set()) {
+        if(!game.players.is_visible(i)) continue;
+        Position &p = game.players.get_pos(i);
+        if(&p != &null_position) {
+            fraise_put_init();
+            fraise_put_uint8(111);
+            fraise_put_uint8(i);
+            fraise_put_uint16(p.angle);
+            fraise_put_uint16(p.distance);
+            fraise_put_uint16(p.size);
+            fraise_put_send();
+        }
+    }
+}
 
 void loop(){
 	static absolute_time_t nextLed;
@@ -100,12 +132,9 @@ void loop(){
 
 	if(lidar_update()) {
           // update players
-        game.players.find_players(lidar_distance_masked);
-          // send debug to Pd
-        fraise_put_init();
-        fraise_put_uint8(100);
-        for(int i: game.players.get_set()) if(game.players.is_visible(i)) fraise_put_uint16(game.players.get_pos(i));
-        fraise_put_send();
+        //game.players.find_players(lidar_distance_masked);
+        game.players.find_players_light(lidar_distance_masked);
+        //send_positions();
     }
 
     game.update();
@@ -127,10 +156,10 @@ void fraise_receivebytes(const char *data, uint8_t len){
 		        int c2 = fraise_get_uint8();
 		        switch(c2) {
 			        case 0: lidar_reset(); break;
-			        case 1: lidar_stop(); lidar_state = STOP; break;
-			        case 2: lidar_start(); lidar_state = RUN; break;
+			        case 1: lidar_stop(); lidar_change_state(STOP); break;
+			        case 2: lidar_start(); lidar_change_state(RUN); break;
 			        case 3: lidar_background_snap(); break;
-			        case 4: lidar_state = SNAP_PRE; break;
+			        case 4: lidar_change_state(SNAP_PRE); break;
 			        case 5: lidar_print_status(); break;
 			        default: ;
 		        }
@@ -168,23 +197,21 @@ void fraise_receivebytes(const char *data, uint8_t len){
 
         case 20: config.receivebytes(data + 1, len - 1); break;
 
-        case 30: game.receivebytes(data + 1, len - 1); break; //mp3_play(fraise_get_uint16()); break;
-        /*case 40: {
-                for(int i = 0; i < 32; i++) printf("s %d\n", osc1.getSample());
-            }
-            break;
-        case 41: osc1.setFreq(fraise_get_uint16()); break;
-        case 42: osc1.setVol(fraise_get_uint16()); break;
-        case 43: osc1.setStep(fraise_get_uint32()); break;*/
+        case 30: game.receivebytes(data + 1, len - 1); break;
 
 	    case 100 : fraise_print_status(); break;
+
 	    case 102: bg_substract = fraise_get_uint16(); break;
 	    case 103: bg_min_width = fraise_get_uint16(); break;
 	    case 104: snap_smooth = fraise_get_uint16(); break;
+
+	    case 149: game.standby(); break;
 	    case 150: game.stop(); break;
 	    case 151: game.start(); break;
 	    //case 152: game.set_period_ms(fraise_get_uint16()); break;
 	    case 153: game.prepare(); break;
+	    case 154: game.players.find_players(lidar_distance_masked); break;
+	    case 155: send_positions(); break;
 
 	    case 200:
 	        {
