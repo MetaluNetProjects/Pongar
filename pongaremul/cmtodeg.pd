@@ -1,0 +1,12 @@
+#N canvas 1165 415 317 222 12;
+#X obj 45 30 inlet size;
+#X obj 140 30 inlet dist;
+#X obj 44 131 outlet deg;
+#X obj 45 55 /, f 14;
+#X obj 45 80 / 3.14159;
+#X obj 45 105 * 180;
+#X connect 0 0 3 0;
+#X connect 1 0 3 1;
+#X connect 3 0 4 0;
+#X connect 4 0 5 0;
+#X connect 5 0 2 0;

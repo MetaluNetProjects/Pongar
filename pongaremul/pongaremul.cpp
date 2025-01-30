@@ -72,6 +72,7 @@ typedef struct _pongaremul
     t_outlet *x_msgout;
     MainPatch *x_patch;
     bool x_wav_is_playing;
+    uint16_t x_lidar[360];
 } t_pongaremul;
 
 t_pongaremul *instance;
@@ -102,16 +103,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         /*players_count = argc;
         for(int i = 0; i < argc; i++) players_pos[i] = atom_getfloat(&argv[i]);*/
         int count = argc;
-        uint16_t pos[Players::PLAYERS_MAX];
-        for(int i = 0; i < argc; i++) pos[i] = atom_getfloat(&argv[i]);
+        Position pos[Players::PLAYERS_MAX];
+        for(int i = 0; i < argc; i++) pos[i].angle = atom_getfloat(&argv[i]);
         game.players.set_raw_pos(pos, count);
 
-        t_atom at[2 * Players::PLAYERS_MAX];
+        t_atom at[3 * Players::PLAYERS_MAX];
         for(int i = 0; i < game.players.get_count(); i++) {
-            SETFLOAT(&at[i], game.players.get_pos(i));
-            SETFLOAT(&at[i], game.players.get_pos(i));
+            SETFLOAT(&at[3 * i], game.players.get_pos(i).angle);
+            SETFLOAT(&at[3 * i + 1], game.players.get_pos(i).distance);
+            SETFLOAT(&at[3 * i + 2], game.players.get_pos(i).size);
         }
-        outlet_anything(instance->x_msgout, gensym("fplayers"), game.players.get_count(), at);
+        outlet_anything(instance->x_msgout, gensym("fplayers"), game.players.get_count() * 3, at);
     }
     else if(s == gensym("prepare")){
         game.prepare();
@@ -127,9 +129,64 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     }
     else if(s == gensym("buzz")) x->x_patch->buzz();
     else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
+    else if(s == gensym("tut")) { if(argc > 1) game.sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));}
+    else if(s == gensym("lidar")) {
+        t_symbol *tabname = atom_getsymbol(&argv[0]);
+        t_garray *a;
+        int npoints;
+        t_word *vec;
+
+        if (!(a = (t_garray *)pd_findbyclass(tabname, garray_class)))
+            pd_error(x, "%s: no such array", tabname->s_name);
+        else if (!garray_getfloatwords(a, &npoints, &vec))
+            pd_error(x, "%s: bad template for tabread", tabname->s_name);
+        else
+        {
+            for(int i = 0; i < 360 && i < npoints; i++) x->x_lidar[i] = vec[i].w_float;
+            //game.players.find_players(x->x_lidar);
+            game.players.find_players_light(x->x_lidar);
+
+            t_atom at[4 * Players::PLAYERS_MAX];
+            if(game.players.get_object_set().size() >= Players::PLAYERS_MAX) {
+                pd_error(x, "too many objects!");
+            } else {
+                int n = 0;
+                //printf("nb objs:%ld\n", game.players.get_object_set().size());
+                for(int i: game.players.get_object_set()) {
+                    Position &p = game.players.get_object_pos(i);
+                    if(&p != &null_position) {
+                        //printf("obj %d angle:%d\n", i, p.angle);
+                        SETFLOAT(&at[n], i);            n++;
+                        SETFLOAT(&at[n], p.angle);      n++;
+                        SETFLOAT(&at[n], p.distance);   n++;
+                        SETFLOAT(&at[n], p.size);       n++;
+                    }
+                }
+                //printf("nbatoms: %d\n", n);
+                outlet_anything(instance->x_msgout, gensym("fobjects"), n, at);
+            }
+
+            if(game.players.get_set().size() >= Players::PLAYERS_MAX) {
+                pd_error(x, "too many players!");
+            } else {
+                int n = 0;
+                for(int i: game.players.get_set()) {
+                    Position &p = game.players.get_pos(i);
+                    if(&p != &null_position) {
+                        SETFLOAT(&at[n], i);            n++;
+                        SETFLOAT(&at[n], p.angle);      n++;
+                        SETFLOAT(&at[n], p.distance);   n++;
+                        SETFLOAT(&at[n], p.size);       n++;
+                    }
+                }
+                outlet_anything(instance->x_msgout, gensym("fplayers"), n, at);
+            }
+        }
+
+    }
 }
 
-#define CLIP(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
+//#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
 static t_int *pongaremul_perform(t_int *w)
 {
     t_pongaremul *x = (t_pongaremul *)(w[1]);
@@ -140,10 +197,8 @@ static t_int *pongaremul_perform(t_int *w)
 
     x->x_patch->mix(intbuf, 0);
     for (i = 0; i < n; i++)
-        //while (n--)
     {
-        *out++ = CLIP(intbuf[i] / 32768.0);
-        //*out++ = CLIP(((random() % 0xFFFF) -32768.0) / 32768.0);
+        *out++ = CLIP(intbuf[i] / 32768.0, -1.0, 1.0);
     }
     return (w+4);
 }
@@ -155,18 +210,7 @@ static void pongaremul_dsp(t_pongaremul *x, t_signal **sp)
 
 /* -------------------------- audio layer ------------------------------ */
 
-char *SoundCommandString[] = {/*"say", "saypause", "sayclear", */"buzz", "bounce"};
-
-/*char *WordsString[] =  {"zero", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze",
-                  partie = 101, joueur, perdu, gagné};*/
-
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    /*t_atom at[4];
-    SETSYMBOL(&at[0], gensym(SoundCommandString[(int)c]));
-    SETFLOAT(&at[1], p1);
-    SETFLOAT(&at[2], p2);
-    SETFLOAT(&at[3], p3);
-    outlet_anything(instance->x_msgout, gensym("sound_command"), 4, at);*/
     main_patch.command(c, p1, p2, p3);
 }
 
@@ -227,23 +271,6 @@ void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b){
     SETFLOAT(&at[3], b);
     outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);
 }
-
-/*void Players::update() {
-    if(steady_count == players_count) {
-        steady_timeout = at_the_end_of_time;
-        pre_steady_count = -1;
-        return;
-    }
-    if(pre_steady_count != players_count) {
-        pre_steady_count = players_count;
-        steady_timeout = make_timeout_time_ms(STEADY_MS);
-        return;
-    }
-    if(time_reached(steady_timeout)) {
-        steady_count = pre_steady_count;
-        steady_timeout = at_the_end_of_time;
-    }
-}*/
 
 /* -------------------------- setup ------------------------------ */
 
