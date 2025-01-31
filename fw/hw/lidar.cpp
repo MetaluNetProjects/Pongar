@@ -6,18 +6,19 @@
 #include "../config.h"
 
 lidar_state_t lidar_state;
-bool lidar_maxing;
 uint16_t lidar_distance[360];
+uint16_t lidar_distance_min[360];
+uint8_t lidar_written[360];
+uint8_t lidar_min_written[360];
+
 uint16_t lidar_background[360];
 uint16_t lidar_distance_masked[360];
-uint8_t lidar_written[360];
 bool lidar_header_ok;
 uint8_t lidar_buffer[10];
 uint8_t lidar_bufcount;
 const uint8_t lidar_header_ref[] = {0xA5, 0x5A, 0x05, 0x00, 0x00, 0x40, 0x81};
 uart_inst_t *lidar_uart;
 
-int distance_max = 7000;
 #define DISTANCE_FAR 12000
 
 int bg_substract = 100;
@@ -44,10 +45,12 @@ void lidar_irq() {
 			if(lidar_bufcount == 5) {
 				int a = ((lidar_buffer[1] + lidar_buffer[2] * 128) / 64) % 360;
 				int d = (lidar_buffer[3] + lidar_buffer[4] * 256) / 4;
+				if(d < config.distance_min) d  = DISTANCE_FAR;
 				if(d) {
-					if(lidar_maxing) lidar_distance[a] = MIN(lidar_distance[a], d);
-					else lidar_distance[a] = d;
-					lidar_written[a] = 1;
+					if(lidar_min_written[a]) lidar_distance_min[a] = MIN(lidar_distance_min[a], d);
+					else lidar_distance_min[a] = d;
+					lidar_distance[a] = d;
+					lidar_min_written[a] = lidar_written[a] = 1;
 				}
 				lidar_bufcount = 0;
 			}
@@ -77,7 +80,9 @@ void lidar_background_snap() {
 		int d = 12000;
 		for(int o = -snap_smooth; o <= snap_smooth ; o++) {
 			int ao = (a + o + 360) % 360;
-			if(lidar_distance[ao] < d) d = lidar_distance[ao];
+			int dist = lidar_distance_min[ao];
+			if(dist < config.distance_min) dist  = DISTANCE_FAR;
+			if(dist < d) d = dist;
 		}
 		if(d > bg_substract) 
 			d = (d - bg_substract) * bg_compress;
@@ -85,6 +90,8 @@ void lidar_background_snap() {
 			lidar_background[a] = 0;
 		lidar_background[a] = d;
 	}
+	// acknowledge the reading of min_data
+	memset(lidar_min_written, 0, sizeof(lidar_min_written));
 }
 
 void setup_lidar(int tx_pin, int rx_pin, uart_inst_t *uart) {
@@ -105,8 +112,26 @@ void setup_lidar(int tx_pin, int rx_pin, uart_inst_t *uart) {
 	// Now enable the UART to send interrupts - RX only
 	uart_set_irq_enables(lidar_uart, true, false);
 
-	lidar_maxing = false;
+	//lidar_maxing = false;
 	lidar_state = STOP;
+}
+
+void lidar_adapt_background() {
+	for(int a = 0; a < 360; a++) {
+		if(lidar_min_written[a]) {
+			int min_dist = DISTANCE_FAR;
+			for(int o = -snap_smooth; o <= snap_smooth ; o++) {
+				int ao = (a + o + 360) % 360;
+				int dist = lidar_distance_min[ao];
+				if(dist < config.distance_min) dist  = DISTANCE_FAR;
+				if(dist < min_dist) min_dist = dist;
+			}
+			if((min_dist - bg_substract) > lidar_background[a] && lidar_background[a] < DISTANCE_FAR) lidar_background[a] += 50;
+			else if(lidar_background[a] > 10) lidar_background[a] -= 10;
+		}
+	}
+	// acknowledge the reading of min_data
+	memset(lidar_min_written, 0, sizeof(lidar_min_written));
 }
 
 bool lidar_update() {
@@ -122,14 +147,24 @@ bool lidar_update() {
 			break;
 		case RUN:
 			{
-				// mask the distance map with the background map
+				// mask the distance map with the background map;
 				for(int a = 0; a < 360; a++) {
-					if(lidar_written[a] && lidar_distance[a] > 0 && lidar_distance[a] < lidar_background[a]) {
-						lidar_distance_masked[a] = lidar_distance[a];
-					} else lidar_distance_masked[a] = DISTANCE_FAR;
+					if(!lidar_written[a]) lidar_distance_masked[a] = DISTANCE_FAR;
+					else 
+					{
+						int dist = lidar_distance[a];
+						if(dist > 0 && dist < lidar_background[a] && dist > config.distance_min) {
+							lidar_distance_masked[a] = dist;
+						} else lidar_distance_masked[a] = DISTANCE_FAR;
+					}
 				}
 				// acknowledge the reading of data, we don't need lidar_distance[] anymore
 				memset(lidar_written, 0, sizeof(lidar_written));
+
+				static int count = 0;
+				if(count == 10) { lidar_adapt_background(); count = 0; }
+				else count++;
+
 				// discard objects that are too narrow:
 				for(int a = 0; a < 360; a++) {
 					if(lidar_distance_masked[a] < config.distance_max) {
@@ -152,12 +187,11 @@ bool lidar_update() {
 		case SNAP:
 			printf("l snap start\n");
 			update_time = make_timeout_time_ms(1000);
-			lidar_maxing = true;
+			memset(lidar_min_written, 0, sizeof(lidar_min_written));
 			lidar_state = SNAP_POST;
 			break;
 		case SNAP_POST:
 			lidar_background_snap();
-			lidar_maxing = false;
 			lidar_state = RUN;
 			printf("l snap done\n");
 			break;
