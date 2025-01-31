@@ -2,6 +2,7 @@
 #define IS_RGBW false
 #define NUM_PIXELS 300
 #include "ws2812.h"
+#include <string.h>
 
 #pragma once
 
@@ -9,7 +10,9 @@
 extern "C" {
 #endif
 
-extern uint32_t framebuffer[NUM_PIXELS];
+//extern uint32_t framebuffer[NUM_PIXELS];
+
+extern uint32_t *framebuffer;
 
 void pixel_setup();
 void set_all(bool on);
@@ -20,8 +23,11 @@ inline void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
 		framebuffer[n] = urgb_u32(r, g, b);
 	}
 }
+inline void clear_pixels() {
+    memset(framebuffer, 0, NUM_PIXELS * sizeof(uint32_t));
+}
 
-bool pixel_update(void (*callback)(void)); // return true if frame was sent
+bool pixel_update(/*void (*callback)(void)*/); // return true if frame was sent
 
 #ifdef __cplusplus
 }
