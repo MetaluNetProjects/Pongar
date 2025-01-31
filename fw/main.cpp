@@ -16,7 +16,8 @@
 //#include "sound.h"
 #include "osc.h"
 #include "config.h"
-//#include "../wavs_duration.h"
+#include "cpuload.h"
+
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 int ledPeriod = 250;
@@ -42,6 +43,9 @@ const int MP3_TX_PIN = 8;
 bool button, button_last;
 int button_count;
 
+CpuLoad pixel_load("pixel");
+CpuLoad lidar_load("lidar");
+CpuLoad game_load("game");
 //Osc osc1;
 
 void setup() {
@@ -130,16 +134,24 @@ void loop(){
 		}
 	}
 
+    lidar_load.start();
 	if(lidar_update()) {
           // update players
         //game.players.find_players(lidar_distance_masked);
         game.players.find_players_light(lidar_distance_masked);
         //send_positions();
+        lidar_load.stop();
     }
 
-    game.update();
-    //if(pixel_update()) game.pixels_update();
-    pixel_update(game_pixels_update);
+    game_load.start();
+    if(game.update()) game_load.stop();
+
+    pixel_load.start();
+    if(pixel_update()) {
+        game.pixels_update();
+        pixel_load.stop();
+    }
+    //pixel_update(game_pixels_update);
 
     if(dmx.transfer_finished()) {
         dmx.transfer_frame(dmxBuf, DMX_CHAN_COUNT);
@@ -148,7 +160,7 @@ void loop(){
 
 void fraise_receivebytes(const char *data, uint8_t len){
 	uint8_t command = fraise_get_uint8();
-
+    //fraise_printf("l get command %d\n", command);
 	switch(command) {
 	    case 1: ledPeriod = (int)fraise_get_uint8() * 10; break;
 	    case 4:
@@ -194,6 +206,8 @@ void fraise_receivebytes(const char *data, uint8_t len){
 	        break;
 
         case 10: pixel_receivebytes(data + 1, len - 1); break;
+        case 11: pixel_load.get_load(); lidar_load.get_load(); game_load.get_load(); break;
+        case 12: pixel_load.reset(); lidar_load.reset(); game_load.reset(); break;
 
         case 20: config.receivebytes(data + 1, len - 1); break;
 

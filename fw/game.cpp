@@ -92,10 +92,10 @@ void Game::pixels_update() {
     }
 }
 
-void Game::update() {
+bool Game::update() {
     wavplayer.update();
     players.update();
-    if(!time_reached(update_time)) return;
+    if(!time_reached(update_time)) return false;
     update_time = make_timeout_time_ms(PERIOD_MS);
     switch(mode) {
         case STOP: break;
@@ -123,6 +123,7 @@ void Game::update() {
         case PLAYING: game_mode->update(); break;
         case STANDBY: break;
     }
+    return true;
 }
 
 void Game::receivebytes(const char* data, uint8_t len) {

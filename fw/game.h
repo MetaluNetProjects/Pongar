@@ -27,6 +27,7 @@ class Game {
     float dim;
     void change_players_count(int count);
   public:
+    Game() {};
     Players players;
     static const int PERIOD_MS = 40;
     void init(int audio_pin, int tx_pin);
@@ -34,7 +35,7 @@ class Game {
     void start();
     void stop();
     void standby();
-    void update();
+    bool update();
     void receivebytes(const char* data, uint8_t len);
     inline int get_players_count() { return game_players_count; }
     inline void say(Words w) { wavplayer.play(say_mode, (int)w); }
