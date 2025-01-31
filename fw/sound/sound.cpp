@@ -67,6 +67,7 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
                 case 2: main_patch.bounce(); break;
                 case 3: main_patch.bouncer.bounce(fraise_get_int16(), fraise_get_int16(), fraise_get_int16()); break;
                 case 4: main_patch.tut.tut(fraise_get_int16(), fraise_get_int16()); break;
+                case 5: main_patch.buzzer.config(fraise_get_int16(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16()); break;
             }
         }
     }

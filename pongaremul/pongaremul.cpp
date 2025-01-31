@@ -130,6 +130,9 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     else if(s == gensym("buzz")) x->x_patch->buzz();
     else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
     else if(s == gensym("tut")) { if(argc > 1) game.sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));}
+    else if(s == gensym("buzzcfg")) { if(argc > 3)
+        x->x_patch->buzzer.config(atom_getfloat(&argv[0]), atom_getfloat(&argv[1]), atom_getfloat(&argv[2]), atom_getfloat(&argv[3]));
+    }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);
         t_garray *a;

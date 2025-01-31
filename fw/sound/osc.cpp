@@ -52,6 +52,16 @@ void Osc::mix_saw(int32_t *buffer) {
     }
 }
 
+void Osc::mix_squ(int32_t *buffer, int thres) {
+    for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+        pos += step + lfoval;
+        if (pos >= pos_max) pos -= pos_max;
+        else if(pos < 0) pos += pos_max;
+        if((pos >> 11u) < thres) *buffer++ -= vol;
+        else *buffer++ += vol;
+    }
+}
+
 bool Osc::update() {
 	if(release && vol > 64) {
 		vol = (vol * release) >> 16;

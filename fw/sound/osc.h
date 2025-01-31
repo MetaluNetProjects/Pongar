@@ -1,8 +1,12 @@
 #pragma once
 
 #include <math.h>
+#include <string.h>
 #include "config.h"
 #include "sound_command.h"
+
+#define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
+
 
 class Osc {
 public:
@@ -16,6 +20,7 @@ public:
 	void dsp_saw(int16_t *buffer);
 	void mix_sin(int32_t *buffer);
 	void mix_saw(int32_t *buffer);
+	void mix_squ(int32_t *buffer, int thres);
 	bool update();
 	void setStep(int32_t _step) {
 		step = _step;
@@ -57,22 +62,60 @@ class Patch {
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) = 0;// {};
 };
 
+class Hip : public Patch {
+  private:
+    int32_t last;
+    uint16_t coeff;
+  public:
+    Hip(int f) { setFreq(f);}
+    virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
+        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            int32_t new_sample = *out_buffer + (coeff * last) / 256;
+            *out_buffer++ = new_sample - last;
+            last = new_sample;
+        }
+    }
+    void setFreq(int f) {
+        coeff = 256 * (1.0 - f * (2 * 3.14159) / AUDIO_SAMPLE_RATE);
+        //coeff = CLIP(coeff, 0, 65530);
+        coeff = CLIP(coeff, 0, 255);
+    }
+};
+
 class Buzzer : public Patch {
   private:
   public:
     Osc osc1;
     Osc osc2;
+    Hip hip1;
     absolute_time_t stop_time;
-    Buzzer() : osc1(100, 20000), osc2(103, -20000) { /*osc1.setVol(20000); osc1.setVol(-20000);*/}
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
+    int gain = 3 * 256;
+    int squthres = 0;
+    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600) {}
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
-        osc1.mix_saw(out_buffer);
-        osc2.mix_saw(out_buffer);
-        osc1.setFreq(85 + random()%3);
-        osc2.setFreq(88 + random()%3);
+        memset(buf, 0, sizeof(buf));
+        //osc1.mix_squ(buf, squthres);
+        osc1.mix_saw(buf);
+        osc2.mix_saw(buf);
+        hip1.mix(buf);
+        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            *out_buffer++ = CLIP((buf[i] * gain) / 256, -65536, 65535);
+        }
+        osc1.setFreq(85 + random()%5);
+        osc2.setFreq(91 + random()%5);
     }
     void buzz(uint ms) {
         stop_time = make_timeout_time_ms(ms);
+    }
+    
+    void config(int f, int thr, int hipf, int g) {
+        osc1.setFreq(f);
+        //osc2.setFreq(f2);
+        squthres = thr;
+        hip1.setFreq(hipf);
+        gain = g;
     }
 };
 

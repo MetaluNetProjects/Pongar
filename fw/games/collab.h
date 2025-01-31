@@ -20,18 +20,29 @@ class Collab : public GameMode {
     int pad_width = 30;
     int tilt_bounce = 1000;
     int flash_count;
+    bool end_of_game;
+    
+    enum RING_MODE {NORMAL, START, FAULT, WIN, LOOSE} ring_mode;
+    int ring_count;
+    int ring_end;
+    void set_ring_mode(RING_MODE mode, int count) { ring_mode = mode; ring_count = 0; ring_end = count; }
+    
     void say_score() {
         say(Words((int)Words::_0 + score));
     }
     void game_over() {
+        set_ring_mode(LOOSE, 200);
         say(Words::perdu);
         saysilence(1000);
-        game.prepare();
+        end_of_game = true;
+        //game.prepare();
     }
     void win() {
+        set_ring_mode(WIN, 200);
         say(Words::gagne);
-        saysilence(1000);
-        game.prepare();
+        saysilence(2000);
+        end_of_game = true;
+        //game.prepare();
     }
 
   public:
@@ -52,6 +63,8 @@ class Collab : public GameMode {
         saysilence(500);
         pad_width = 30;
         tilt_bounce = 1000;
+        set_ring_mode(START, 40);
+        end_of_game = false;
     }
 
     bool test_touched() {
@@ -69,7 +82,10 @@ class Collab : public GameMode {
         if(game.get_players_count() == 1) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
         //printf("touched %d\n", touched);
         if(touched) sfx(SoundCommand::bounce, tilt > 0);
-        else sfx(SoundCommand::buzz);
+        else {
+            sfx(SoundCommand::buzz);
+            set_ring_mode(FAULT, 20);
+        }
         saysilence(300); // waits end of sfx before saying smth
         return touched;
     }
@@ -84,6 +100,10 @@ class Collab : public GameMode {
     }
 
     virtual void update() {
+        if(end_of_game) {
+            if(!game.is_saying()) game.prepare();
+            return;
+        }
         if(game.get_players_count() == 1) {
         }
         pan += pan_delta;
@@ -125,9 +145,57 @@ class Collab : public GameMode {
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
     }
 
+    void ring_mode_paint(int total_leds) {
+        switch(ring_mode) {
+            case NORMAL: break;
+            case START: {
+                    int v = ((ring_end - ring_count) * 255) / ring_end;
+                    v = (v * v) / 255;
+                    for(int i = 0; i < total_leds; i++) {
+                        set_pixel(i, 0, v, 0);
+                    }
+                }
+                break;
+            case FAULT: {
+                    int rot = (ring_count * total_leds) / ring_end;
+                    for(int i = 0; i < total_leds / 4; i++) {
+                        set_pixel((i + rot) % total_leds, 255, 0, 0);
+                        set_pixel((i + rot + total_leds / 4) % total_leds, 0, 0, 0);
+                        set_pixel((i + rot + total_leds / 2) % total_leds, 255, 0, 0);
+                        set_pixel((i + rot + 3 * total_leds / 4) % total_leds, 0, 0, 0);
+                    }
+                }
+                break;
+            case WIN: {
+                    int v = 127 * (1.0 + cos(ring_count * 3.14159 / 40));
+                    v = (v * v) / 255;
+                    for(int i = 0; i < total_leds; i++) {
+                        set_pixel(i, 0, v, 0);
+                    }
+                }
+                break;
+            case LOOSE: {
+                    int v = 127 * (1.0 + cos(ring_count * 3.14159 / 40));
+                    v = (v * v) / 255;
+                    for(int i = 0; i < total_leds; i++) {
+                        set_pixel(i, v, 0, 0);
+                    }
+                }
+                break;
+            default: ;
+        }
+        if(ring_count++ == ring_end) {
+            ring_mode = NORMAL;
+        }
+    }
+
     virtual void pixels_update() {
         int total_leds = MIN(config.total_leds, NUM_PIXELS);
 
+        if(ring_mode != NORMAL || end_of_game) {
+            ring_mode_paint(total_leds);
+            return;
+        }
         uint8_t col[3][3] = {{0, 0, 0}, {255, 0, 0}, {255, 255, 255}};
         uint8_t c = 0;
         if(score > 8) {
@@ -163,24 +231,6 @@ class Collab : public GameMode {
                 else set_pixel(i, 0, 0, 0);
             }
         }
-
-#if 0
-        for(int player: game.players.get_set()) {
-            if(!game.players.is_visible(player)) continue;
-            int width = pad_width;
-            int startled = ((game.players.get_pos(player).angle - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
-            int stopled =  ((game.players.get_pos(player).angle + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
-            /*switch(player) {
-                case 0: r = 0; g = 255; b = 0; break;
-                case 1: r = 0; g = 0; b = 255; break;
-                case 2: r = 255; g = 0; b = 255; break;
-                default: r = 255; g = 255; b = 0;
-            }*/
-            for(int led = startled; led <= stopled; led++) set_pixel((led + total_leds) % total_leds, r, g, b);
-            //set_pixel((startled + total_leds) % total_leds, 0, 0, 0);
-            //set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
-        }
-#endif
     }
 };
 
