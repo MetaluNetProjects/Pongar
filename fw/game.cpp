@@ -85,10 +85,12 @@ void Game::pixels_update() {
         set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
     }
 #endif
-    for(int i = 0; i < total_leds; i++) {
+    if(dim == 0.0) for(int i = 0; i < total_leds; i++) {
         int angle = (360 * i) / total_leds - config.leds_angle_offset;
         if(game.players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
         else set_pixel(i, 0, 0, 0);
+    } else for(int i = 0; i < total_leds; i++) {
+        set_pixel(i, dim, dim, dim);
     }
 }
 
@@ -107,9 +109,12 @@ bool Game::update() {
                 players_ready_timeout = make_timeout_time_ms(3000);
                 change_players_count(players.get_steady_count());
                 players_ready_okcount = 0;
+                proj.dimmer(dim = 0);
                 break;
             }
-            proj.dimmer(dim = dim * 0.5);
+            if(players_ready_okcount < (PLAYERS_READY_SECONDS - 1)) proj.dimmer(dim = dim * 0.5);
+            else proj.dimmer(dim = dim * 0.8);
+
             if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) {
                 players_ready_okcount++;
                 if(players_ready_okcount < PLAYERS_READY_SECONDS) {
