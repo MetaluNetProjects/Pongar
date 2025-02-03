@@ -62,6 +62,51 @@ class Patch {
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) = 0;// {};
 };
 
+  // Pd bp~ converted to integer computation
+class Bandpass : public Patch {
+  private:
+    int32_t last, prev;
+    float coef1, coef2, gain;
+  public:
+    Bandpass(float f, float q) { setFQ(f, q);}
+    virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
+        int64_t c1 = coef1 * 4096;
+        int64_t c2 = coef2 * 4096;
+        int32_t g = gain * 512;
+        if(!in_buffer) in_buffer = out_buffer;
+        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            int32_t output =  *in_buffer++ + (c1 * last + c2 * prev) / 4096;
+            *out_buffer++ = (g * output) / 512;
+            prev = last;
+            last = output;
+        }
+    }
+
+    static float sigbp_qcos(float f)
+    {
+        if (f >= -(0.5f*3.14159f) && f <= 0.5f*3.14159f)
+        {
+            float g = f*f;
+            return (((g*g*g * (-1.0f/720.0f) + g*g*(1.0f/24.0f)) - g*0.5) + 1);
+        }
+        else return (0);
+    }
+
+    void setFQ(float f, float q) {
+        float r, oneminusr, omega;
+        if (f < 0.001) f = 10;
+        if (q < 0) q = 0;
+        omega = f * (2.0f * 3.14159f) / AUDIO_SAMPLE_RATE;
+        if (q < 0.001) oneminusr = 1.0f;
+        else oneminusr = omega/q;
+        if (oneminusr > 1.0f) oneminusr = 1.0f;
+        r = 1.0f - oneminusr;
+        coef1 = 2.0f * sigbp_qcos(omega) * r;
+        coef2 = - r * r;
+        gain = 2 * oneminusr * (oneminusr + r * omega) /*!!!*/ * q /*!!!*/;
+    }
+};
+
 class Hip : public Patch {
   private:
     int32_t last;
@@ -77,7 +122,6 @@ class Hip : public Patch {
     }
     void setFreq(int f) {
         coeff = 256 * (1.0 - f * (2 * 3.14159) / AUDIO_SAMPLE_RATE);
-        //coeff = CLIP(coeff, 0, 65530);
         coeff = CLIP(coeff, 0, 255);
     }
 };
@@ -88,11 +132,13 @@ class Buzzer : public Patch {
     Osc osc1;
     Osc osc2;
     Hip hip1;
+    Bandpass bp1;
     absolute_time_t stop_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
+    int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
     int gain = 3 * 256;
     int squthres = 0;
-    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600) {}
+    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 500) {}
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
         memset(buf, 0, sizeof(buf));
@@ -100,8 +146,9 @@ class Buzzer : public Patch {
         osc1.mix_saw(buf);
         osc2.mix_saw(buf);
         hip1.mix(buf);
+        bp1.mix(buf2, buf);
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
-            *out_buffer++ = CLIP((buf[i] * gain) / 256, -65536, 65535);
+            *out_buffer++ = CLIP(((buf[i] + buf2[i] / 16) * gain) / 256, -65536, 65535);
         }
         osc1.setFreq(85 + random()%5);
         osc2.setFreq(91 + random()%5);
@@ -116,6 +163,23 @@ class Buzzer : public Patch {
         squthres = thr;
         hip1.setFreq(hipf);
         gain = g;
+    }
+};
+
+class Ring: public Patch {
+  public:
+    Osc osc1;
+    Bandpass bp1;
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
+    Ring(): osc1(20, 20000), bp1(1000, 100) {}
+    virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
+        //if(time_reached(stop_time)) return;
+        memset(buf, 0, sizeof(buf));
+        osc1.mix_saw(buf);
+        bp1.mix(buf);
+        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            *out_buffer++ += CLIP(buf[i], -65536, 65535);
+        }
     }
 };
 
@@ -213,10 +277,12 @@ class MainPatch : public Patch {
     Buzzer buzzer;
     Bouncer bouncer;
     Tut tut;
+    Ring ring;
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         buzzer.mix(out_buffer);
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
+        //ring.mix(out_buffer);
     }
     void buzz() {
         buzzer.buzz(400);
