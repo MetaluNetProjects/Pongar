@@ -24,13 +24,34 @@ void Game::init(int audio_pin, int tx_pin) {
 void Game::prepare() {
     proj.dimmer(0);
     proj.move(180, 0);
-    mode = WAIT_SAYING;
+    mode = PREPARE;
+    wait_saying = true;
     game_players_count = 0;
+    //printf("game::prepare\n");
+}
+
+void Game::prepare_restart() {
+    proj.dimmer(0);
+    proj.move(180, 0);
+    mode = RESTART;
+    wait_saying = true;
+    //printf("game::prepare_restart\n");
 }
 
 void Game::start() {
-    mode = PLAYING;
-    game_mode->init();
+    if(!game_players_count) prepare();
+    else {
+        mode = PLAYING;
+        game_mode->start();
+    }
+}
+
+void Game::restart() {
+    if(!game_players_count) prepare();
+    else {
+        mode = PLAYING;
+        game_mode->restart();
+    }
 }
 
 void Game::stop() {
@@ -63,28 +84,6 @@ void Game::pixels_update() {
         return;
     }
 
-#if 0
-    for(int i = 0; i < total_leds; i++) {
-        set_pixel(i, 30, 0, 0);
-    }
-
-    for(int player: game.players.get_set()) {
-        if(!game.players.is_visible(player)) continue;
-        int width = 50;
-        int startled = ((game.players.get_pos(player).angle - width / 2 + config.leds_angle_offset + 2) * total_leds) / 360;
-        int stopled =  ((game.players.get_pos(player).angle + width / 2 + config.leds_angle_offset - 0) * total_leds) / 360;
-        int r = 255, g = 255, b = 255;
-        /*switch(player) {
-            case 0: r = 0; g = 255; b = 0; break;
-            case 1: r = 0; g = 0; b = 255; break;
-            case 2: r = 255; g = 0; b = 255; break;
-            default: r = 255; g = 255; b = 0;
-        }*/
-        for(int led = startled + 1; led < stopled; led++) set_pixel((led + total_leds) % total_leds, r, g, b);
-        set_pixel((startled + total_leds) % total_leds, 0, 0, 0);
-        set_pixel((stopled + total_leds) % total_leds, 0, 0, 0);
-    }
-#endif
     if(dim == 0.0) for(int i = 0; i < total_leds; i++) {
         int angle = (360 * i) / total_leds - config.leds_angle_offset;
         if(game.players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
@@ -95,15 +94,19 @@ void Game::pixels_update() {
 }
 
 bool Game::update() {
-    wavplayer.update();
-    players.update();
     if(!time_reached(update_time)) return false;
     update_time = make_timeout_time_ms(PERIOD_MS);
+
+    wavplayer.update();
+    players.update();
+
+    if(wait_saying) {
+        if(is_saying()) return true;
+        else wait_saying = false;
+    }
+
     switch(mode) {
         case STOP: break;
-        case WAIT_SAYING:
-            if(!is_saying()) mode = PREPARE;
-            break;
         case PREPARE:
             if(game_players_count != players.get_steady_count()) {
                 players_ready_timeout = make_timeout_time_ms(3000);
@@ -112,19 +115,11 @@ bool Game::update() {
                 proj.dimmer(dim = 0);
                 break;
             }
-            if(players_ready_okcount < (PLAYERS_READY_SECONDS - 1)) proj.dimmer(dim = dim * 0.5);
-            else proj.dimmer(dim = dim * 0.8);
-
-            if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) {
-                players_ready_okcount++;
-                if(players_ready_okcount < PLAYERS_READY_SECONDS) {
-                    say((Words)((int)Words::_0 + PLAYERS_READY_SECONDS - players_ready_okcount));
-                    players_ready_timeout = make_timeout_time_ms(1000);
-                    proj.dimmer(dim = 255.0);
-                    break;
-                }
-                else start();
-            }break;
+            if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) start();
+            break;
+        case RESTART:
+            if(!is_saying()) restart();
+            break;
         case PLAYING: game_mode->update(); break;
         case STANDBY: break;
     }
