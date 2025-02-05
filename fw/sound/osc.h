@@ -138,7 +138,7 @@ class Buzzer : public Patch {
     int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
     int gain = 3 * 256;
     int squthres = 0;
-    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 500) {}
+    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 200) {}
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
         memset(buf, 0, sizeof(buf));
