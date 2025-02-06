@@ -1,4 +1,4 @@
 #pragma once
 
-enum class SoundCommand {/*say = 0, saypause, sayclear, */buzz, bounce, tut};
+enum class SoundCommand {buzz, bounce, tut, ring};
 

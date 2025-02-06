@@ -25,6 +25,9 @@ extern PongarConfig config;
 #define WAVDUR_TABLE_COUNT (100 * 256)
 #define WAVDUR_TABLE_START (XIP_BASE + PICO_FLASH_SIZE_BYTES - (WAVDUR_TABLE_COUNT * 2)) // 51200 bytes = 12.5 * 4k
 
+#ifndef AUDIO_SAMPLE_RATE
 #define AUDIO_SAMPLE_RATE 24000 //57439
+#endif
+
 #define AUDIO_SAMPLES_PER_BUFFER 64
 

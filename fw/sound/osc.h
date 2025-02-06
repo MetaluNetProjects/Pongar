@@ -76,7 +76,7 @@ class Bandpass : public Patch {
         if(!in_buffer) in_buffer = out_buffer;
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
             int32_t output =  *in_buffer++ + (c1 * last + c2 * prev) / 4096;
-            *out_buffer++ = (g * output) / 512;
+            *out_buffer++ += (g * output) / 512;
             prev = last;
             last = output;
         }
@@ -142,6 +142,7 @@ class Buzzer : public Patch {
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
         memset(buf, 0, sizeof(buf));
+        memset(buf2, 0, sizeof(buf2));
         //osc1.mix_squ(buf, squthres);
         osc1.mix_saw(buf);
         osc2.mix_saw(buf);
@@ -169,17 +170,41 @@ class Buzzer : public Patch {
 class Ring: public Patch {
   public:
     Osc osc1;
-    Bandpass bp1;
+    Hip hip1;
+    Bandpass bp1, bp2, bp3, bp4;
+    absolute_time_t stop_time;
+    absolute_time_t finish_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
-    Ring(): osc1(20, 20000), bp1(1000, 100) {}
+    int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
+    Ring(): osc1(30, 10000), hip1(500),
+        bp1(1197, 1000),
+        bp2(2814, 1500),
+        bp3(4822, 2000),
+        bp4(7292, 2000)
+        {}
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
-        //if(time_reached(stop_time)) return;
+        if(time_reached(finish_time)) return;
         memset(buf, 0, sizeof(buf));
-        osc1.mix_saw(buf);
-        bp1.mix(buf);
-        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
-            *out_buffer++ += CLIP(buf[i], -65536, 65535);
+        memset(buf2, 0, sizeof(buf2));
+        if(!time_reached(stop_time)) {
+            osc1.mix_saw(buf);
+            hip1.mix(buf);
+            for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+                buf[i] = (buf[i] * (random() % 1024)) / 1024;
+            }
         }
+        //for(int i = 0; i < 4; i++) bp[i].mix(buf2, buf);
+        bp1.mix(buf2, buf);
+        bp2.mix(buf2, buf);
+        bp3.mix(buf2, buf);
+        bp4.mix(buf2, buf);
+        for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            *out_buffer++ += CLIP(buf2[i] / 4, -32768, 32767);
+        }
+    }
+    void ring(int ms) {
+        stop_time = make_timeout_time_ms(ms);
+        finish_time = make_timeout_time_ms(ms + 500);
     }
 };
 
@@ -282,7 +307,7 @@ class MainPatch : public Patch {
         buzzer.mix(out_buffer);
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
-        //ring.mix(out_buffer);
+        ring.mix(out_buffer);
     }
     void buzz() {
         buzzer.buzz(400);
@@ -295,9 +320,10 @@ class MainPatch : public Patch {
     void command(SoundCommand c, int p1, int p2, int p3) {
         //printf("mainpatch cmd %d %d %d %d\n", (int)c, p1, p2, p3);
         switch(c) {
-            case SoundCommand::buzz: buzz(); break;
+            case SoundCommand::buzz: buzzer.buzz(p1); break;
             case SoundCommand::bounce: bounce(p1 > 0); break;
             case SoundCommand::tut: tut.tut(p1, p2); break;
+            case SoundCommand::ring: ring.ring(p1); break;
             default: ;
         }
     }

@@ -133,6 +133,13 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     else if(s == gensym("buzzcfg")) { if(argc > 3)
         x->x_patch->buzzer.config(atom_getfloat(&argv[0]), atom_getfloat(&argv[1]), atom_getfloat(&argv[2]), atom_getfloat(&argv[3]));
     }
+    else if(s == gensym("sfx")) {
+        int com = argc > 0 ? atom_getfloat(&argv[0]) : 0;
+        int p1 = argc > 1 ? atom_getfloat(&argv[1]) : 0;
+        int p2 = argc > 2 ? atom_getfloat(&argv[2]) : 0;
+        int p3 = argc > 3 ? atom_getfloat(&argv[3]) : 0;
+        x->x_patch->command((SoundCommand)com, p1, p2, p3);
+    }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);
         t_garray *a;
