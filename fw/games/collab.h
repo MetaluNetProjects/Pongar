@@ -22,6 +22,7 @@ class Collab : public GameMode {
     bool end_of_game;
     bool is_winner = false;
     int level = 1;
+    int lives;
     Countdown countdown;
     RingFx ringfx;
     MoveCross cross;
@@ -36,10 +37,14 @@ class Collab : public GameMode {
     }
     void game_over() {
         set_ring_mode(RingFx::LOOSE, 200);
+        game.sfx(SoundCommand::buzz, 800);
+        saysilence(500);
         say(Words::perdu);
         saysilence(1000);
         end_of_game = true;
         is_winner = false;
+        lives = lives - 1;
+        score = 0;
     }
     void win() {
         set_ring_mode(RingFx::WIN, 200);
@@ -47,13 +52,15 @@ class Collab : public GameMode {
         saysilence(2000);
         end_of_game = true;
         is_winner = true;
+        level = level + 1;
+        score = 0;
     }
     void init_move(int difficulty) { move->init(pan, tilt, period_ms, difficulty); }
 
   public:
     virtual ~Collab() {};
     void init() {
-        period_ms = INIT_PERIOD;
+        period_ms = INIT_PERIOD - (level - 1) * 1000;
         score = 0;
         tilt = 0;
         pan = random() % 360;
@@ -62,11 +69,21 @@ class Collab : public GameMode {
         init_move(0);
 
         proj.color(0, 0, 0, 255);
-        proj.dimmer(128);
-        say(Words::partie);
+        proj.dimmer(0);
+        if(level > 1) {
+            if(lives == 1) say(Words::derniere_vie);
+            else {
+                saynumber(lives);
+                saysilence(50);
+                say(Words::vies);
+            }
+            saysilence(350);
+        }
+        saysilence(50);
+        say(Words::niveau);
         saysilence(50);
         saynumber(level);
-        saysilence(500);
+        saysilence(250);
         pad_width = 30;
         set_ring_mode(RingFx::START, 40);
         end_of_game = false;
@@ -75,14 +92,15 @@ class Collab : public GameMode {
     }
 
     virtual void start() {
-        //printf("collab::start\n");
+        printf("collab::start\n");
         level = 1;
+        lives = 3;
         init();
     }
 
     virtual void restart() {
-        //printf("collab::restart\n");
-        level = level + 1;
+        printf("collab::restart level=%d\n", level);
+        //level = level + 1;
         init();
     }
 
@@ -94,7 +112,7 @@ class Collab : public GameMode {
         if(game.get_players_count() == 1) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
         if(touched) sfx(SoundCommand::bounce, tilt > 0);
         else {
-            sfx(SoundCommand::buzz);
+            sfx(SoundCommand::buzz, 400);
             set_ring_mode(RingFx::FAULT, 20);
         }
         saysilence(300); // waits end of sfx before saying smth
@@ -111,31 +129,61 @@ class Collab : public GameMode {
         return false;
     }
 
+    void next_move(bool touched) {
+        int difficulty = score;
+        move = &cross;
+        switch(level) {
+            case 1:
+                difficulty = score / 3;
+                break;
+            case 2:
+                difficulty = score / 2;
+                if(score > 8 && (random() % 5 == 0)) move = &bounce;
+                if(score > 6 && (random() % 5 == 0)) move = &arch;
+                break;
+            case 3:
+                difficulty = score;
+                if(score > 5 && (random() % 3 == 0)) move = &bounce;
+                if(score > 3 && (random() % 3 == 0)) move = &arch;
+                break;
+        }
+        if(touched) {
+            period_ms = period_ms * 0.85;
+            if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
+        }
+        init_move(difficulty);
+    }
+
     virtual void update() {
         if(countdown.update()) return;
         if(end_of_game) {
             if(!game.is_saying()) {
-                if(!is_winner) game.prepare();
-                else if(level == MAX_LEVEL) game.prepare();
+                if(!is_winner) {
+                    if(level == 1 || lives == 0) game.prepare();
+                    else game.prepare_restart();
+                }
+                else if(level == MAX_LEVEL + 1) game.prepare();
                 else game.prepare_restart();
             }
             return;
         }
         proj.dimmer(128);
-        if(game.get_players_count() == 1) {}
+        //if(game.get_players_count() == 1) {}
 
         if(move->update(pan, tilt)) {
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
 
-            if(touched) {
+            /*if(touched) {
                 period_ms = period_ms * 0.85;
                 if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
             }
             move = &cross;
             if(score > 6 && (random() % 5 == 0)) move = &bounce;
             if(score > 3 && (random() % 5 == 0)) move = &arch;
-            init_move(score);
+            move = &arch;
+            init_move(score);*/
+            next_move(touched);
         }
 
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
@@ -179,7 +227,7 @@ class Collab : public GameMode {
         b = col[c][2];
         
         int width = pad_width / 2;
-        if(game.get_players_count() == 1) { // double the pad
+        if(game.players.get_steady_count() /*game.get_players_count()*/ == 1) { // double the pad
             for(int i = 0; i < total_leds; i++) {
                 int angle = (360 * i) / total_leds - config.leds_angle_offset;
                 if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);

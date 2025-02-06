@@ -7,10 +7,15 @@ class Countdown { // 1 second countdown
     int countdown;
     absolute_time_t timeout;
     float dim;
+    bool armed;
   public:
     bool running() { return ((countdown != 0) || !time_reached(timeout)); }
     bool update() {
-        if(!running()) return false;
+        if(!running()) {
+            if(armed) game.sfx(SoundCommand::ring, 500);
+            armed = false;
+            return false;
+        }
         if(countdown > 1) proj.dimmer(dim = dim * 0.5);
         else proj.dimmer(dim = dim * 0.8);
         if(!game.is_saying() && time_reached(timeout)) {
@@ -34,6 +39,7 @@ class Countdown { // 1 second countdown
         countdown = count;
         dim = 255.0;
         timeout = get_absolute_time();
+        armed = true;
     }
 };
 

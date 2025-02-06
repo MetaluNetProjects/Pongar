@@ -135,7 +135,7 @@ void lidar_adapt_background() {
 }
 
 bool lidar_update() {
-	static absolute_time_t update_time;
+	static absolute_time_t update_time = get_absolute_time();
 	if(!time_reached(update_time)) return false;
 	update_time = make_timeout_time_ms(100);
 	switch(lidar_state) {
@@ -200,7 +200,9 @@ bool lidar_update() {
 	return false;
 }
 
-void lidar_print_status() {}
+void lidar_print_status() {
+    printf("l lidar state %d\n", (int)lidar_state);
+}
 
 void lidar_change_state(lidar_state_t s) {
     lidar_state = s;
