@@ -36,6 +36,7 @@ class Collab : public GameMode {
         say(Words((int)Words::_0 + score));
     }
     void game_over() {
+        game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::LOOSE, 200);
         game.sfx(SoundCommand::buzz, 800);
         saysilence(500);
@@ -47,6 +48,7 @@ class Collab : public GameMode {
         score = 0;
     }
     void win() {
+        game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 200);
         say(Words::gagne);
         saysilence(2000);
@@ -89,6 +91,7 @@ class Collab : public GameMode {
         end_of_game = false;
         is_winner = false;
         countdown.init(3);
+        game.sfx(SoundCommand::seqms, period_ms / 5);
     }
 
     virtual void start() {
@@ -152,6 +155,7 @@ class Collab : public GameMode {
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
         init_move(difficulty);
+        game.sfx(SoundCommand::seqms, period_ms / 4);
     }
 
     virtual void update() {

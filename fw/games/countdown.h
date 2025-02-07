@@ -12,7 +12,10 @@ class Countdown { // 1 second countdown
     bool running() { return ((countdown != 0) || !time_reached(timeout)); }
     bool update() {
         if(!running()) {
-            if(armed) game.sfx(SoundCommand::ring, 500);
+            if(armed) {
+                game.sfx(SoundCommand::ring, 500);
+                game.sfx(SoundCommand::seqplay, 1);
+            }
             armed = false;
             return false;
         }
