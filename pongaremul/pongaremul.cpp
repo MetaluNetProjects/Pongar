@@ -45,7 +45,7 @@ bool time_reached(absolute_time_t t) {
     return timercmp(&t, &tv, <);
 }
 
-absolute_time_t at_the_end_of_time { .tv_sec = (long)1e6, .tv_usec = 0};
+absolute_time_t at_the_end_of_time { .tv_sec = (long)1e12, .tv_usec = 0};
 
 absolute_time_t get_absolute_time() {
     struct timeval tv;
@@ -140,6 +140,12 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         int p3 = argc > 3 ? atom_getfloat(&argv[3]) : 0;
         x->x_patch->command((SoundCommand)com, p1, p2, p3);
     }
+    else if(s == gensym("makemelo")) { x->x_patch->seq.make_melodies(); }
+    else if(s == gensym("shuffle")) { if(argc > 0) x->x_patch->seq.set_shuffle(atom_getfloat(&argv[0])); }
+    else if(s == gensym("scale")) { if(argc > 0) x->x_patch->seq.harm.set_scale(atom_getfloat(&argv[0])); }
+    else if(s == gensym("chord")) { if(argc > 0) x->x_patch->seq.harm.set_chord(atom_getfloat(&argv[0])); }
+    else if(s == gensym("tempoms")) { if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0])); }
+    else if(s == gensym("play")) { if(argc > 0) x->x_patch->seq.set_playing(atom_getfloat(&argv[0])); }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);
         t_garray *a;

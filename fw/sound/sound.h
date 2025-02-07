@@ -3,7 +3,7 @@
 #pragma once
 #include "fraise.h"
 //#include "wavplayer.h"
-#include "osc.h"
+#include "main_patch.h"
 #include "sound_command.h"
 
 class AudioLayer {
