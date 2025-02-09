@@ -56,7 +56,7 @@ struct Harmony {
 };
 
 struct Voice {
-    SawA synth;
+    Synth synth;
     int octave;
     bool force_chord;
     bool force_base;
@@ -105,9 +105,11 @@ class Sequencer {
   public:
     Voice v1, v2, v3;
     Harmony harm;
-    inline Sequencer() : v1(3), v2(5), v3(5){
+    inline Sequencer() : v1(3), v2(5), v3(6){
+        v1.synth.wavform = Synth::SQUARE;
         v1.force_base = true;
         //v2.force_chord = true;
+        v3.synth.wavform = Synth::SIN;
 
         v1.make_melody(16, harm, 70);
         v2.make_melody(16, harm, 30);
@@ -122,7 +124,7 @@ class Sequencer {
             if(time_reached(next_beat)) {
                 play_step();
                 next_beat = make_timeout_time_ms(ms);
-                next_half = make_timeout_time_ms(ms / 2 + ms * (shuffle / 6.0));
+                next_half = make_timeout_time_ms(ms / 2 + ms * (shuffle / 4.0));
             }
             if(time_reached(next_half)) {
                 play_step();
@@ -132,7 +134,7 @@ class Sequencer {
     }
 
     void play_step() {
-        if(step % 64 == 0) {
+        if(step % 32 == 0) {
             int c = random() % 6;
             harm.set_chord(c);
             make_melodies();

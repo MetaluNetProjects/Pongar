@@ -8,7 +8,7 @@
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
-class SawA {
+class Synth {
   private:
   public:
     Osc osc1;
@@ -17,12 +17,17 @@ class SawA {
     absolute_time_t stop_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int next_note = 0, next_vol, next_ms;
-    SawA() : osc1(100, 10000), lop1(500) { osc1.setLfo(/*280, 100*/ 400, 150); }
+    enum {SIN, SAW, SQUARE} wavform = SAW;
+    Synth() : osc1(100, 10000), lop1(500) { osc1.setLfo(/*280, 100*/ 400, 150); }
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(next_note && env1.is_stopped()) do_play(next_note, next_vol, next_ms);
         if(time_reached(stop_time)) return;
         memset(buf, 0, sizeof(buf));
-        osc1.mix_saw(buf);
+        switch(wavform) {
+            case SIN: osc1.mix_sin(buf); break;
+            case SAW: osc1.mix_saw(buf); break;
+            case SQUARE: osc1.mix_squ(buf, 10000); break;
+        }
         lop1.filter(buf);
         env1.mix_squ(out_buffer, buf);
         osc1.update();
