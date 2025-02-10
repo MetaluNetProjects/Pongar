@@ -17,6 +17,9 @@ class Synth {
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int next_note = 0, next_vol, next_ms;
     int A, S = 1000, R; // millis
+    float portamento;
+    float note_current;
+    float note_dest;
   public:
     enum Waveform {SIN, SAW, SQUARE} waveform = SAW;
     Synth() : osc1(100, 5000) { osc1.setLfo(400, 150); }
@@ -25,6 +28,8 @@ class Synth {
     void mix(int32_t *out_buffer) {
         if(next_note && env1.is_stopped()) do_play(next_note, next_vol, next_ms);
         if(time_reached(stop_time)) return;
+        note_current += (note_dest - note_current) * (1.0 - portamento);
+        osc1.setFreq8(Osc::mtof8(note_current));
         memset(buf, 0, sizeof(buf));
         switch(waveform) {
             case SIN: osc1.mix_sin(buf); break;
@@ -37,7 +42,7 @@ class Synth {
     }
 
     virtual void do_play(int note, int vol, int ms) {
-        osc1.setMidi(note);
+        note_dest = note;
         osc1.setVol(vol);
         int a = MIN(A, ms / 2);
         int r = R;
@@ -66,6 +71,8 @@ class Synth {
 
         float r = (random() % 1000) / 1000.0;
         R = r * r * 800.0;
+
+        portamento = 0.97 * sqrt((random() % 1000) / 1000.0);
     }
 };
 
@@ -84,14 +91,13 @@ class SynthBp : public Synth {
     virtual void post_process() {
         //hip1.filter(buf);
         bpf_current += (bpf_dest - bpf_current) * (1.0 - bpf_portamento);
-        bp1.setMidiQ(bpf_current, bpq, MAX(bpq * 0.5, 1.0));
+        bp1.setMidiQ(bpf_current, bpq, bpq * 0.2 + 1.0);
         if(waveform != SIN) bp1.filter(buf);
     }
 
     virtual void do_play(int note, int vol, int ms) {
         int f = note + bpf_offset + (random() % bpf_random);
         bpf_dest = CLIP(f, 10, 110);
-        //bp1.setMidiQ(f, bpq, MAX(bpq * 0.5, 1.0));
         Synth::do_play(note, vol, ms);
     }
 
@@ -99,8 +105,8 @@ class SynthBp : public Synth {
         Synth::randomize();
         bpf_offset = random() % 36;
         bpf_random = random() % 36 + 1;
-        bpq = (random() % 30) + 1.0;
-        bpf_portamento = sqrt((random() % 1000) / 1000.0);
+        bpq = (random() % 20) + 1.0;
+        bpf_portamento = 0.09 + 0.9 * sqrt((random() % 1000) / 1000.0);
     }
 };
 
