@@ -65,7 +65,7 @@ class Bandpass {
     }
 
     void setMidiQ(int note, float q, float g) {
-        setFQ(Osc::mtof8_table[note % 135] / 256.0, q, g);
+        setFQ(Osc::mtof8(note) / 256, q, g);
     }
 };
 
@@ -97,7 +97,7 @@ class Hip {
         coeff = CLIP(coeff, 0, 255);
     }
     void setMidi(int note) {
-        setFreq(Osc::mtof8_table[note % 135] / 256);
+        setFreq(Osc::mtof8(note) / 256);
     }
 };
 
@@ -131,7 +131,7 @@ class Lop {
     }
 
     void setMidi(int note) {
-        setFreq(Osc::mtof8_table[note % 135] / 256);
+        setFreq(Osc::mtof8(note) / 256);
     }
 };
 
