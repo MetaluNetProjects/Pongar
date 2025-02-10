@@ -21,7 +21,7 @@ class Buzzer {
     int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
     int gain = 3 * 256;
     int squthres = 0;
-    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 200) {}
+    Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 200, 100) {}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
         memset(buf, 0, sizeof(buf));
@@ -60,10 +60,10 @@ class Ring {
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
     Ring(): osc1(30, 10000), hip1(500),
-        bp1(1197, 1000),
-        bp2(2814, 1500),
-        bp3(4822, 2000),
-        bp4(7292, 2000)
+        bp1(1197, 1000, 1000),
+        bp2(2814, 1500, 1500),
+        bp3(4822, 2000, 2000),
+        bp4(7292, 2000, 2000)
         {}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(finish_time)) return;
@@ -162,8 +162,8 @@ class MainPatch {
             case SoundCommand::bounce: bounce(p1 > 0); break;
             case SoundCommand::tut: tut.tut(p1, p2); break;
             case SoundCommand::ring: ring.ring(p1); break;
-            case SoundCommand::note: seq.v1.synth.play(p1, p2, p3); break;
-            case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
+            //case SoundCommand::note: seq.v1.synth.play(p1, p2, p3); break;
+            //case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
             case SoundCommand::seqplay: seq.set_playing(p1); break;
             case SoundCommand::seqms: seq.set_tempo_ms(p1); break;
             default: ;

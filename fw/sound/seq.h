@@ -4,10 +4,13 @@
 #include <string.h>
 #include "synth.h"
 #include <vector>
+#include <array>
 #include <algorithm>
 
+using Scale = std::vector<uint8_t>;
+using Melody = std::vector<int8_t>;
+
 struct Harmony {
-    using Scale = std::vector<uint8_t>;
     Scale *scale;
     Scale *chord;
 
@@ -56,21 +59,22 @@ struct Harmony {
 };
 
 struct Voice {
-    Synth synth;
-    int octave;
+    SynthBp synth;
+    int octave = 5;
+    int silence_percent = 50;
     bool force_chord;
     bool force_base;
-    std::vector<int> melody;
-    void play_step(int step, int ms, Harmony &harm) {
+    int note_offset;
+    void play_step(int step, int ms, Melody &melody) {
         if(!melody.size()) return;
         int note = melody[step % melody.size()];
-        if(note != -1000) synth.play(note, 10000, ms / 4);
+        if(note != -128) synth.play(note + note_offset, 5000, ms / 2);
     }
-    void make_melody(int steps, Harmony &harm, int silence_percent) {
-        melody.clear();
+    Melody make_melody(int steps, Harmony &harm) {
+        Melody melody;
         int note = 0;
         for(int i = 0; i < steps; i++) {
-            if(random() % 100 < silence_percent) melody.push_back(-1000);
+            if(random() % 100 < silence_percent) melody.push_back(-128);
             else {
                 if(force_base) {
                     note = harm.get_scale((*harm.chord)[0]);
@@ -89,37 +93,93 @@ struct Voice {
                 }
             }
         }
+        //printf("melody: "); for(int i = 0 ; i < melody.size(); i++) printf("%d ", melody[i]); printf("\n");
+        return melody;
     }
-    Voice(int _octave): octave(_octave){}
+    void randomize(bool is_bass) {
+        synth.waveform = (Synth::Waveform)(random() % 3);
+        force_base = is_bass;
+        if(!is_bass) {
+            force_chord = ((random() % 4) == 0);
+            octave = 4 + (random() % 4);
+            if(octave > 5) synth.waveform = Synth::SIN;
+            silence_percent = (random() % 40) + 10;
+        } else {
+            octave = 3 + (random() % 2);
+            silence_percent = 30 + (random() % 35);
+        }
+        synth.randomize();
+    }
+};
+
+#define SEQUENCER_NB_VOICES 3
+
+class Part {
+    Melody melodies[SEQUENCER_NB_VOICES];
+  public:
+    Harmony harm;
+    void make_melodies(Voice *voices) {
+        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
+    }
+    void play_step(int step, int ms, Voice *voices) {
+        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i]);
+    }
+};
+
+class Piece {
+    std::array<Part, 8> parts;
+    std::vector<int> plan;
+    int plan_index = 0;
+  public:
+    Piece(){}
+    ~Piece(){}
+    void make(Voice *voices) {
+        int note_offset = (random() % 12) - 6;
+        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) {
+            voices[i].note_offset = note_offset;
+            voices[i].randomize(i == 0);
+        }
+        int scale = random() % 5;
+        if(scale > 2) scale = 0;
+        parts[0].harm.set_scale(scale);
+        parts[0].harm.set_chord(0);
+        parts[0].make_melodies(voices);
+        parts[1].harm.set_scale(scale);
+        parts[1].harm.set_chord(3);
+        parts[1].make_melodies(voices);
+        parts[2].harm.set_scale(scale);
+        parts[2].harm.set_chord(4);
+        parts[2].make_melodies(voices);
+
+        plan = {0, 0, 1, 1, 0, 0, 2, 1};
+    }
+
+    void play_step(int step, int ms, Voice *voices) {
+        if(parts.empty() || plan.empty()) return;
+        plan_index = (step / 16) % plan.size();
+        int current_part = plan[plan_index] % parts.size();
+        parts[current_part].play_step(step, ms, voices);
+    }
 };
 
 class Sequencer {
   private:
     int step;
-    int ms = 400;
-    float shuffle = 0.8;
+    int ms = 300;
+    float shuffle = 0.5;
     bool playing = false;
     absolute_time_t next_beat;
     absolute_time_t next_half;
 
   public:
-    Voice v1, v2, v3;
-    Harmony harm;
-    inline Sequencer() : v1(3), v2(5), v3(6){
-        v1.synth.wavform = Synth::SQUARE;
-        v1.force_base = true;
-        //v2.force_chord = true;
-        v3.synth.wavform = Synth::SIN;
-
-        v1.make_melody(16, harm, 70);
-        v2.make_melody(16, harm, 30);
-        v3.make_melody(16, harm, 20);
+    Voice voices[SEQUENCER_NB_VOICES];
+    Piece piece;
+    inline Sequencer() {
+        piece.make(voices);
     };
 
     void mix(int32_t *out_buffer) {
-        v1.synth.mix(out_buffer);
-        v2.synth.mix(out_buffer);
-        v3.synth.mix(out_buffer);
+        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) voices[i].synth.mix(out_buffer);
         if(playing) {
             if(time_reached(next_beat)) {
                 play_step();
@@ -134,30 +194,8 @@ class Sequencer {
     }
 
     void play_step() {
-        if(step % 32 == 0) {
-            int c = random() % 6;
-            harm.set_chord(c);
-            make_melodies();
-        }
-        if(step % 16 == 0) {
-            int v = random() % 10;
-            switch(v) {
-                case 0: v1.make_melody(16, harm, 70); break;
-                case 1: v2.make_melody(16, harm, 30); break;
-                case 2: v3.make_melody(16, harm, 20); break;
-                default: ;
-            }
-        }
-        v1.play_step(step, ms, harm);
-        v2.play_step(step, ms, harm);
-        v3.play_step(step, ms, harm);
+        piece.play_step(step, ms, voices);
         step++;
-    }
-
-    void make_melodies() {
-        v1.make_melody(16, harm, 70);
-        v2.make_melody(16, harm, 30);
-        v3.make_melody(16, harm, 20);
     }
 
     void set_shuffle(float s) { shuffle = s; }
@@ -168,7 +206,11 @@ class Sequencer {
     
     void set_playing(bool p) {
         playing = p;
-        if(p) step = 0;
+        if(p) {
+            step = 0;
+            piece.make(voices);
+            set_shuffle((random() % 1000) / 1000.0);
+        }
         next_half = at_the_end_of_time;
     }
 };

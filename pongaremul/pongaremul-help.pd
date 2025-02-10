@@ -198,7 +198,7 @@
 #X connect 17 0 6 0;
 #X restore 10 178 pd old_pdlua_interface;
 #X obj 301 201 s \$0-to_emul;
-#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 3400 1;
+#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 6900 1;
 #N canvas 1244 70 649 859 lidar 1;
 #X obj 14 8 table \$0-lidar 360;
 #X obj 13 163 symbol \$0-lidar;

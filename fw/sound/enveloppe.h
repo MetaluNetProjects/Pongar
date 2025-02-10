@@ -15,6 +15,7 @@ class Enveloppe {
     static const int MAX_LEVEL = 1 << MAX_LEVEL_BITS;
    enum {OFF, A, S, R} state = OFF;
     absolute_time_t next_time;
+    absolute_time_t finish_time;
     void mix(int32_t *out_buffer, int32_t *in_buffer) {
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
             switch(state) {
@@ -78,13 +79,14 @@ class Enveloppe {
         Rinc = MAX_LEVEL / (r * (AUDIO_SAMPLE_RATE / 1000));
         level = 0;
         state = A;
+        finish_time = make_timeout_time_ms(a + s + r);
     }
     void stop(int r) {
         Rinc = MAX_LEVEL / (r * (AUDIO_SAMPLE_RATE / 1000));
         state = R;
     }
     bool is_stopped() {
-        return state == OFF;
+        return (state == OFF || time_reached(finish_time));
     }
 };
 

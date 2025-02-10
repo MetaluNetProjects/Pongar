@@ -13,7 +13,7 @@ class Bandpass {
     int32_t last, prev;
     float coef1, coef2, gain;
   public:
-    Bandpass(float f, float q) { setFQ(f, q);}
+    Bandpass(float f, float q, float g) { setFQ(f, q, g);}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         int64_t c1 = coef1 * 4096;
         int64_t c2 = coef2 * 4096;
@@ -50,7 +50,7 @@ class Bandpass {
         else return (0);
     }
 
-    void setFQ(float f, float q) {
+    void setFQ(float f, float q, float g) {
         float r, oneminusr, omega;
         if (f < 0.001) f = 10;
         if (q < 0) q = 0;
@@ -61,11 +61,11 @@ class Bandpass {
         r = 1.0f - oneminusr;
         coef1 = 2.0f * sigbp_qcos(omega) * r;
         coef2 = - r * r;
-        gain = 2 * oneminusr * (oneminusr + r * omega) /*!!!*/ * q /*!!!*/;
+        gain = 2 * oneminusr * (oneminusr + r * omega) /*!!!*/ * g /*!!!*/;
     }
 
-    void setMidiQ(int note, float q) {
-        setFQ(Osc::mtof8_table[note % 135] / 256.0, q);
+    void setMidiQ(int note, float q, float g) {
+        setFQ(Osc::mtof8_table[note % 135] / 256.0, q, g);
     }
 };
 
