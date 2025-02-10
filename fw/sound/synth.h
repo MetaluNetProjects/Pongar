@@ -10,16 +10,16 @@
 
 class Synth {
   private:
-  public:
+  protected:
     Osc osc1;
     Enveloppe env1;
-    //Lop lop1;
     absolute_time_t stop_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int next_note = 0, next_vol, next_ms;
     int A, S = 1000, R; // millis
+  public:
     enum Waveform {SIN, SAW, SQUARE} waveform = SAW;
-    Synth() : osc1(100, 5000)/*, lop1(500)*/ { osc1.setLfo(400, 150); }
+    Synth() : osc1(100, 5000) { osc1.setLfo(400, 150); }
     virtual ~Synth(){}
     virtual void post_process() {}
     void mix(int32_t *out_buffer) {
@@ -32,7 +32,6 @@ class Synth {
             case SQUARE: osc1.mix_squ(buf, 10000); break;
         }
         osc1.update();
-        //lop1.filter(buf);
         post_process();
         env1.mix_squ(out_buffer, buf);
     }
@@ -40,9 +39,8 @@ class Synth {
     virtual void do_play(int note, int vol, int ms) {
         osc1.setMidi(note);
         osc1.setVol(vol);
-        //lop1.setMidi(note / 2 + 50);
         int a = MIN(A, ms / 2);
-        int r = R; //MIN(R, ms);
+        int r = R;
         int s = CLIP(ms - a - r, 1, S);
         env1.start(a, s, r);
         stop_time = make_timeout_time_ms(a + s + r + 10);
@@ -73,22 +71,27 @@ class Synth {
 
 class SynthBp : public Synth {
   private:
-  public:
     Hip hip1;
     Bandpass bp1;
     int bpf_offset;
     int bpf_random;
+    float bpf_current;
+    float bpf_dest;
+    float bpf_portamento;
     float bpq;
+  public:
     SynthBp() : hip1(500), bp1(500, 4, 4) {}
     virtual void post_process() {
         //hip1.filter(buf);
+        bpf_current += (bpf_dest - bpf_current) * (1.0 - bpf_portamento);
+        bp1.setMidiQ(bpf_current, bpq, MAX(bpq * 0.5, 1.0));
         if(waveform != SIN) bp1.filter(buf);
     }
 
     virtual void do_play(int note, int vol, int ms) {
         int f = note + bpf_offset + (random() % bpf_random);
-        f = CLIP(f, 10, 110);
-        bp1.setMidiQ(f, bpq, MAX(bpq * 0.5, 1.0));
+        bpf_dest = CLIP(f, 10, 110);
+        //bp1.setMidiQ(f, bpq, MAX(bpq * 0.5, 1.0));
         Synth::do_play(note, vol, ms);
     }
 
@@ -97,6 +100,7 @@ class SynthBp : public Synth {
         bpf_offset = random() % 36;
         bpf_random = random() % 36 + 1;
         bpq = (random() % 30) + 1.0;
+        bpf_portamento = sqrt((random() % 1000) / 1000.0);
     }
 };
 
