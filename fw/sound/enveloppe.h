@@ -88,5 +88,8 @@ class Enveloppe {
     bool is_stopped() {
         return (state == OFF || time_reached(finish_time));
     }
+    float get_level_norm() {
+        return ((float)level) / MAX_LEVEL;
+    }
 };
 
