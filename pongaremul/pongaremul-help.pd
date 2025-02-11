@@ -198,7 +198,7 @@
 #X connect 17 0 6 0;
 #X restore 10 178 pd old_pdlua_interface;
 #X obj 301 201 s \$0-to_emul;
-#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 6900 1;
+#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 3500 1;
 #N canvas 1244 70 649 859 lidar 1;
 #X obj 14 8 table \$0-lidar 360;
 #X obj 13 163 symbol \$0-lidar;
@@ -1499,7 +1499,7 @@
 #X connect 137 0 51 0;
 #X connect 137 0 25 0;
 #X restore 475 579 pd test_musique;
-#N canvas 62 411 857 457 melody 1;
+#N canvas 101 513 857 457 melody 1;
 #X obj 29 287 s \$0-to_emul;
 #X msg 168 187 makemelo;
 #X msg 29 222 shuffle \$1;
@@ -1527,6 +1527,7 @@
 #X msg 195 339 60000 \$1;
 #X obj 195 364 /;
 #X floatatom 229 364 5 0 0 1 ms - - 0;
+#X msg 145 40 1;
 #X connect 1 0 0 0;
 #X connect 2 0 0 0;
 #X connect 3 0 2 0;
@@ -1544,6 +1545,7 @@
 #X connect 24 0 25 0;
 #X connect 25 0 26 0;
 #X connect 25 0 22 0;
+#X connect 27 0 20 0;
 #X restore 226 603 pd melody;
 #X connect 1 0 0 0;
 #X connect 2 0 26 0;

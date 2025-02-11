@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include "synth.h"
+#include "drum.h"
 #include <vector>
 #include <array>
 #include <algorithm>
@@ -58,8 +59,10 @@ struct Harmony {
     ~Harmony(){}
 };
 
-struct Voice {
+class Voice {
+  private:
     SynthBp synth;
+  public:
     int octave = 5;
     int silence_percent = 50;
     bool force_chord;
@@ -74,7 +77,13 @@ struct Voice {
     Melody make_melody(int steps, Harmony &harm) {
         Melody melody;
         int note = 0;
-        for(int i = 0; i < steps; i++) {
+        int final_steps = steps;
+        const int chances = 6;
+        if(random() % chances == 0) final_steps = 6;
+        if(random() % chances == 0) final_steps = 8;
+        if(random() % chances == 0) final_steps = 12;
+        if(random() % chances == 0) final_steps = 4;
+        for(int i = 0; i < final_steps; i++) {
             if(random() % 100 < silence_percent) melody.push_back(-128);
             else {
                 if(force_base) {
@@ -102,66 +111,166 @@ struct Voice {
         if(!is_bass) {
             synth.waveform = (Synth::Waveform)(random() % 3);
             force_chord = ((random() % 4) == 0);
-            octave = 5 + (random() % 3);
+            octave = 4 + (random() % 3);
             if(octave > 6) synth.waveform = Synth::SIN;
             silence_percent = (random() % 40) + 10;
+            volume = 5000;
         } else {
             synth.waveform = (Synth::Waveform)((random() % 2) + 1);
-            volume = 10000;
+            volume = 11000;
             octave = 3 + (random() % 2);
             silence_percent = 30 + (random() % 35);
         }
         synth.randomize();
     }
+    void mix(int32_t *out_buffer) {
+        synth.mix(out_buffer);
+    }
 };
 
-#define SEQUENCER_NB_VOICES 3
-
-class Part {
-    Melody melodies[SEQUENCER_NB_VOICES];
+class Drumvoice {
+  private:
+    class PlayProba {
+      private:
+        int steps;
+        int wanted;
+        int percent;
+      public:
+        PlayProba(int _steps, int _wanted, int _percent): steps(_steps), wanted(_wanted), percent(_percent) {}
+        bool get(int step) {
+            if((step % steps) == wanted) return (random() % 100) < percent;
+            else return false;
+        }
+    };
+    std::vector<PlayProba> probas;
+    int8_t volume = 20; // 0 - 127
+    Drum *drum;
   public:
-    Harmony harm;
-    void make_melodies(Voice *voices) {
-        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
+    Drumvoice(Drum *_drum): drum(_drum) {};
+    void set_volume(int8_t v) { volume = v; }
+    void clear_probas() { probas.clear(); }
+    void add_proba(int steps, int wanted, int percent) {
+        probas.emplace_back(steps, wanted, percent);
     }
-    void play_step(int step, int ms, Voice *voices) {
-        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i]);
+    void play_step(int step, int ms, Melody &pattern) {
+        if(!pattern.size()) return;
+        int8_t vol = pattern[step % pattern.size()];
+        if(vol != -128) drum->play(vol * 256, ms);
+    }
+    Melody make_pattern(int steps) {
+        Melody pattern;
+        for(int i = 0; i < steps; i++) {
+            bool play = false;
+            for(auto &p: probas) {
+                play |= p.get(i);
+                if(play) break;
+            }
+            if(play) pattern.push_back(volume);
+            else pattern.push_back(-128);
+        }
+        return pattern;
+    }
+    void mix(int32_t *out_buffer) {
+        drum->mix(out_buffer);
+    }
+    void randomize_drum() {
+        drum->randomize();
     }
 };
 
 class Piece {
-    std::array<Part, 8> parts;
+  private:
+    static const int NB_VOICES = 3;
+    static const int NB_DRUMS = 3;
+    class Part {
+        Melody melodies[NB_VOICES];
+        Melody patterns[NB_DRUMS];
+      public:
+        Harmony harm;
+        void make_melodies(Voice *voices, Drumvoice *drumvoices) {
+            for(int i = 0; i < NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
+            for(int i = 0; i < NB_DRUMS; i++) patterns[i] = drumvoices[i].make_pattern(16);
+        }
+        void play_step(int step, int ms, Voice *voices, Drumvoice *drumvoices) {
+            for(int i = 0; i < NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i]);
+            for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].play_step(step, ms, patterns[i]);
+        }
+    };
+
+    std::array<Part, 6> parts;
     std::vector<int> plan;
+    std::vector<std::vector<int>> plans = {
+        {0, 0, 3, 3, 0, 0, 4, 3},
+        {0, 3, 0, 4},
+        {5, 0, 1, 3, 5, 0, 2, 2, 5, 0, 1, 3, 5, 2, 5, 2},
+        {0, 1, 2, 3, 0, 2, 3, 4}
+    };
     int plan_index = 0;
+    int plan_steps = 16;
+    Voice voices[NB_VOICES];
+    Hihat hh;
+    Snare snare;
+    Kick kick;
+    Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
+    enum drumnames {HH = 0, SNARE, KICK};
   public:
     Piece(){}
     ~Piece(){}
-    void make(Voice *voices) {
+    void randomize_voices() {
         int note_offset = (random() % 12) - 6;
-        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) {
+        for(int i = 0; i < NB_VOICES; i++) {
             voices[i].note_offset = note_offset;
             voices[i].randomize(i == 0);
         }
+    }
+    void randomize_drumvoices() {
+        for(int i = 0; i < NB_DRUMS; i++) {
+            drumvoices[i].randomize_drum();
+            drumvoices[i].clear_probas();
+        }
+        drumvoices[HH].add_proba(4, 0, random() % 100);
+        drumvoices[HH].add_proba(4, 1, random() % 30);
+        drumvoices[HH].add_proba(4, 2, random() % 100);
+        drumvoices[HH].add_proba(4, 3, random() % 100);
+        drumvoices[HH].set_volume(5 + (random() % 15));
+
+        drumvoices[SNARE].add_proba(8, 4, random() % 80);
+        drumvoices[SNARE].add_proba(1, 0, random() % 20);
+        drumvoices[SNARE].set_volume(40 + (random() % 40));
+
+        int kick_proba = random() % 100;
+        drumvoices[KICK].add_proba(16, 0, kick_proba);
+        drumvoices[KICK].add_proba(8, 0, kick_proba);
+        drumvoices[KICK].add_proba(1, 0, kick_proba / 10);
+        drumvoices[KICK].set_volume(60 + (random() % 50));
+    }
+    void make() {
+        randomize_voices();
+        randomize_drumvoices();
+
         int scale = random() % 5;
         if(scale > 2) scale = 0;
-        parts[0].harm.set_scale(scale);
-        parts[0].harm.set_chord(0);
-        parts[0].make_melodies(voices);
-        parts[1].harm.set_scale(scale);
-        parts[1].harm.set_chord(3);
-        parts[1].make_melodies(voices);
-        parts[2].harm.set_scale(scale);
-        parts[2].harm.set_chord(4);
-        parts[2].make_melodies(voices);
-
-        plan = {0, 0, 1, 1, 0, 0, 2, 1};
+        for(int i = 0; i < (int)parts.size(); i++) {
+            parts[i].harm.set_chord(i);
+            parts[i].harm.set_scale(scale);
+            parts[i].make_melodies(voices, drumvoices);
+        }
+        plan = plans[random() % plans.size()];
+        plan_steps = 16;
+        if(random() % 4 == 0) plan_steps = 8;
+        if(random() % 6 == 0) plan_steps = 12;
     }
 
-    void play_step(int step, int ms, Voice *voices) {
+    void play_step(int step, int ms) {
         if(parts.empty() || plan.empty()) return;
-        plan_index = (step / 16) % plan.size();
+        plan_index = (step / plan_steps) % plan.size();
         int current_part = plan[plan_index] % parts.size();
-        parts[current_part].play_step(step, ms, voices);
+        parts[current_part].play_step(step, ms, voices, drumvoices);
+    }
+
+    void mix(int32_t *out_buffer) {
+        for(int i = 0; i < NB_VOICES; i++) voices[i].mix(out_buffer);
+        for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].mix(out_buffer);
     }
 };
 
@@ -175,14 +284,13 @@ class Sequencer {
     absolute_time_t next_half;
 
   public:
-    Voice voices[SEQUENCER_NB_VOICES];
     Piece piece;
     inline Sequencer() {
-        piece.make(voices);
+        piece.make();
     };
 
     void mix(int32_t *out_buffer) {
-        for(int i = 0; i < SEQUENCER_NB_VOICES; i++) voices[i].synth.mix(out_buffer);
+        piece.mix(out_buffer);
         if(playing) {
             if(time_reached(next_beat)) {
                 play_step();
@@ -197,7 +305,7 @@ class Sequencer {
     }
 
     void play_step() {
-        piece.play_step(step, ms, voices);
+        piece.play_step(step, ms);
         step++;
     }
 
@@ -211,8 +319,9 @@ class Sequencer {
         playing = p;
         if(p) {
             step = 0;
-            piece.make(voices);
-            set_shuffle((random() % 1000) / 1000.0);
+            piece.make();
+            shuffle = (random() % 1000) / 1000.0;
+            shuffle *= shuffle;
         }
         next_half = at_the_end_of_time;
     }
