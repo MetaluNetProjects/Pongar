@@ -63,12 +63,12 @@ class Synth {
     }
     
     float randf(float amp = 1.0) { return amp * (random() % 1024) / 1024.0; }
-    void randomize() {
+    virtual void randomize() {
         osc1.setLfo(4 + randf(4), randf(0.2));
         float a = randf();
         A = a * a * a * 50.0;
 
-        S = random() % 500 + 200;
+        S = (random() % 500) + 200;
 
         float r = randf();
         R = r * r * 800.0;
@@ -94,7 +94,7 @@ class SynthBp : public Synth {
     virtual void post_process() {
         //hip1.filter(buf);
         bpf_current += (bpf_dest - bpf_current) * (1.0 - bpf_portamento);
-        bp1.setMidiQ(bpf_current, bpq, bpq * 0.2 + 1.0);
+        bp1.setMidiQ(bpf_current, bpq, bpq * 0.1 + 1.0);
         if(waveform != SIN) bp1.filter(buf);
     }
 
@@ -106,8 +106,8 @@ class SynthBp : public Synth {
 
     virtual void randomize() {
         Synth::randomize();
-        bpf_offset = 15 + random() % 24;
-        bpf_random = random() % 36 + 1;
+        bpf_offset = 15 + (random() % 24);
+        bpf_random = (random() % 36) + 1;
         bpq = (random() % 20) + 1.0;
         float Tmax = 0.5; // seconds
         float portamento_max = 1.0 - (6.28 * AUDIO_SAMPLES_PER_BUFFER) / (Tmax * AUDIO_SAMPLE_RATE);
