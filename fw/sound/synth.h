@@ -22,7 +22,7 @@ class Synth {
     float note_dest;
   public:
     enum Waveform {SIN, SAW, SQUARE} waveform = SAW;
-    Synth() : osc1(100, 5000) { osc1.setLfo(400, 150); }
+    Synth() : osc1(100, 5000) {}
     virtual ~Synth(){}
     virtual void post_process() {}
     void mix(int32_t *out_buffer) {
@@ -62,17 +62,20 @@ class Synth {
         }
     }
     
+    float randf(float amp = 1.0) { return amp * (random() % 1024) / 1024.0; }
     void randomize() {
-        osc1.setLfo(200 + (random() % 200), random() % 300);
-        float a = (random() % 1000) / 1000.0;
+        osc1.setLfo(4 + randf(4), randf(0.2));
+        float a = randf();
         A = a * a * a * 50.0;
 
-        S = random() % 500 + 100;
+        S = random() % 500 + 200;
 
-        float r = (random() % 1000) / 1000.0;
+        float r = randf();
         R = r * r * 800.0;
 
-        portamento = 0.97 * sqrt((random() % 1000) / 1000.0);
+        float Tmax = 0.1; // seconds
+        float portamento_max = 1.0 - (6.28 * AUDIO_SAMPLES_PER_BUFFER) / (Tmax * AUDIO_SAMPLE_RATE);
+        portamento = randf(portamento_max);
     }
 };
 
@@ -103,10 +106,12 @@ class SynthBp : public Synth {
 
     virtual void randomize() {
         Synth::randomize();
-        bpf_offset = random() % 36;
+        bpf_offset = 15 + random() % 24;
         bpf_random = random() % 36 + 1;
         bpq = (random() % 20) + 1.0;
-        bpf_portamento = 0.09 + 0.9 * sqrt((random() % 1000) / 1000.0);
+        float Tmax = 0.5; // seconds
+        float portamento_max = 1.0 - (6.28 * AUDIO_SAMPLES_PER_BUFFER) / (Tmax * AUDIO_SAMPLE_RATE);
+        bpf_portamento = 0.1 + randf(0.9 * portamento_max);
     }
 };
 

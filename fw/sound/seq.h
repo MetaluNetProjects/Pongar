@@ -65,10 +65,11 @@ struct Voice {
     bool force_chord;
     bool force_base;
     int note_offset;
+    int volume = 5000;
     void play_step(int step, int ms, Melody &melody) {
         if(!melody.size()) return;
         int note = melody[step % melody.size()];
-        if(note != -128) synth.play(note + note_offset, 5000, ms / 2);
+        if(note != -128) synth.play(note + note_offset, volume, ms / 2);
     }
     Melody make_melody(int steps, Harmony &harm) {
         Melody melody;
@@ -97,14 +98,16 @@ struct Voice {
         return melody;
     }
     void randomize(bool is_bass) {
-        synth.waveform = (Synth::Waveform)(random() % 3);
         force_base = is_bass;
         if(!is_bass) {
+            synth.waveform = (Synth::Waveform)(random() % 3);
             force_chord = ((random() % 4) == 0);
-            octave = 4 + (random() % 4);
-            if(octave > 5) synth.waveform = Synth::SIN;
+            octave = 5 + (random() % 3);
+            if(octave > 6) synth.waveform = Synth::SIN;
             silence_percent = (random() % 40) + 10;
         } else {
+            synth.waveform = (Synth::Waveform)((random() % 2) + 1);
+            volume = 10000;
             octave = 3 + (random() % 2);
             silence_percent = 30 + (random() % 35);
         }

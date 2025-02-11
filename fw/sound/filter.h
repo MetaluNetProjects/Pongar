@@ -113,9 +113,6 @@ class Lop {
         int feedback = 255 - coeff;
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
             last = *out_buffer++ = (coeff * *in_buffer++ + feedback * last) / 256;
-            //int32_t new_sample = *in_buffer++ + (coeff * last) / 256;
-            //*out_buffer++ += new_sample - last;
-            //last = new_sample;
         }
     }
     void filter(int32_t *out_buffer, int32_t *in_buffer = 0) {

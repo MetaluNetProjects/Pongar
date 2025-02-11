@@ -89,7 +89,12 @@ public:
 	}
 
 	void setVol(int _vol) { vol = _vol; }
-	void setLfo(int freq, int amp) { lfofreq = freq; lfoamp = amp; }
+	//void setLfo(int freq, int amp) { lfofreq = freq; lfoamp = amp; }
+	void setLfo(float freq, float amp) { 
+	    lfofreq = freq * (sin_table_len * 16 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE;
+	    lfoamp = CLIP(amp, 0, 1) * 1000;
+    }
+
 	static void setup() {
 		for (int i = 0; i < sin_table_len; i++) {
 			sine_wave_table[i] = 32767 * cosf((i + sin_table_len / 4)* 2 * (float) (M_PI / sin_table_len));
