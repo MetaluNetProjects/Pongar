@@ -58,6 +58,9 @@ class Collab : public GameMode {
         score = 0;
     }
     void init_move(int difficulty) { move->init(pan, tilt, period_ms, difficulty); }
+    void set_seq_tempo() {
+        game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
+    }
 
   public:
     virtual ~Collab() {};
@@ -91,7 +94,7 @@ class Collab : public GameMode {
         end_of_game = false;
         is_winner = false;
         countdown.init(3);
-        game.sfx(SoundCommand::seqms, period_ms / 5);
+        set_seq_tempo();
     }
 
     virtual void start() {
@@ -155,7 +158,7 @@ class Collab : public GameMode {
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
         init_move(difficulty);
-        game.sfx(SoundCommand::seqms, period_ms / 4);
+        set_seq_tempo();
     }
 
     virtual void update() {
