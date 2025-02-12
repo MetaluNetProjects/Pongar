@@ -152,9 +152,9 @@ class MainPatch {
         switch(osc1_waveform) {
             case SIN: osc1.mix_sin(out_buffer); break;
             case SAW: osc1.mix_saw(out_buffer); break;
-            case SQU: osc1.mix_squ(out_buffer, 0); break;
+            case SQU: osc1.mix_squ(out_buffer, 20000); break;
             case BLSAW: osc1.mix_blsaw(out_buffer); break;
-            case BLSQU: osc1.mix_blsqu(out_buffer, 0); break;
+            case BLSQU: osc1.mix_blsqu(out_buffer, 20000); break;
         }
     }
     void buzz() {

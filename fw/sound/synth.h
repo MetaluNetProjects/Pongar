@@ -11,7 +11,7 @@
 class Synth {
   private:
   protected:
-    Osc osc1;
+    Blosc osc1;
     Enveloppe env1;
     absolute_time_t stop_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
@@ -22,7 +22,7 @@ class Synth {
     float note_dest;
   public:
     enum Waveform {SIN, SAW, SQUARE} waveform = SAW;
-    Synth() : osc1(100, 5000) {}
+    Synth() {}
     virtual ~Synth(){}
     virtual void post_process() {}
     void mix(int32_t *out_buffer) {
@@ -33,8 +33,8 @@ class Synth {
         memset(buf, 0, sizeof(buf));
         switch(waveform) {
             case SIN: osc1.mix_sin(buf); break;
-            case SAW: osc1.mix_saw(buf); break;
-            case SQUARE: osc1.mix_squ(buf, 10000); break;
+            case SAW: osc1.mix_blsaw(buf); break;
+            case SQUARE: osc1.mix_blsqu(buf, 10000); break;
         }
         osc1.update();
         post_process();
