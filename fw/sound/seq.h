@@ -112,7 +112,6 @@ class Voice {
             synth.waveform = (Synth::Waveform)(random() % 3);
             force_chord = ((random() % 4) == 0);
             octave = 4 + (random() % 3);
-            if(octave > 6) synth.waveform = Synth::SIN;
             silence_percent = (random() % 40) + 10;
             volume = 5000;
         } else {
@@ -186,6 +185,7 @@ class Piece {
         Melody melodies[NB_VOICES];
         Melody patterns[NB_DRUMS];
       public:
+        ~Part(){}
         Harmony harm;
         void make_melodies(Voice *voices, Drumvoice *drumvoices) {
             for(int i = 0; i < NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
