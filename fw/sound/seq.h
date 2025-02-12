@@ -179,7 +179,7 @@ class Drumvoice {
 
 class Piece {
   private:
-    static const int NB_VOICES = 3;
+    static const int NB_VOICES = 4;
     static const int NB_DRUMS = 3;
     class Part {
         Melody melodies[NB_VOICES];
