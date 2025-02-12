@@ -141,12 +141,21 @@ class MainPatch {
     Tut tut;
     Ring ring;
     Sequencer seq;
+    Blosc osc1;
+    enum WF {SIN, SAW, SQU, BLSAW, BLSQU} osc1_waveform = BLSAW;
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         buzzer.mix(out_buffer);
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
         ring.mix(out_buffer);
         seq.mix(out_buffer);
+        switch(osc1_waveform) {
+            case SIN: osc1.mix_sin(out_buffer); break;
+            case SAW: osc1.mix_saw(out_buffer); break;
+            case SQU: osc1.mix_squ(out_buffer, 0); break;
+            case BLSAW: osc1.mix_blsaw(out_buffer); break;
+            case BLSQU: osc1.mix_blsqu(out_buffer, 0); break;
+        }
     }
     void buzz() {
         buzzer.buzz(400);
@@ -166,6 +175,8 @@ class MainPatch {
             //case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
             case SoundCommand::seqplay: seq.set_playing(p1); break;
             case SoundCommand::seqms: seq.set_tempo_ms(p1); break;
+            case SoundCommand::osc1: osc1.setVol(p1); osc1.setFreq8(p2); osc1.set_bandlimit(p3 / 256.0); break;
+            case SoundCommand::osc1wf: osc1_waveform = (WF)p1; break;
             default: ;
         }
     }

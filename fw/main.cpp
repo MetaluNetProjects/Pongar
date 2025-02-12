@@ -46,15 +46,13 @@ int button_count;
 CpuLoad pixel_load("pixel");
 CpuLoad lidar_load("lidar");
 CpuLoad game_load("game");
-//Osc osc1;
 
 void setup() {
     eeprom_load();
 
     game.init(AUDIO_PWM_PIN, MP3_TX_PIN);
     Osc::setup();
-    /*osc1.setFreq(440);
-    osc1.setVol(0);*/
+    Blosc::setup();
 
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);

@@ -297,6 +297,7 @@ extern "C" {
 void pongaremul_setup(void)
 {
     Osc::setup();
+    Blosc::setup();
     pongaremul_class = class_new(gensym("pongaremul"), (t_newmethod)pongaremul_new,
         (t_method)pongaremul_free, sizeof(t_pongaremul), 0, A_NULL);
     class_addanything(pongaremul_class, pongaremul_anything);
