@@ -40,7 +40,7 @@ class Osc {
 		    pos += step + lfoval;
 		    if (pos >= pos_max) pos -= pos_max;
 		    else if(pos < 0) pos += pos_max;
-		    *buffer++ += ((vol * sine_wave_table[(pos >> 16u)%sin_table_len]) >> 16u);
+		    *buffer++ += ((vol * sine_wave_table[(pos >> 16u)%sin_table_len]) >> 15u);
 		}
 	}
 
@@ -49,7 +49,7 @@ class Osc {
 		    pos += step + lfoval;
 		    if (pos >= pos_max) pos -= pos_max;
 		    else if(pos < 0) pos += pos_max;
-		    *buffer++ += (vol * ((int16_t)(pos >> 11u) - 32768)) >> 16u;
+		    *buffer++ += (vol * ((int16_t)(pos >> 11u))) >> 15u;
 		}
 	}
 
@@ -90,7 +90,7 @@ class Osc {
 	}
 
 	void setVol(int _vol) { vol = _vol; }
-	//void setLfo(int freq, int amp) { lfofreq = freq; lfoamp = amp; }
+
 	void setLfo(float freq, float amp) { 
 	    lfofreq = freq * (sin_table_len * 16 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE;
 	    lfoamp = CLIP(amp, 0, 1) * 1000;
@@ -110,11 +110,11 @@ class Blosc : public Osc {
 private:
 	static const int transition_table_len = 1024;
 	static int16_t transition_table[transition_table_len];
+    float bandlimit = 1.0;
 
 public:
-    float bandlimit = 1.0;
 	void mix_blsaw(int32_t *buffer) {
-        int mult = (0.2 * bandlimit * sin_table_len * 0x10000 * 128) / step;
+        int mult = (0.2 * bandlimit * sin_table_len * 0x10000 * 128) / (1 + step);
         if(mult < 1) mult = 1;
 		/*
 		    mult = (AUDIO_SAMPLE_RATE / 2 * 0.4 * bandlimit) / f;
@@ -124,31 +124,38 @@ public:
 		    pos += step + lfoval;
 		    if (pos >= pos_max) pos -= pos_max;
 		    else if(pos < 0) pos += pos_max;
-		    int phase = (int16_t)(pos >> 11u) - 32768; // -32768 32767
-		    int trans_index = (phase * mult) / 128;
-		    trans_index = ((CLIP(trans_index, -32768, 32767) + 32768) * transition_table_len) / (65536);
-		    *buffer++ += (vol * (transition_table[trans_index] - phase)) >> 16u;
+		    int phase = (int16_t)(pos >> 11u); // -32768 32767
+		    int trans_index = (phase * mult) >> 7u;
+		    trans_index = ((CLIP(trans_index, -32768, 32767) + 32768) * transition_table_len) >> 16u;
+		    trans_index = CLIP(trans_index, 0, transition_table_len - 1);
+	        int16_t trans = transition_table[trans_index];
+	        *buffer++ += ((vol * (phase - 2 * trans)) >> 15u);
 		}
 	}
 
 	void mix_blsqu(int32_t *buffer, int thres) {
+        int mult = (0.1 * bandlimit * sin_table_len * 0x10000 * 128) / (1 + step);
+        if(mult < 1) mult = 1;
 		for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
 		    pos += step + lfoval;
 		    if (pos >= pos_max) pos -= pos_max;
 		    else if(pos < 0) pos += pos_max;
-		    if((pos >> 11u) < thres) *buffer++ -= vol;
-		    else *buffer++ += vol;
+		    int phase = sine_wave_table[(pos >> 16u) % sin_table_len] + thres; // -32768 32767
+		    int trans_index = ((phase * mult) >> 7u);
+		    trans_index = ((CLIP(trans_index, -32768, 32767) + 32768) * transition_table_len) >> 16u;
+		    trans_index = CLIP(trans_index, 0, transition_table_len - 1);
+	        int16_t trans = transition_table[trans_index];
+	        *buffer++ += ((vol * 2 * trans) >> 15u);
 		}
 	}
 
     void set_bandlimit(float b) {
         bandlimit = b;
-        int mult = (0.2 * bandlimit * sin_table_len * 0x10000 * 128) / step;
-        printf("bl = %f , mult = %d\n", b, mult); 
     }
+
 	static void setup() {
 		for (int i = 0; i < transition_table_len; i++) {
-			float x = 2 * M_PI * i / (float)transition_table_len;
+			float x = M_PI * i / (float)transition_table_len;
 			transition_table[i] = 32767 * (0.75 * (0.3333 * cos(3 * x) - cosf(x)));
 		}
 	}
