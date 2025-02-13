@@ -24,7 +24,6 @@ private:
     WavPlayer wavplayer;
     Chaser chaser;
     int say_mode = 1;
-    float dim;
     void change_players_count(int count);
     bool wait_saying = false;
 public:
