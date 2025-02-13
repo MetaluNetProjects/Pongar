@@ -152,10 +152,10 @@ public:
         move = &cross;
         switch(level) {
         case 1:
-            difficulty = score / 3;
+            difficulty = score / 2;
             break;
         case 2:
-            difficulty = score / 2;
+            difficulty = (score * 2) / 3;
             if(score > 8 && (random() % 5 == 0)) move = &bounce;
             if(score > 6 && (random() % 5 == 0)) move = &arch;
             break;

@@ -17,14 +17,15 @@ protected:
     float pan_delta = 0, tilt_delta = 0;
     int new_pan;
     static const int INIT_PAN = 15;
-    static const int MAX_PAN = 60;
-    static const int INC_PAN = 4;
+    static const int MAX_PAN = 75;
+    static const int INC_PAN = 6;
 public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         tilt_delta = (2.0 * config.proj_tilt_amp * Game::PERIOD_MS) / period_ms;
         if(tilt > 0) tilt_delta = -tilt_delta;
 
-        pan_change_amp = CLIP(INIT_PAN + INC_PAN * difficulty, INIT_PAN, MAX_PAN);
+        pan_change_amp = INIT_PAN + INC_PAN * difficulty;
+        pan_change_amp = CLIP(pan_change_amp, INIT_PAN, MAX_PAN);
         int pan_change = (0.5 + 0.5 * (random() % 1024) / 1024.0) * pan_change_amp;
         if(random() % 2) pan_change = -pan_change;
         new_pan = pan + pan_change;
