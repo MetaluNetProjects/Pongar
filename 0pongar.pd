@@ -811,6 +811,9 @@
 #X text 55 753 seq play;
 #X floatatom 32 914 5 0 0 0 - - - 0;
 #X text 47 839 seq tempo ms;
+#X msg 182 810 1;
+#X msg 40 719 4 11;
+#X text 39 700 new song;
 #X connect 1 0 0 0;
 #X connect 2 0 0 0;
 #X connect 3 0 0 0;
@@ -949,6 +952,7 @@
 #X connect 140 0 141 0;
 #X connect 141 0 142 0;
 #X connect 145 0 146 0;
+#X connect 145 0 156 0;
 #X connect 146 0 105 0;
 #X connect 147 0 106 0;
 #X connect 147 0 145 0;
@@ -959,6 +963,8 @@
 #X connect 151 0 106 0;
 #X connect 152 0 151 0;
 #X connect 152 0 154 0;
+#X connect 156 0 149 0;
+#X connect 157 0 106 0;
 #X restore 119 199 pd audio_test;
 #N canvas 923 54 878 696 wavs_duration 0;
 #X obj 166 85 table \$0-wavdur 25600;

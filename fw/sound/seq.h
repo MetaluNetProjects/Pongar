@@ -121,7 +121,7 @@ public:
         } else {
             synth.waveform = (Synth::Waveform)((random() % 2) + 1);
             volume = 11000;
-            octave = 3 + (random() % 2);
+            octave = 2 + (random() % 3);
             silence_percent = 30 + (random() % 35);
         }
         synth.randomize();
@@ -261,6 +261,9 @@ private:
 public:
     Piece() {}
     ~Piece() {}
+    void randomize_reverb() {
+        config_reverb(random() % 8000, random() % 16000);
+    }
     void randomize_voices() {
         int note_offset = (random() % 12) - 6;
         for(int i = 0; i < NB_VOICES; i++) {
@@ -293,6 +296,7 @@ public:
     void make() {
         randomize_voices();
         randomize_drumvoices();
+        randomize_reverb();
 
         int scale = random() % 5;
         if(scale > 2) scale = 0;
@@ -377,4 +381,9 @@ public:
         shuffle = (random() % 1000) / 1000.0;
         shuffle *= shuffle;
     }
+
+    void config_reverb(uint16_t feedback, uint16_t volume) {
+        piece.config_reverb(feedback, volume);
+    }
+
 };

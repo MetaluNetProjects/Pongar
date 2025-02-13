@@ -147,12 +147,9 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         int p3 = argc > 3 ? atom_getfloat(&argv[3]) : 0;
         x->x_patch->command((SoundCommand)com, p1, p2, p3);
     }
-    //else if(s == gensym("makemelo")) { x->x_patch->seq.make_melodies(); }
     else if(s == gensym("shuffle")) {
         if(argc > 0) x->x_patch->seq.set_shuffle(atom_getfloat(&argv[0]));
     }
-    //else if(s == gensym("scale")) { if(argc > 0) x->x_patch->seq.harm.set_scale(atom_getfloat(&argv[0])); }
-    //else if(s == gensym("chord")) { if(argc > 0) x->x_patch->seq.harm.set_chord(atom_getfloat(&argv[0])); }
     else if(s == gensym("tempoms")) {
         if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0]));
     }
@@ -219,7 +216,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
                 outlet_anything(instance->x_msgout, gensym("fplayers"), n, at);
             }
         }
-
+    }
+    else if(s == gensym("testrand")) {
+        int mod = atom_getfloat(&argv[0]);
+        int count[100] = {0};
+        const int total = 10000000;
+        if(mod < 2 || mod > 100) return;
+        for(int i = 0; i < total; i++) {
+            int r = random() % mod;
+            count[r]++;
+        }
+        for(int i = 0; i < mod; i++) printf("%d: %f\n", i, ((float)mod) * count[i] / (float)total - 1.0);
     }
 }
 

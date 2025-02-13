@@ -208,9 +208,9 @@ public:
         case SoundCommand::osc1wf:
             osc1_waveform = (WF)p1;
             break;
-       /*case SoundCommand::rev1:
-            seq.piece.config_reverb(p1, p2);
-            break;*/
+       case SoundCommand::rev1:
+            seq.config_reverb(p1, p2);
+            break;
         default:
             ;
         }
