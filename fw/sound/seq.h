@@ -73,10 +73,10 @@ public:
     bool force_base;
     int note_offset;
     int volume = 5000;
-    void play_step(int step, int ms, Melody &melody) {
+    void play_step(int step, int ms, Melody &melody, uint8_t mastervol) {
         if(!melody.size()) return;
         int note = melody[step % melody.size()];
-        if(note != -128) synth.play(note + note_offset, volume, ms / 2);
+        if(note != -128) synth.play(note + note_offset, (volume * mastervol) / 256, ms / 2);
     }
     Melody make_melody(int steps, Harmony &harm) {
         Melody melody;
@@ -159,10 +159,10 @@ public:
     void add_proba(int steps, int wanted, int percent) {
         probas.emplace_back(steps, wanted, percent);
     }
-    void play_step(int step, int ms, Melody &pattern) {
+    void play_step(int step, int ms, Melody &pattern, uint8_t mastervol) {
         if(!pattern.size()) return;
         int8_t vol = pattern[step % pattern.size()];
-        if(vol != -128) drum->play(vol * 256, ms);
+        if(vol != -128) drum->play(vol * mastervol, ms);
     }
     Melody make_pattern(int steps) {
         Melody pattern;
@@ -231,9 +231,9 @@ private:
             for(int i = 0; i < NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
             for(int i = 0; i < NB_DRUMS; i++) patterns[i] = drumvoices[i].make_pattern(16);
         }
-        void play_step(int step, int ms, Voice *voices, Drumvoice *drumvoices) {
-            for(int i = 0; i < NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i]);
-            for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].play_step(step, ms, patterns[i]);
+        void play_step(int step, int ms, Voice *voices, Drumvoice *drumvoices, uint8_t mastervol) {
+            for(int i = 0; i < NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i], mastervol);
+            for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].play_step(step, ms, patterns[i], mastervol);
         }
     };
 
@@ -257,6 +257,7 @@ private:
     Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
     enum drumnames {HH = 0, SNARE, KICK};
     Reverb rev1;
+    uint8_t mastervol = 150;
 public:
     Piece() {}
     ~Piece() {}
@@ -310,7 +311,7 @@ public:
         if(parts.empty() || plan.empty()) return;
         plan_index = (step / plan_steps) % plan.size();
         int current_part = plan[plan_index] % parts.size();
-        parts[current_part].play_step(step, ms, voices, drumvoices);
+        parts[current_part].play_step(step, ms, voices, drumvoices, mastervol);
     }
 
     void mix(int32_t *out_buffer) {
