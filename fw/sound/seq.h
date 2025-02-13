@@ -4,6 +4,7 @@
 #include <string.h>
 #include "synth.h"
 #include "drum.h"
+#include "echo.h"
 #include <vector>
 #include <array>
 #include <algorithm>
@@ -184,6 +185,38 @@ public:
     }
 };
 
+class Reverb {
+private:
+    Echo<10007> echo1;
+    Echo<13901> echo2;
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
+    int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER];
+    uint16_t feedback = 3000;
+    uint16_t volume = 5000;
+    int16_t lop_last;
+
+public:
+    Reverb() {
+        echo1.config(0, 32767, 5011);
+        echo2.config(0, 32767, 7529);
+    }
+    void mix(int32_t *out_buffer) {
+        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            buf[i] = (volume * out_buffer[i] + (lastbuf[i] + lop_last) * feedback) >> 15;
+            lop_last = lastbuf[i];
+        }
+        echo1.filter(lastbuf, buf);
+        echo2.mix(lastbuf, buf);
+        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            out_buffer[i] += lastbuf[i];
+        }
+    }
+    void config(uint16_t _feedback, uint16_t _volume) {
+        feedback = _feedback / 2;
+        volume = _volume;
+    }
+};
+
 class Piece {
 private:
     static const int NB_VOICES = 4;
@@ -210,7 +243,10 @@ private:
         {0, 0, 3, 3, 0, 0, 4, 3},
         {0, 3, 0, 4},
         {5, 0, 1, 3, 5, 0, 2, 2, 5, 0, 1, 3, 5, 2, 5, 2},
-        {0, 1, 2, 3, 0, 2, 3, 4}
+        {0, 1, 2, 3, 0, 2, 3, 4},
+        {0, 2, 0, 1, 0, 4, 0, 3, 4, 0, 1, 2, 0, 2, 3, 4},
+        {0, 0, 3, 3, 2, 2, 4, 4},
+        {0, 3, 1, 4, 0, 3, 2, 4}
     };
     int plan_index = 0;
     int plan_steps = 16;
@@ -220,6 +256,7 @@ private:
     Kick kick;
     Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
     enum drumnames {HH = 0, SNARE, KICK};
+    Reverb rev1;
 public:
     Piece() {}
     ~Piece() {}
@@ -247,8 +284,9 @@ public:
 
         int kick_proba = random() % 100;
         drumvoices[KICK].add_proba(16, 0, kick_proba);
-        drumvoices[KICK].add_proba(8, 0, kick_proba);
-        drumvoices[KICK].add_proba(1, 0, kick_proba / 10);
+        drumvoices[KICK].add_proba(8, 0, kick_proba * (random() % 2 == 0));
+        drumvoices[KICK].add_proba(4, 0, kick_proba * (random() % 4 == 0));
+        drumvoices[KICK].add_proba(1, 0, (kick_proba / 10) * (random() % 4 == 0));
         drumvoices[KICK].set_volume(60 + (random() % 50));
     }
     void make() {
@@ -277,7 +315,11 @@ public:
 
     void mix(int32_t *out_buffer) {
         for(int i = 0; i < NB_VOICES; i++) voices[i].mix(out_buffer);
+        rev1.mix(out_buffer);
         for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].mix(out_buffer);
+    }
+    void config_reverb(uint16_t feedback, uint16_t volume) {
+        rev1.config(feedback, volume);
     }
 };
 

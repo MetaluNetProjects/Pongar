@@ -144,11 +144,11 @@ public:
     Blosc osc1;
     enum WF {SIN, SAW, SQU, BLSAW, BLSQU} osc1_waveform = BLSAW;
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
-        buzzer.mix(out_buffer);
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
+        seq.mix(out_buffer); // seq adds reverb!
         ring.mix(out_buffer);
-        seq.mix(out_buffer);
+        buzzer.mix(out_buffer);
         switch(osc1_waveform) {
         case SIN:
             osc1.mix_sin(out_buffer);
@@ -204,6 +204,9 @@ public:
             break;
         case SoundCommand::osc1wf:
             osc1_waveform = (WF)p1;
+            break;
+       case SoundCommand::rev1:
+            seq.piece.config_reverb(p1, p2);
             break;
         default:
             ;
