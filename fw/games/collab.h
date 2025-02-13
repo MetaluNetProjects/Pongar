@@ -57,6 +57,7 @@ class Collab : public GameMode {
         end_of_game = true;
         is_winner = true;
         level = level + 1;
+        game.sfx(SoundCommand::seqnew);
         score = 0;
     }
     void init_move(int difficulty) {
@@ -77,8 +78,8 @@ public:
         move = &cross;
         init_move(0);
 
-        proj.color(0, 0, 0, 255);
         proj.dimmer(0);
+        proj.color(0, 0, 0, 255);
         if(level > 1) {
             if(lives == 1) say(Words::derniere_vie);
             else {
@@ -106,6 +107,7 @@ public:
         level = 1;
         lives = 3;
         init();
+        game.sfx(SoundCommand::seqnew);
     }
 
     virtual void restart() {
@@ -172,7 +174,12 @@ public:
     }
 
     virtual void update() {
-        if(countdown.update()) return;
+        auto countstate = countdown.update();
+        if(countstate == countdown.RUNNING) return;
+        if(countstate == countdown.FIRED) {
+            game.sfx(SoundCommand::ring, 500);
+            game.sfx(SoundCommand::seqplay, 1);
+        }
         if(end_of_game) {
             if(!game.is_saying()) {
                 if(!is_winner) {
@@ -184,25 +191,15 @@ public:
             }
             return;
         }
-        proj.dimmer(128);
         //if(game.get_players_count() == 1) {}
 
         if(move->update(pan, tilt)) {
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
-
-            /*if(touched) {
-                period_ms = period_ms * 0.85;
-                if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
-            }
-            move = &cross;
-            if(score > 6 && (random() % 5 == 0)) move = &bounce;
-            if(score > 3 && (random() % 5 == 0)) move = &arch;
-            move = &arch;
-            init_move(score);*/
             next_move(touched);
         }
 
+        proj.dimmer(128);
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
 
         if(move == &bounce) {

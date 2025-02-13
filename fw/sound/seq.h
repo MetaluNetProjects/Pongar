@@ -187,8 +187,8 @@ public:
 
 class Reverb {
 private:
-    Echo<10007> echo1;
-    Echo<13901> echo2;
+    Echo<5011> echo1;
+    Echo<7529> echo2;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER];
     uint16_t feedback = 3000;
@@ -331,9 +331,8 @@ private:
     bool playing = false;
     absolute_time_t next_beat;
     absolute_time_t next_half;
-
-public:
     Piece piece;
+public:
     inline Sequencer() {
         piece.make();
     };
@@ -368,12 +367,13 @@ public:
 
     void set_playing(bool p) {
         playing = p;
-        if(p) {
-            step = 0;
-            piece.make();
-            shuffle = (random() % 1000) / 1000.0;
-            shuffle *= shuffle;
-        }
+        if(p) step = 0;
         next_half = at_the_end_of_time;
+    }
+
+    void make_new_piece() {
+        piece.make();
+        shuffle = (random() % 1000) / 1000.0;
+        shuffle *= shuffle;
     }
 };

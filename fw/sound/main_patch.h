@@ -191,6 +191,9 @@ public:
             break;
         //case SoundCommand::note: seq.v1.synth.play(p1, p2, p3); break;
         //case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
+        case SoundCommand::seqnew:
+            seq.make_new_piece();
+            break;
         case SoundCommand::seqplay:
             seq.set_playing(p1);
             break;
@@ -205,9 +208,9 @@ public:
         case SoundCommand::osc1wf:
             osc1_waveform = (WF)p1;
             break;
-       case SoundCommand::rev1:
+       /*case SoundCommand::rev1:
             seq.piece.config_reverb(p1, p2);
-            break;
+            break;*/
         default:
             ;
         }

@@ -8,18 +8,22 @@ private:
     absolute_time_t timeout;
     float dim;
     bool armed;
+    bool waiting_not_saying;
 public:
+    enum State {OFF, RUNNING, FIRED};
     bool running() {
         return ((countdown != 0) || !time_reached(timeout));
     }
-    bool update() {
+    State update() {
         if(!running()) {
             if(armed) {
-                game.sfx(SoundCommand::ring, 500);
-                game.sfx(SoundCommand::seqplay, 1);
+                armed = false;
+                return FIRED;
             }
-            armed = false;
-            return false;
+            return OFF;
+        }
+        if(waiting_not_saying && !game.is_saying()) {
+            waiting_not_saying = false;
         }
         if(countdown > 1) proj.dimmer(dim = dim * 0.5);
         else proj.dimmer(dim = dim * 0.8);
@@ -32,19 +36,18 @@ public:
                 countdown--;
             }
         }
-        return true;
+        return RUNNING;
     }
     bool pixel_update() {
-        if(!running()) return false;
+        if(!running() || waiting_not_saying) return false;
         for(int i = 0; i < config.total_leds; i++) set_pixel(i, dim, dim, dim);
         return true;
     }
-
     void init(int count) {
         countdown = count;
-        dim = 255.0;
         timeout = get_absolute_time();
         armed = true;
+        waiting_not_saying = true;
     }
 };
 
