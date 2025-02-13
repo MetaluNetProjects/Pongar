@@ -17,6 +17,7 @@
 #include "osc.h"
 #include "config.h"
 #include "cpuload.h"
+#include "pico/rand.h"
 
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
@@ -69,6 +70,7 @@ void setup() {
 
     pixel_setup();
 
+    srandom(get_rand_32());
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
     sleep_ms(200);
     lidar_change_state(START);

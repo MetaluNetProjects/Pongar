@@ -7,6 +7,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     pico_sync
     hardware_flash
     pico_multicore
+    pico_rand
 )
 
 pico_generate_pio_header(${CMAKE_PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/hw/uart_tx.pio)
