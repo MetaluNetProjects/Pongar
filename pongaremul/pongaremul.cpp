@@ -33,7 +33,9 @@ Movobeam100 proj;
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
     struct timeval tv;
-    struct timeval tv_offset { .tv_sec = ms / 1000, .tv_usec = (ms % 1000) * 1000};
+    struct timeval tv_offset {
+        .tv_sec = ms / 1000, .tv_usec = (ms % 1000) * 1000
+    };
     gettimeofday(&tv, 0);
     timeradd(&tv, &tv_offset, &tv);
     return tv;
@@ -42,7 +44,7 @@ absolute_time_t make_timeout_time_ms(int ms) {
 bool time_reached(absolute_time_t t) {
     struct timeval tv;
     gettimeofday(&tv, 0);
-    return timercmp(&t, &tv, <);
+    return timercmp(&t, &tv, < );
 }
 
 absolute_time_t at_the_end_of_time { .tv_sec = (long)1e12, .tv_usec = 0};
@@ -61,7 +63,9 @@ uint32_t to_ms_since_boot (absolute_time_t t) {
     return tv.tv_sec * 1000U + tv.tv_usec / 1000U;
 }
 
-uint8_t fraise_get_uint8() { return 0;}
+uint8_t fraise_get_uint8() {
+    return 0;
+}
 /* -------------------------- pongaremul ------------------------------ */
 static t_class *pongaremul_class;
 
@@ -99,7 +103,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         game.update();
         game.pixels_update();
     }
-    else if(s == gensym("players")){
+    else if(s == gensym("players")) {
         /*players_count = argc;
         for(int i = 0; i < argc; i++) players_pos[i] = atom_getfloat(&argv[i]);*/
         int count = argc;
@@ -115,23 +119,26 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         }
         outlet_anything(instance->x_msgout, gensym("fplayers"), game.players.get_count() * 3, at);
     }
-    else if(s == gensym("prepare")){
+    else if(s == gensym("prepare")) {
         game.prepare();
     }
-    else if(s == gensym("start")){
+    else if(s == gensym("start")) {
         game.start();
     }
-    else if(s == gensym("stop")){
+    else if(s == gensym("stop")) {
         game.stop();
     }
-    else if(s == gensym("wav_playing")){
+    else if(s == gensym("wav_playing")) {
         x->x_wav_is_playing = argc > 0 ? atom_getfloat(&argv[0]) : 0;
     }
     else if(s == gensym("buzz")) x->x_patch->buzz();
     else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
-    else if(s == gensym("tut")) { if(argc > 1) game.sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));}
-    else if(s == gensym("buzzcfg")) { if(argc > 3)
-        x->x_patch->buzzer.config(atom_getfloat(&argv[0]), atom_getfloat(&argv[1]), atom_getfloat(&argv[2]), atom_getfloat(&argv[3]));
+    else if(s == gensym("tut")) {
+        if(argc > 1) game.sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));
+    }
+    else if(s == gensym("buzzcfg")) {
+        if(argc > 3)
+            x->x_patch->buzzer.config(atom_getfloat(&argv[0]), atom_getfloat(&argv[1]), atom_getfloat(&argv[2]), atom_getfloat(&argv[3]));
     }
     else if(s == gensym("sfx")) {
         int com = argc > 0 ? atom_getfloat(&argv[0]) : 0;
@@ -141,11 +148,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         x->x_patch->command((SoundCommand)com, p1, p2, p3);
     }
     //else if(s == gensym("makemelo")) { x->x_patch->seq.make_melodies(); }
-    else if(s == gensym("shuffle")) { if(argc > 0) x->x_patch->seq.set_shuffle(atom_getfloat(&argv[0])); }
+    else if(s == gensym("shuffle")) {
+        if(argc > 0) x->x_patch->seq.set_shuffle(atom_getfloat(&argv[0]));
+    }
     //else if(s == gensym("scale")) { if(argc > 0) x->x_patch->seq.harm.set_scale(atom_getfloat(&argv[0])); }
     //else if(s == gensym("chord")) { if(argc > 0) x->x_patch->seq.harm.set_chord(atom_getfloat(&argv[0])); }
-    else if(s == gensym("tempoms")) { if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0])); }
-    else if(s == gensym("play")) { if(argc > 0) x->x_patch->seq.set_playing(atom_getfloat(&argv[0])); }
+    else if(s == gensym("tempoms")) {
+        if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0]));
+    }
+    else if(s == gensym("play")) {
+        if(argc > 0) x->x_patch->seq.set_playing(atom_getfloat(&argv[0]));
+    }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);
         t_garray *a;
@@ -168,14 +181,18 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
             } else {
                 int n = 0;
                 //printf("nb objs:%ld\n", game.players.get_object_set().size());
-                for(int i: game.players.get_object_set()) {
+                for(int i : game.players.get_object_set()) {
                     Position &p = game.players.get_object_pos(i);
                     if(&p != &null_position) {
                         //printf("obj %d angle:%d\n", i, p.angle);
-                        SETFLOAT(&at[n], i);            n++;
-                        SETFLOAT(&at[n], p.angle);      n++;
-                        SETFLOAT(&at[n], p.distance);   n++;
-                        SETFLOAT(&at[n], p.size);       n++;
+                        SETFLOAT(&at[n], i);
+                        n++;
+                        SETFLOAT(&at[n], p.angle);
+                        n++;
+                        SETFLOAT(&at[n], p.distance);
+                        n++;
+                        SETFLOAT(&at[n], p.size);
+                        n++;
                     }
                 }
                 //printf("nbatoms: %d\n", n);
@@ -186,13 +203,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
                 pd_error(x, "too many players!");
             } else {
                 int n = 0;
-                for(int i: game.players.get_set()) {
+                for(int i : game.players.get_set()) {
                     Position &p = game.players.get_pos(i);
                     if(&p != &null_position) {
-                        SETFLOAT(&at[n], i);            n++;
-                        SETFLOAT(&at[n], p.angle);      n++;
-                        SETFLOAT(&at[n], p.distance);   n++;
-                        SETFLOAT(&at[n], p.size);       n++;
+                        SETFLOAT(&at[n], i);
+                        n++;
+                        SETFLOAT(&at[n], p.angle);
+                        n++;
+                        SETFLOAT(&at[n], p.distance);
+                        n++;
+                        SETFLOAT(&at[n], p.size);
+                        n++;
                     }
                 }
                 outlet_anything(instance->x_msgout, gensym("fplayers"), n, at);
@@ -216,7 +237,7 @@ static t_int *pongaremul_perform(t_int *w)
     {
         *out++ = CLIP(intbuf[i] / 32768.0, -1.0, 1.0);
     }
-    return (w+4);
+    return (w + 4);
 }
 
 static void pongaremul_dsp(t_pongaremul *x, t_signal **sp)
@@ -242,16 +263,16 @@ void WavPlayer::play(uint8_t folder, uint8_t track) {
     SETFLOAT(&at[1], track);
     outlet_anything(instance->x_msgout, gensym("say"), 2, at);
 }
-void WavPlayer::silence(uint16_t ms){
+void WavPlayer::silence(uint16_t ms) {
     t_atom at[1];
     SETFLOAT(&at[0], ms);
     outlet_anything(instance->x_msgout, gensym("saysilence"), 1, at);
 }
-void WavPlayer::clear(){
+void WavPlayer::clear() {
     outlet_anything(instance->x_msgout, gensym("sayclear"), 0, NULL);
 }
 
-bool WavPlayer::is_playing(){
+bool WavPlayer::is_playing() {
     return instance->x_wav_is_playing;
 }
 
@@ -279,7 +300,7 @@ void Movobeam100::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
     outlet_anything(instance->x_msgout, gensym("proj_col"), 4, at);
 }
 
-void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b){
+void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
     t_atom at[4];
     SETFLOAT(&at[0], n);
     SETFLOAT(&at[1], r);
@@ -299,7 +320,7 @@ void pongaremul_setup(void)
     Osc::setup();
     Blosc::setup();
     pongaremul_class = class_new(gensym("pongaremul"), (t_newmethod)pongaremul_new,
-        (t_method)pongaremul_free, sizeof(t_pongaremul), 0, A_NULL);
+                                 (t_method)pongaremul_free, sizeof(t_pongaremul), 0, A_NULL);
     class_addanything(pongaremul_class, pongaremul_anything);
     class_addmethod(pongaremul_class, (t_method)pongaremul_dsp, gensym("dsp"), A_NULL);
 }

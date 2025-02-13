@@ -4,10 +4,10 @@
 #include "sound_command.h"
 
 class AudioLayer {
-  public:
+public:
     MainPatch main_patch;
     void init(int audio_pin);
-    void receivebytes(const char* data, uint8_t len){};
+    void receivebytes(const char* data, uint8_t len) {};
     void command(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0);
 };
 
