@@ -12,7 +12,7 @@
 
 class GameMode;
 class Game {
-  private:
+private:
     static const int PLAYERS_READY_SECONDS = 4;
     enum {STOP, PREPARE, PLAYING, RESTART, STANDBY} mode = STOP;
     absolute_time_t update_time;
@@ -27,7 +27,7 @@ class Game {
     float dim;
     void change_players_count(int count);
     bool wait_saying = false;
-  public:
+public:
     Game() {};
     Players players;
     static const int PERIOD_MS = 40;
@@ -40,31 +40,59 @@ class Game {
     void standby();
     bool update();
     void receivebytes(const char* data, uint8_t len);
-    inline int get_players_count() { return game_players_count; }
-    inline void say(Words w) { wavplayer.play(say_mode, (int)w); }
-    inline void saynumber(int n) { say((Words)((int)Words::_0 + n)); }
-    inline void saysilence(int ms) { wavplayer.silence(ms); }
-    inline void sayclear() { wavplayer.clear(); }
-    inline bool is_saying() { return wavplayer.is_playing(); }
-    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) { audio.command(c, p1, p2, p3); }
+    inline int get_players_count() {
+        return game_players_count;
+    }
+    inline void say(Words w) {
+        wavplayer.play(say_mode, (int)w);
+    }
+    inline void saynumber(int n) {
+        say((Words)((int)Words::_0 + n));
+    }
+    inline void saysilence(int ms) {
+        wavplayer.silence(ms);
+    }
+    inline void sayclear() {
+        wavplayer.clear();
+    }
+    inline bool is_saying() {
+        return wavplayer.is_playing();
+    }
+    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {
+        audio.command(c, p1, p2, p3);
+    }
     void pixels_update();
 };
 
 extern Game game;
 
 class GameMode {
-  public:
+public:
     virtual ~GameMode() {};
     virtual void start() = 0;
     virtual void restart() = 0;
     virtual void update() = 0;
-    virtual void pixels_update() { game.pixels_update(); }
-    inline void say(Words w) { game.say(w);}
-    inline void saynumber(int n) { game.saynumber(n); }
-    inline void saysilence(int ms) { game.saysilence(ms); }
-    inline bool is_saying() { return game.is_saying(); }
-    inline void sayclear() { game.sayclear(); }
-    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) { game.sfx(c, p1, p2, p3); }
+    virtual void pixels_update() {
+        game.pixels_update();
+    }
+    inline void say(Words w) {
+        game.say(w);
+    }
+    inline void saynumber(int n) {
+        game.saynumber(n);
+    }
+    inline void saysilence(int ms) {
+        game.saysilence(ms);
+    }
+    inline bool is_saying() {
+        return game.is_saying();
+    }
+    inline void sayclear() {
+        game.sayclear();
+    }
+    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {
+        game.sfx(c, p1, p2, p3);
+    }
 };
 
 

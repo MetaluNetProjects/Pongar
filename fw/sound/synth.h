@@ -9,8 +9,8 @@
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
 class Synth {
-  private:
-  protected:
+private:
+protected:
     Blosc osc1;
     Enveloppe env1;
     absolute_time_t stop_time;
@@ -20,10 +20,10 @@ class Synth {
     float portamento;
     float note_current;
     float note_dest;
-  public:
+public:
     enum Waveform {SIN, SAW, SQUARE} waveform = SAW;
     Synth() {}
-    virtual ~Synth(){}
+    virtual ~Synth() {}
     virtual void post_process() {}
     void mix(int32_t *out_buffer) {
         if(next_note && env1.is_stopped()) do_play(next_note, next_vol, next_ms);
@@ -32,9 +32,15 @@ class Synth {
         osc1.setFreq8(Osc::mtof8(note_current));
         memset(buf, 0, sizeof(buf));
         switch(waveform) {
-            case SIN: osc1.mix_sin(buf); break;
-            case SAW: osc1.mix_blsaw(buf); break;
-            case SQUARE: osc1.mix_blsqu(buf, 10000); break;
+        case SIN:
+            osc1.mix_sin(buf);
+            break;
+        case SAW:
+            osc1.mix_blsaw(buf);
+            break;
+        case SQUARE:
+            osc1.mix_blsqu(buf, 10000);
+            break;
         }
         osc1.update();
         post_process();
@@ -61,8 +67,10 @@ class Synth {
             next_ms = ms;
         }
     }
-    
-    float randf(float amp = 1.0) { return amp * (random() % 1024) / 1024.0; }
+
+    float randf(float amp = 1.0) {
+        return amp * (random() % 1024) / 1024.0;
+    }
     virtual void randomize() {
         osc1.setLfo(4 + randf(4), randf(0.2));
         float a = randf();
@@ -80,7 +88,7 @@ class Synth {
 };
 
 class SynthBp : public Synth {
-  private:
+private:
     Hip hip1;
     Bandpass bp1;
     int bpf_offset;
@@ -89,7 +97,7 @@ class SynthBp : public Synth {
     float bpf_dest;
     float bpf_portamento;
     float bpq;
-  public:
+public:
     SynthBp() : hip1(500), bp1(500, 4, 4) {}
     virtual void post_process() {
         //hip1.filter(buf);

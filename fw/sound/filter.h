@@ -7,13 +7,15 @@
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
-  // Pd bp~ converted to integer computation
+// Pd bp~ converted to integer computation
 class Bandpass {
-  private:
+private:
     int32_t last, prev;
     float coef1, coef2, gain;
-  public:
-    Bandpass(float f, float q, float g) { setFQ(f, q, g);}
+public:
+    Bandpass(float f, float q, float g) {
+        setFQ(f, q, g);
+    }
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         int64_t c1 = coef1 * 4096;
         int64_t c2 = coef2 * 4096;
@@ -42,10 +44,10 @@ class Bandpass {
 
     static float sigbp_qcos(float f)
     {
-        if (f >= -(0.5f*3.14159f) && f <= 0.5f*3.14159f)
+        if (f >= -(0.5f * 3.14159f) && f <= 0.5f * 3.14159f)
         {
-            float g = f*f;
-            return (((g*g*g * (-1.0f/720.0f) + g*g*(1.0f/24.0f)) - g*0.5) + 1);
+            float g = f * f;
+            return (((g * g * g * (-1.0f / 720.0f) + g * g * (1.0f / 24.0f)) - g * 0.5) + 1);
         }
         else return (0);
     }
@@ -56,7 +58,7 @@ class Bandpass {
         if (q < 0) q = 0;
         omega = f * (2.0f * 3.14159f) / AUDIO_SAMPLE_RATE;
         if (q < 0.001) oneminusr = 1.0f;
-        else oneminusr = omega/q;
+        else oneminusr = omega / q;
         if (oneminusr > 1.0f) oneminusr = 1.0f;
         r = 1.0f - oneminusr;
         coef1 = 2.0f * sigbp_qcos(omega) * r;
@@ -69,13 +71,15 @@ class Bandpass {
     }
 };
 
-  // Pd hip~ converted to integer computation
+// Pd hip~ converted to integer computation
 class Hip {
-  private:
+private:
     int32_t last;
     uint16_t coeff;
-  public:
-    Hip(int f) { setFreq(f);}
+public:
+    Hip(int f) {
+        setFreq(f);
+    }
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(!in_buffer) in_buffer = out_buffer;
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
@@ -101,13 +105,15 @@ class Hip {
     }
 };
 
-  // Pd lop~ converted to integer computation
+// Pd lop~ converted to integer computation
 class Lop {
-  private:
+private:
     int32_t last;
     uint16_t coeff;
-  public:
-    Lop(int f) { setFreq(f);}
+public:
+    Lop(int f) {
+        setFreq(f);
+    }
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(!in_buffer) in_buffer = out_buffer;
         int feedback = 255 - coeff;

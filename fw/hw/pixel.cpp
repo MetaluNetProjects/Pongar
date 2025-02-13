@@ -19,14 +19,24 @@ void set_all(bool on) {
 }
 
 void pixel_receivebytes(const char* data, uint8_t len) {
-	char command = data[0];
-	switch(command) {
-		case 10: set_all(data[1] != 0); break;
-		case 20: set_pixel((int)data[1], data[2], data[3], data[4]); break;
-		case 40: all_color0 = (int32_t)((data[1] << 24) | (data[2]  << 16) | (data[3] << 8) | data[4]); break;
-		case 41: all_color1 = (int32_t)((data[1] << 24) | (data[2]  << 16) | (data[3] << 8) | data[4]); break;
-		case 100: ws2812_print_status(); break;
-	}
+    char command = data[0];
+    switch(command) {
+    case 10:
+        set_all(data[1] != 0);
+        break;
+    case 20:
+        set_pixel((int)data[1], data[2], data[3], data[4]);
+        break;
+    case 40:
+        all_color0 = (int32_t)((data[1] << 24) | (data[2]  << 16) | (data[3] << 8) | data[4]);
+        break;
+    case 41:
+        all_color1 = (int32_t)((data[1] << 24) | (data[2]  << 16) | (data[3] << 8) | data[4]);
+        break;
+    case 100:
+        ws2812_print_status();
+        break;
+    }
 }
 
 void pixel_setup() {

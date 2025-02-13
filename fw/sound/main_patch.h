@@ -10,8 +10,8 @@
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
 class Buzzer {
-  private:
-  public:
+private:
+public:
     Osc osc1;
     Osc osc2;
     Hip hip1;
@@ -34,13 +34,13 @@ class Buzzer {
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
             *out_buffer++ = CLIP(((buf[i] + buf2[i] / 16) * gain) / 256, -65536, 65535);
         }
-        osc1.setFreq(85 + random()%5);
-        osc2.setFreq(91 + random()%5);
+        osc1.setFreq(85 + random() % 5);
+        osc2.setFreq(91 + random() % 5);
     }
     void buzz(uint ms) {
         stop_time = make_timeout_time_ms(ms);
     }
-    
+
     void config(int f, int thr, int hipf, int g) {
         osc1.setFreq(f);
         //osc2.setFreq(f2);
@@ -51,7 +51,7 @@ class Buzzer {
 };
 
 class Ring {
-  public:
+public:
     Osc osc1;
     Hip hip1;
     Bandpass bp1, bp2, bp3, bp4;
@@ -64,7 +64,7 @@ class Ring {
         bp2(2814, 1500, 1500),
         bp3(4822, 2000, 2000),
         bp4(7292, 2000, 2000)
-        {}
+    {}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(finish_time)) return;
         memset(buf, 0, sizeof(buf));
@@ -92,8 +92,8 @@ class Ring {
 };
 
 class Tut {
-  private:
-  public:
+private:
+public:
     Osc osc1;
     absolute_time_t stop_time;
     Tut() : osc1(1000, 20000) {}
@@ -108,12 +108,12 @@ class Tut {
 };
 
 class Bouncer {
-  private:
+private:
     Osc osc1;
     Enveloppe env;
     int freq;
     int freq_inc;
-  public:
+public:
     absolute_time_t stop_time;
     Bouncer() : osc1(500, 20000) {}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
@@ -134,8 +134,8 @@ class Bouncer {
 };
 
 class MainPatch {
-  private:
-  public:
+private:
+public:
     Buzzer buzzer;
     Bouncer bouncer;
     Tut tut;
@@ -150,11 +150,21 @@ class MainPatch {
         ring.mix(out_buffer);
         seq.mix(out_buffer);
         switch(osc1_waveform) {
-            case SIN: osc1.mix_sin(out_buffer); break;
-            case SAW: osc1.mix_saw(out_buffer); break;
-            case SQU: osc1.mix_squ(out_buffer, 20000); break;
-            case BLSAW: osc1.mix_blsaw(out_buffer); break;
-            case BLSQU: osc1.mix_blsqu(out_buffer, 20000); break;
+        case SIN:
+            osc1.mix_sin(out_buffer);
+            break;
+        case SAW:
+            osc1.mix_saw(out_buffer);
+            break;
+        case SQU:
+            osc1.mix_squ(out_buffer, 20000);
+            break;
+        case BLSAW:
+            osc1.mix_blsaw(out_buffer);
+            break;
+        case BLSQU:
+            osc1.mix_blsqu(out_buffer, 20000);
+            break;
         }
     }
     void buzz() {
@@ -167,17 +177,36 @@ class MainPatch {
 
     void command(SoundCommand c, int p1, int p2, int p3) {
         switch(c) {
-            case SoundCommand::buzz: buzzer.buzz(p1); break;
-            case SoundCommand::bounce: bounce(p1 > 0); break;
-            case SoundCommand::tut: tut.tut(p1, p2); break;
-            case SoundCommand::ring: ring.ring(p1); break;
-            //case SoundCommand::note: seq.v1.synth.play(p1, p2, p3); break;
-            //case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
-            case SoundCommand::seqplay: seq.set_playing(p1); break;
-            case SoundCommand::seqms: seq.set_tempo_ms(p1); break;
-            case SoundCommand::osc1: osc1.setVol(p1); osc1.setFreq8(p2); osc1.set_bandlimit(p3 / 256.0); break;
-            case SoundCommand::osc1wf: osc1_waveform = (WF)p1; break;
-            default: ;
+        case SoundCommand::buzz:
+            buzzer.buzz(p1);
+            break;
+        case SoundCommand::bounce:
+            bounce(p1 > 0);
+            break;
+        case SoundCommand::tut:
+            tut.tut(p1, p2);
+            break;
+        case SoundCommand::ring:
+            ring.ring(p1);
+            break;
+        //case SoundCommand::note: seq.v1.synth.play(p1, p2, p3); break;
+        //case SoundCommand::lfoA: seq.v1.synth.osc1.setLfo(p1, p2); break;
+        case SoundCommand::seqplay:
+            seq.set_playing(p1);
+            break;
+        case SoundCommand::seqms:
+            seq.set_tempo_ms(p1);
+            break;
+        case SoundCommand::osc1:
+            osc1.setVol(p1);
+            osc1.setFreq8(p2);
+            osc1.set_bandlimit(p3 / 256.0);
+            break;
+        case SoundCommand::osc1wf:
+            osc1_waveform = (WF)p1;
+            break;
+        default:
+            ;
         }
     }
 };

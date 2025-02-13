@@ -10,24 +10,26 @@
 using rgb_t = uint32_t;
 
 static inline int modulo(int a, int b) {
-  const int result = a % b;
-  return result >= 0 ? result : result + b;
+    const int result = a % b;
+    return result >= 0 ? result : result + b;
 }
 
 class ChaserMode {
-  public:
-    virtual ~ChaserMode(){};
+public:
+    virtual ~ChaserMode() {};
     virtual void update() = 0;
     virtual void init() {};
-    inline void set_pixel_rgb(int n, rgb_t rgb) { set_pixel(n, rgb >> 16, rgb >> 8, rgb); }
-    rgb_t rgb_mulf(rgb_t col, float m) { 
+    inline void set_pixel_rgb(int n, rgb_t rgb) {
+        set_pixel(n, rgb >> 16, rgb >> 8, rgb);
+    }
+    rgb_t rgb_mulf(rgb_t col, float m) {
         uint8_t r = col >> 16, g = col >> 8, b = col;
         return (((uint8_t)CLIP(r * m, 0, 255)) << 16) + (((uint8_t)CLIP(g * m, 0, 255)) << 8) + ((uint8_t)CLIP(b * m, 0, 255));
     }
 };
 
 class MocheMode : public ChaserMode {
-  public:
+public:
     virtual void update() {
         static float rot = -1;
         static float speed;
@@ -53,7 +55,7 @@ class MocheMode : public ChaserMode {
 };
 
 class FlashyMode : public ChaserMode {
-  private:
+private:
     static const int NPOINTS = 7;
     float rot = -1;
     float speed;
@@ -64,7 +66,7 @@ class FlashyMode : public ChaserMode {
     float points_speed[NPOINTS];
     static const rgb_t col_points[NPOINTS];// = {0xff0000, 0xffff00, 0xffffff, 0x00ff00, 0x0000ff, 0x00ffff, 0xff00ff};
     int total_leds;
-  public:
+public:
     virtual void init() {
         total_leds = config.total_leds;
         for(int i = 0; i < NPOINTS; i++) {
@@ -118,13 +120,13 @@ class FlashyMode : public ChaserMode {
 const rgb_t FlashyMode::col_points[NPOINTS] = {0xff0000, 0xffff00, 0xffffff, 0x00ff00, 0x0000ff, 0x00ffff, 0xff00ff};
 
 class BallsMode : public ChaserMode {
-  private:
+private:
     static const int NPOINTS = 7;
     float points[NPOINTS];
     float points_lop[NPOINTS];
     float points_speed[NPOINTS];
     int total_leds;
-  public:
+public:
     virtual void init() {
         total_leds = config.total_leds;
         for(int i = 0; i < NPOINTS; i++) {
@@ -169,7 +171,7 @@ void Chaser::set_mode(int m) {
     modes[mode]->init();
 }
 
-void Chaser::update(){
+void Chaser::update() {
     modes[mode]->update();
 }
 

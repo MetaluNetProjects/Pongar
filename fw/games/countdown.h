@@ -3,13 +3,15 @@
 #pragma once
 #include "game.h"
 class Countdown { // 1 second countdown
-  private:
+private:
     int countdown;
     absolute_time_t timeout;
     float dim;
     bool armed;
-  public:
-    bool running() { return ((countdown != 0) || !time_reached(timeout)); }
+public:
+    bool running() {
+        return ((countdown != 0) || !time_reached(timeout));
+    }
     bool update() {
         if(!running()) {
             if(armed) {

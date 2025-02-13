@@ -28,7 +28,7 @@ void Players::find_players_light(const uint16_t *distance_array) {
     bool detected = false;
     int player_width = 0;
     int player_start = 0;
-    #define INDEX ((start + index) % 360)
+#define INDEX ((start + index) % 360)
     for(int index = 0; index < 360; index++) {
         bool near = distance_array[INDEX] < config.distance_max;
         if(!near) hole_width++;
@@ -60,7 +60,7 @@ void Players::find_players_light(const uint16_t *distance_array) {
     for(int i = 0; i < raw_count; i++) {
         int a = raw_positions[i].angle;
         bool found = false;
-        for(int p: positions) {
+        for(int p : positions) {
             if(angle_distance(a, p) < 50) {
                 found = true;
                 break;
@@ -186,7 +186,7 @@ int Players::create_player(Position &pos) {
     return i;
 }
 
-  // erase objects and players that haven't been seen since too long
+// erase objects and players that haven't been seen since too long
 void Players::cleanup() {
     for (auto it = objects_set.begin(); it != objects_set.end();) {
         int p = *it;
@@ -207,7 +207,7 @@ void Players::cleanup() {
 }
 
 class TmpObject : public Position {
-  public:
+public:
     int num;
     int select = -1;
     uint16_t dist[Players::PLAYERS_MAX];
@@ -217,17 +217,17 @@ class TmpObject : public Position {
 void Players::follow_objects() {
     std::vector<TmpObject> temp_objects;
     std::vector<TmpObject> found_tobjs;
-      // fill temp_objects from raw positions
+    // fill temp_objects from raw positions
     for(int i = 0; i < raw_count; i++) temp_objects.emplace_back(i, raw_positions[i]);
-      // compute distances from all temp_objects to all current objects
+    // compute distances from all temp_objects to all current objects
     for(int i = 0; i < (int)temp_objects.size(); i++)
-        for(uint j: objects_set)
+        for(uint j : objects_set)
             temp_objects[i].dist[j] = temp_objects[i].distance_to(objects[j]);
 
     std::set<int> objects_to_test = objects_set;
 
     while(!temp_objects.empty() && !objects_to_test.empty()) {
-          // find the closest {temp_object, object} pair
+        // find the closest {temp_object, object} pair
         int min_dist = 1000;
         auto tp = temp_objects.begin();
         int p = 0;
@@ -238,7 +238,7 @@ void Players::follow_objects() {
                     tp = tpit;
                     p = j;
                 }
-          // remove the temp_object and the object from the waiting lists
+        // remove the temp_object and the object from the waiting lists
         found_tobjs.emplace_back(*tp);
         found_tobjs.back().select = p;
         temp_objects.erase(tp);
@@ -249,9 +249,9 @@ void Players::follow_objects() {
         if(objects[p].exists()) printf("l couldn't find obj for object %d\n", p);
     }*/
 
-    for(auto tp: found_tobjs) {
+    for(auto tp : found_tobjs) {
         //printf("raw %d links to object %d\n", tp.num, tp.select);
-          // update the object position and timeout
+        // update the object position and timeout
         objects[tp.select].update(tp);
     }
 
@@ -290,12 +290,12 @@ void Players::disassociate(int element, int player) {
 }
 
 void Players::follow_players() {
-    for(int element: objects_set) {
+    for(int element : objects_set) {
         int player = objects[element].get_associate();
         if(player == -1 || !players[player].exists()) { // accociate to the closest player, or create a new one
             int min_dist = 12000;
             player = -1;
-            for(int p: players_set) {
+            for(int p : players_set) {
                 int d = objects[element].distance_to(players[p]);
                 if(d < players_separation_mm && d < min_dist) {
                     min_dist = d;
@@ -310,15 +310,15 @@ void Players::follow_players() {
             else associate(element, player);
         }
     }
-      // update players position
-    for(int p: players_set) {
+    // update players position
+    for(int p : players_set) {
         Player &player = players[p];
         auto &elts = player.get_elements();
         if(elts.size()) {
             int angle = 0;
             int distance = 0;
             int angle0 = -1;
-            for(int el: elts) {
+            for(int el : elts) {
                 int a = objects[el].angle;
                 if(angle0 == -1) angle0 = a;
                 else {
@@ -341,7 +341,7 @@ void Players::follow_players() {
     }
 }
 
-void Players::set_raw_pos(Position *pos, int count){
+void Players::set_raw_pos(Position *pos, int count) {
     raw_count = MIN(count, PLAYERS_MAX);
     for(int i = 0; i < raw_count; i++) raw_positions[i] = pos[i];
     follow_objects();

@@ -5,10 +5,10 @@
 
 class ChaserMode;
 class Chaser {
-  private:
+private:
     int mode = 0;
     ChaserMode *modes[10];
-  public:
+public:
     Chaser();
     void update();
     void set_mode(int m);

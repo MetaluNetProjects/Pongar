@@ -11,14 +11,14 @@ struct audio_buffer_pool *producer_pool;
 
 void sound_init(uint sample_freq, int buffer_size, int nb_buffers, int pin) {
     static audio_format_t audio_format = {
-            .sample_freq = sample_freq,
-            .format = AUDIO_BUFFER_FORMAT_PCM_S16,
-            .channel_count = 1,
+        .sample_freq = sample_freq,
+        .format = AUDIO_BUFFER_FORMAT_PCM_S16,
+        .channel_count = 1,
     };
 
     static struct audio_buffer_format producer_format = {
-            .format = &audio_format,
-            .sample_stride = 2
+        .format = &audio_format,
+        .sample_stride = 2
     };
 
     static audio_pwm_channel_config_t channel_config = default_mono_channel_config;
@@ -53,27 +53,42 @@ void AudioLayer::init(int audio_pin) {
 void AudioLayer::receivebytes(const char* data, uint8_t len) {
     uint8_t c = fraise_get_uint8();
     switch(c) {
-        case 1: print_cpu(); break;
-        case 2: {
-                main_patch.buzzer.osc1.setFreq(fraise_get_int16());
-                main_patch.buzzer.osc1.setVol(fraise_get_int16());
-                main_patch.buzzer.osc2.setFreq(fraise_get_int16());
-                main_patch.buzzer.osc2.setVol(fraise_get_int16());
-            } break;
-        case 3: {
-                char type = fraise_get_uint8();
-                switch(type) {
-                    case 1: main_patch.buzz(); break;
-                    case 2: main_patch.bounce(); break;
-                    case 3: main_patch.bouncer.bounce(fraise_get_int16(), fraise_get_int16(), fraise_get_int16()); break;
-                    case 4: main_patch.tut.tut(fraise_get_int16(), fraise_get_int16()); break;
-                    case 5: main_patch.buzzer.config(fraise_get_int16(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16()); break;
-                    //case 6: main_patch.seq.make_melodies(); break;
-                }
-            } break;
-        case 4: {
-                command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
-            } break;
+    case 1:
+        print_cpu();
+        break;
+    case 2: {
+        main_patch.buzzer.osc1.setFreq(fraise_get_int16());
+        main_patch.buzzer.osc1.setVol(fraise_get_int16());
+        main_patch.buzzer.osc2.setFreq(fraise_get_int16());
+        main_patch.buzzer.osc2.setVol(fraise_get_int16());
+    }
+    break;
+    case 3: {
+        char type = fraise_get_uint8();
+        switch(type) {
+        case 1:
+            main_patch.buzz();
+            break;
+        case 2:
+            main_patch.bounce();
+            break;
+        case 3:
+            main_patch.bouncer.bounce(fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+            break;
+        case 4:
+            main_patch.tut.tut(fraise_get_int16(), fraise_get_int16());
+            break;
+        case 5:
+            main_patch.buzzer.config(fraise_get_int16(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+            break;
+            //case 6: main_patch.seq.make_melodies(); break;
+        }
+    }
+    break;
+    case 4: {
+        command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+    }
+    break;
     }
 }
 
@@ -97,10 +112,10 @@ void AudioLayer::audio_task() {
 
 void AudioLayer::print_cpu() {
     printf("cpu %.2f%% (%.2f / %d us)\n",
-        cpu_avg * ((100.0 * 1.0e-6 * AUDIO_SAMPLE_RATE) / AUDIO_SAMPLES_PER_BUFFER),
-        cpu_avg,
-        (1000000 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE
-    );
+           cpu_avg * ((100.0 * 1.0e-6 * AUDIO_SAMPLE_RATE) / AUDIO_SAMPLES_PER_BUFFER),
+           cpu_avg,
+           (1000000 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE
+          );
 }
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {

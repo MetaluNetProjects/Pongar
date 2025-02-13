@@ -48,21 +48,24 @@ struct Harmony {
         int m = modulo(n, (int)scale->size());
         int i;
         if(random() % 2 == 0) for(i = 1; i < (int)chord->size(); i++) {
-            if((*scale)[(*chord)[i]] >= m) break;
-        }
+                if((*scale)[(*chord)[i]] >= m) break;
+            }
         else for(i = (int)chord->size() - 1; i <= 1; i--) {
-            if((*scale)[(*chord)[i]] <= m) break;
-        }
+                if((*scale)[(*chord)[i]] <= m) break;
+            }
         return scale->size() * (n / (int)scale->size()) + (*chord)[i];
     }
-    Harmony() { set_scale(0); set_chord(0);}
-    ~Harmony(){}
+    Harmony() {
+        set_scale(0);
+        set_chord(0);
+    }
+    ~Harmony() {}
 };
 
 class Voice {
-  private:
+private:
     SynthBp synth;
-  public:
+public:
     int octave = 5;
     int silence_percent = 50;
     bool force_chord;
@@ -88,8 +91,8 @@ class Voice {
             else {
                 if(force_base) {
                     note = harm.get_scale((*harm.chord)[0]);
-                    if(random()%6 == 0) note += 7;
-                    if(random()%6 == 0) note += 12;
+                    if(random() % 6 == 0) note += 7;
+                    if(random() % 6 == 0) note += 12;
                     melody.push_back(note + octave * 12 + 2);
                 } else {
                     float note_add = (random() % 1000) / 1000.0;
@@ -128,13 +131,13 @@ class Voice {
 };
 
 class Drumvoice {
-  private:
+private:
     class PlayProba {
-      private:
+    private:
         int steps;
         int wanted;
         int percent;
-      public:
+    public:
         PlayProba(int _steps, int _wanted, int _percent): steps(_steps), wanted(_wanted), percent(_percent) {}
         bool get(int step) {
             if((step % steps) == wanted) return (random() % 100) < percent;
@@ -144,10 +147,14 @@ class Drumvoice {
     std::vector<PlayProba> probas;
     int8_t volume = 20; // 0 - 127
     Drum *drum;
-  public:
+public:
     Drumvoice(Drum *_drum): drum(_drum) {};
-    void set_volume(int8_t v) { volume = v; }
-    void clear_probas() { probas.clear(); }
+    void set_volume(int8_t v) {
+        volume = v;
+    }
+    void clear_probas() {
+        probas.clear();
+    }
     void add_proba(int steps, int wanted, int percent) {
         probas.emplace_back(steps, wanted, percent);
     }
@@ -160,7 +167,7 @@ class Drumvoice {
         Melody pattern;
         for(int i = 0; i < steps; i++) {
             bool play = false;
-            for(auto &p: probas) {
+            for(auto &p : probas) {
                 play |= p.get(i);
                 if(play) break;
             }
@@ -178,14 +185,14 @@ class Drumvoice {
 };
 
 class Piece {
-  private:
+private:
     static const int NB_VOICES = 4;
     static const int NB_DRUMS = 3;
     class Part {
         Melody melodies[NB_VOICES];
         Melody patterns[NB_DRUMS];
-      public:
-        ~Part(){}
+    public:
+        ~Part() {}
         Harmony harm;
         void make_melodies(Voice *voices, Drumvoice *drumvoices) {
             for(int i = 0; i < NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
@@ -213,9 +220,9 @@ class Piece {
     Kick kick;
     Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
     enum drumnames {HH = 0, SNARE, KICK};
-  public:
-    Piece(){}
-    ~Piece(){}
+public:
+    Piece() {}
+    ~Piece() {}
     void randomize_voices() {
         int note_offset = (random() % 12) - 6;
         for(int i = 0; i < NB_VOICES; i++) {
@@ -275,7 +282,7 @@ class Piece {
 };
 
 class Sequencer {
-  private:
+private:
     int step;
     int ms = 300;
     float shuffle = 0.5;
@@ -283,7 +290,7 @@ class Sequencer {
     absolute_time_t next_beat;
     absolute_time_t next_half;
 
-  public:
+public:
     Piece piece;
     inline Sequencer() {
         piece.make();
@@ -309,12 +316,14 @@ class Sequencer {
         step++;
     }
 
-    void set_shuffle(float s) { shuffle = s; }
-    
+    void set_shuffle(float s) {
+        shuffle = s;
+    }
+
     void set_tempo_ms(int m) {
         ms = m;
     }
-    
+
     void set_playing(bool p) {
         playing = p;
         if(p) {

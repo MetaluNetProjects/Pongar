@@ -23,12 +23,12 @@ void mp3_print_status();
 #include "romtable.h"
 
 class WavPlayer {
-  private:
+private:
     static const int max_waiting = 32;
     std::list<uint32_t> waiting;
     absolute_time_t end_of_play;
     static RomTable<uint16_t> wavsDuration;
-  public:
+public:
     void init(int tx_pin);
     void play(uint8_t folder, uint8_t track);
     void silence(uint16_t ms);

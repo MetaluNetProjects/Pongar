@@ -9,17 +9,17 @@
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
 class Drum {
-  private:
-  protected:
+private:
+protected:
     Enveloppe env1;
     absolute_time_t stop_time;
     int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
     int next_vol, next_ms;
     int A = 1, S = 10, R = 200; // millis
     int volume;
-    Drum(){}
-  public:
-    virtual ~Drum(){}
+    Drum() {}
+public:
+    virtual ~Drum() {}
     virtual void process() {}
     void mix(int32_t *out_buffer) {
         if(next_vol && env1.is_stopped()) do_play(next_vol, next_ms);
@@ -45,14 +45,16 @@ class Drum {
         }
     }
 
-    float randf(float amp = 1.0) { return amp * (random() % 1024) / 1024.0; }
+    float randf(float amp = 1.0) {
+        return amp * (random() % 1024) / 1024.0;
+    }
 
     virtual void randomize() {
     }
 };
 
 class Hihat : public Drum {
-  private:
+private:
     Bandpass bp1;
     int bpf_offset;
     int bpf_random;
@@ -60,8 +62,10 @@ class Hihat : public Drum {
     float bpf_dest;
     float bpf_portamento;
     float bpq;
-  public:
-    Hihat() : bp1(8000, 30, 8) { R = 100;}
+public:
+    Hihat() : bp1(8000, 30, 8) {
+        R = 100;
+    }
     virtual void process() {
         if(volume) for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) buf[i] = (random() % (volume * 2)) - volume;
         bpf_current += (bpf_dest - bpf_current) * (1.0 - bpf_portamento);
@@ -88,7 +92,7 @@ class Hihat : public Drum {
 };
 
 class Snare : public Drum {
-  private:
+private:
     Bandpass bp1;
     int bpf_offset;
     int bpf_random;
@@ -96,8 +100,10 @@ class Snare : public Drum {
     float bpf_dest;
     float bpf_portamento;
     float bpq;
-  public:
-    Snare() : bp1(8000, 30, 8) { R = 100;}
+public:
+    Snare() : bp1(8000, 30, 8) {
+        R = 100;
+    }
     virtual void process() {
         if(volume) for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) buf[i] = (random() % (volume * 2)) - volume;
         bpf_current += (bpf_dest - bpf_current) * (1.0 - bpf_portamento);
@@ -124,12 +130,14 @@ class Snare : public Drum {
 };
 
 class Kick : public Drum {
-  private:
+private:
     Osc osc1;
     float note_max = 55;
     float note_min = 20;
-  public:
-    Kick() : osc1(100, 5000) { R = 1000;}
+public:
+    Kick() : osc1(100, 5000) {
+        R = 1000;
+    }
     virtual void process() {
         int note = env1.get_level_norm() * (note_max - note_min) + note_min;
         osc1.setFreq8(Osc::mtof8(note));

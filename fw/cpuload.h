@@ -5,14 +5,14 @@
 #include <string>
 
 class CpuLoad {
-  private:
+private:
     absolute_time_t sensor_time;
     absolute_time_t reset_time;
     unsigned int count_us;
     std::string name;
-  public:
-    CpuLoad(std::string n): name(n){}
-    void start() { 
+public:
+    CpuLoad(std::string n): name(n) {}
+    void start() {
         sensor_time = get_absolute_time();
     }
     void stop() {

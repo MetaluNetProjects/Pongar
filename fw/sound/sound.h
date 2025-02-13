@@ -7,13 +7,13 @@
 #include "sound_command.h"
 
 class AudioLayer {
-  private:
+private:
     //WavPlayer player;
     float cpu_avg;
-  public:
+public:
     MainPatch main_patch;
     void init(int audio_pin/*, int tx_pin*/);
-    
+
     //void update();
     void audio_task();
     void receivebytes(const char* data, uint8_t len);

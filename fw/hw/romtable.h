@@ -12,7 +12,7 @@
 #include "string.h"
 
 template<class T> class RomTable {
-  public:
+public:
     void init(intptr_t _start_address, uint32_t _item_count) {
         start_address = _start_address;
         item_count = _item_count;
@@ -56,11 +56,15 @@ template<class T> class RomTable {
             return (((T*)start_address)[num_item]);
     }
 
-    inline bool is_in_ram() { return ram_buffer != NULL; }
+    inline bool is_in_ram() {
+        return ram_buffer != NULL;
+    }
 
-    inline uint32_t get_count() { return item_count; }
+    inline uint32_t get_count() {
+        return item_count;
+    }
 
-  private:
+private:
     intptr_t start_address;
     uint32_t item_count;
     T *ram_buffer;

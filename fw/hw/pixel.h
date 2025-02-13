@@ -19,9 +19,9 @@ void set_all(bool on);
 void pixel_receivebytes(const char* data, uint8_t len);
 //void pixel_update_players(int players_count, const uint16_t *players_pos, int players_separation);
 inline void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
-	if(n >= 0 && n < NUM_PIXELS) {
-		framebuffer[n] = urgb_u32(r, g, b);
-	}
+    if(n >= 0 && n < NUM_PIXELS) {
+        framebuffer[n] = urgb_u32(r, g, b);
+    }
 }
 inline void clear_pixels() {
     memset(framebuffer, 0, NUM_PIXELS * sizeof(uint32_t));

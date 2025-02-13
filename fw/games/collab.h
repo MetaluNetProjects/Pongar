@@ -30,8 +30,10 @@ class Collab : public GameMode {
     MoveArch arch;
     Movement *move = &cross;
 
-    void set_ring_mode(RingFx::MODE mode, int count) { ringfx.set_mode(mode, count); }
-    
+    void set_ring_mode(RingFx::MODE mode, int count) {
+        ringfx.set_mode(mode, count);
+    }
+
     void say_score() {
         say(Words((int)Words::_0 + score));
     }
@@ -57,12 +59,14 @@ class Collab : public GameMode {
         level = level + 1;
         score = 0;
     }
-    void init_move(int difficulty) { move->init(pan, tilt, period_ms, difficulty); }
+    void init_move(int difficulty) {
+        move->init(pan, tilt, period_ms, difficulty);
+    }
     void set_seq_tempo() {
         game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
     }
 
-  public:
+public:
     virtual ~Collab() {};
     void init() {
         period_ms = INIT_PERIOD - (level - 1) * 1000;
@@ -129,8 +133,14 @@ class Collab : public GameMode {
         //printf("update score %d\n", inc);
         if(inc) score++;
         else score--;
-        if(score <= 0) { game_over(); return true; }
-        else if(score >= SCORE_MAX) { win(); return true; }
+        if(score <= 0) {
+            game_over();
+            return true;
+        }
+        else if(score >= SCORE_MAX) {
+            win();
+            return true;
+        }
         say_score();
         return false;
     }
@@ -139,19 +149,19 @@ class Collab : public GameMode {
         int difficulty = score;
         move = &cross;
         switch(level) {
-            case 1:
-                difficulty = score / 3;
-                break;
-            case 2:
-                difficulty = score / 2;
-                if(score > 8 && (random() % 5 == 0)) move = &bounce;
-                if(score > 6 && (random() % 5 == 0)) move = &arch;
-                break;
-            case 3:
-                difficulty = score;
-                if(score > 5 && (random() % 3 == 0)) move = &bounce;
-                if(score > 3 && (random() % 3 == 0)) move = &arch;
-                break;
+        case 1:
+            difficulty = score / 3;
+            break;
+        case 2:
+            difficulty = score / 2;
+            if(score > 8 && (random() % 5 == 0)) move = &bounce;
+            if(score > 6 && (random() % 5 == 0)) move = &arch;
+            break;
+        case 3:
+            difficulty = score;
+            if(score > 5 && (random() % 3 == 0)) move = &bounce;
+            if(score > 3 && (random() % 3 == 0)) move = &arch;
+            break;
         }
         if(touched) {
             period_ms = period_ms * 0.85;
@@ -232,7 +242,7 @@ class Collab : public GameMode {
         r = col[c][0];
         g = col[c][1];
         b = col[c][2];
-        
+
         int width = pad_width / 2;
         if(game.players.get_steady_count() /*game.get_players_count()*/ == 1) { // double the pad
             for(int i = 0; i < total_leds; i++) {

@@ -106,22 +106,26 @@ bool Game::update() {
     }
 
     switch(mode) {
-        case STOP: break;
-        case PREPARE:
-            if(game_players_count != players.get_steady_count()) {
-                players_ready_timeout = make_timeout_time_ms(3000);
-                change_players_count(players.get_steady_count());
-                players_ready_okcount = 0;
-                proj.dimmer(dim = 0);
-                break;
-            }
-            if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) start();
+    case STOP:
+        break;
+    case PREPARE:
+        if(game_players_count != players.get_steady_count()) {
+            players_ready_timeout = make_timeout_time_ms(3000);
+            change_players_count(players.get_steady_count());
+            players_ready_okcount = 0;
+            proj.dimmer(dim = 0);
             break;
-        case RESTART:
-            if(!is_saying()) restart();
-            break;
-        case PLAYING: game_mode->update(); break;
-        case STANDBY: break;
+        }
+        if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) start();
+        break;
+    case RESTART:
+        if(!is_saying()) restart();
+        break;
+    case PLAYING:
+        game_mode->update();
+        break;
+    case STANDBY:
+        break;
     }
     return true;
 }
@@ -129,8 +133,12 @@ bool Game::update() {
 void Game::receivebytes(const char* data, uint8_t len) {
     char command = fraise_get_uint8();
     switch(command) {
-        case 1: audio.receivebytes(data + 1, len - 1); break;
-        case 2: wavplayer.receivebytes(data + 1, len - 1); break;
+    case 1:
+        audio.receivebytes(data + 1, len - 1);
+        break;
+    case 2:
+        wavplayer.receivebytes(data + 1, len - 1);
+        break;
     }
 }
 

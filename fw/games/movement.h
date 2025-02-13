@@ -5,28 +5,28 @@
 #include "config.h"
 #include <math.h>
 class Movement {
-  private:
-  public:
+private:
+public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) = 0;
     virtual bool update(float &pan, float &tilt) = 0; // return true if finished
 };
 
 class MoveCross: public Movement {
-  protected:
+protected:
     float pan_change_amp = 45.0;
     float pan_delta = 0, tilt_delta = 0;
     int new_pan;
     static const int INIT_PAN = 15;
     static const int MAX_PAN = 60;
     static const int INC_PAN = 4;
-  public:
+public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         tilt_delta = (2.0 * config.proj_tilt_amp * Game::PERIOD_MS) / period_ms;
         if(tilt > 0) tilt_delta = -tilt_delta;
 
         pan_change_amp = CLIP(INIT_PAN + INC_PAN * difficulty, INIT_PAN, MAX_PAN);
         int pan_change = (0.5 + 0.5 * (random() % 1024) / 1024.0) * pan_change_amp;
-        if(random()%2) pan_change = -pan_change;
+        if(random() % 2) pan_change = -pan_change;
         new_pan = pan + pan_change;
         new_pan = CLIP(new_pan, 0.0, 360.0);
         pan_delta = 2.0 * ((new_pan - pan) * Game::PERIOD_MS) / period_ms;
@@ -43,9 +43,9 @@ class MoveCross: public Movement {
 };
 
 class MoveBounce: public MoveCross {
-  private:
+private:
     bool tilt_bounce;
-  public:
+public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         MoveCross::init(pan, tilt, period_ms, difficulty);
         tilt_bounce = true;
@@ -61,13 +61,13 @@ class MoveBounce: public MoveCross {
 };
 
 class MoveArch: public Movement {
-  protected:
+protected:
     float index;
     float inc;
     float init_tilt;
     float init_pan;
     int new_pan;
-  public:
+public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         init_tilt = tilt;
         init_pan = pan;
