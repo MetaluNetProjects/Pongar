@@ -1,4 +1,4 @@
-#N canvas 203 59 721 647 12;
+#N canvas 136 60 721 647 12;
 #X declare -lib pdlua -path ..;
 #X declare -path ../pofgui;
 #X msg 539 35 \; pd dsp 1;
@@ -198,7 +198,7 @@
 #X connect 17 0 6 0;
 #X restore 10 178 pd old_pdlua_interface;
 #X obj 301 201 s \$0-to_emul;
-#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 5900 1;
+#X obj 130 464 hsl 170 20 0 1 0 1 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 7600 1;
 #N canvas 1244 70 649 859 lidar 1;
 #X obj 14 8 table \$0-lidar 360;
 #X obj 13 163 symbol \$0-lidar;
@@ -347,6 +347,14 @@
 #X obj 170 125 t b b;
 #X obj 117 99 sel 0;
 #X obj 13 71 metro 50;
+#X obj 54 672 timer, f 13;
+#X floatatom 54 697 10 0 0 0 - - - 0;
+#X obj 110 632 bng 20 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 54 630 bng 20 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X floatatom 97 794 10 0 0 0 - - - 0;
+#X msg 50 750 29;
+#X msg 95 754 26;
+#X msg 163 753 23;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
 #X connect 4 0 12 0;
@@ -448,6 +456,9 @@
 #X connect 92 1 13 0;
 #X connect 93 0 91 0;
 #X connect 94 0 4 0;
+#X connect 95 0 96 0;
+#X connect 97 0 95 1;
+#X connect 98 0 95 0;
 #X restore 333 359 pd lidar;
 #X obj 46 253 bng 20 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
 #X obj 212 150 spigot;
@@ -1499,7 +1510,7 @@
 #X connect 137 0 51 0;
 #X connect 137 0 25 0;
 #X restore 475 579 pd test_musique;
-#N canvas 676 184 514 379 melody 1;
+#N canvas 582 57 514 379 melody 0;
 #X obj 32 211 s \$0-to_emul;
 #X msg 32 146 shuffle \$1;
 #X obj 35 111 hsl 120 20 0 1 0 0 empty empty empty -2 -10 0 12 #fcfcfc #000000 #000000 0 1;
@@ -1606,6 +1617,19 @@
 #X connect 7 0 5 0;
 #X connect 8 0 0 0;
 #X restore 369 619 pd seq_rev1;
+#N canvas 218 684 450 300 othertests 1;
+#X obj 100 234 s \$0-to_emul;
+#X msg 100 196 testwords \$1;
+#X msg 100 155 0;
+#X msg 144 155 101;
+#X floatatom 129 99 5 0 255 0 - - - 0;
+#X msg 185 155 107;
+#X connect 1 0 0 0;
+#X connect 2 0 1 0;
+#X connect 3 0 1 0;
+#X connect 4 0 1 0;
+#X connect 5 0 1 0;
+#X restore 466 617 pd othertests;
 #X connect 1 0 0 0;
 #X connect 2 0 26 0;
 #X connect 3 0 19 0;

@@ -228,6 +228,10 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         }
         for(int i = 0; i < mod; i++) printf("%d: %f\n", i, ((float)mod) * count[i] / (float)total - 1.0);
     }
+    else if(s == gensym("testwords")) {
+        int n = atom_getfloat(&argv[0]);
+        printf("words %d: %s\n", n , get_word_string(n));
+    }
 }
 
 //#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
