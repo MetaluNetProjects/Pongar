@@ -242,6 +242,14 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
             outlet_anything(instance->x_msgout, gensym("word"), 2, at);
         }
     }
+    else if (s == gensym("saynumber")) {
+        int n = atom_getfloat(&argv[0]);
+        speaker.saynumber(n);
+    }
+    else if (s == gensym("say_hundredths")) {
+        float f = atom_getfloat(&argv[0]);
+        speaker.say_hundredths(f);
+    }
 }
 
 //#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)

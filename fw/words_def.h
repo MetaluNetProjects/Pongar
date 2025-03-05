@@ -21,6 +21,23 @@ WORDS_MACRO(_17,        17)
 WORDS_MACRO(_18,        18)
 WORDS_MACRO(_19,        19)
 WORDS_MACRO(_20,        20)    // "vinte"
+
+WORDS_MACRO(_30,        21)
+WORDS_MACRO(_40,        22)
+WORDS_MACRO(_50,        23)
+WORDS_MACRO(_60,        24)
+WORDS_MACRO(_70,        25)
+WORDS_MACRO(_80,        26)
+WORDS_MACRO(_90,        27)
+WORDS_MACRO(_100,       28)
+WORDS_MACRO(_1000,      29)
+WORDS_MACRO(et,         30)    // et
+WORDS_MACRO(une,        31)    // une
+
+WORDS_MACRO(virgule,    32)
+WORDS_MACRO(centieme,   33)
+WORDS_MACRO(millieme,   34)
+/*
 WORDS_MACRO(et,         21)    // et
 WORDS_MACRO(une,        22)    // une
 WORDS_MACRO(_30,        23)
@@ -32,9 +49,7 @@ WORDS_MACRO(_80,        28)
 WORDS_MACRO(_90,        29)
 WORDS_MACRO(_100,       30)
 WORDS_MACRO(_1000,      31)
-WORDS_MACRO(virgule,    32)
-WORDS_MACRO(centieme,   33)
-WORDS_MACRO(millieme,   34)
+*/
 
 #define WORDS_MULTIPLE_NITEMS 5
 #define WORDS_MULTIPLE_OFFSET 40
