@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "proj.h"
 
 PongarConfig config;
-Movobeam100 proj;
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
     struct timeval tv;
@@ -232,6 +231,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         int n = atom_getfloat(&argv[0]);
         printf("words %d: %s\n", n , get_word_string(n));
     }
+    else if (s == gensym("get_words")) {
+        t_atom at[2];
+        for(int i = 0; i < 256; i++) {
+            const char *w = get_word_string(i);
+            if(!w) w = "_none_";
+            //printf("word %d %s\n", i , w);
+            SETFLOAT(&at[0], i);
+            SETSYMBOL(&at[1], gensym(w));
+            outlet_anything(instance->x_msgout, gensym("word"), 2, at);
+        }
+    }
 }
 
 //#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
@@ -289,20 +299,28 @@ bool WavPlayer::is_playing() {
 
 /* -------------------------- projector ------------------------------ */
 
-void Movobeam100::move(float pan, float tilt) {
+class FakeProj: public DMXProj {
+public:
+    virtual void move(float pan, float tilt);
+    virtual void dimmer(uint8_t l);
+    virtual void color(uint8_t r, uint8_t g, uint8_t b, uint8_t w);
+} _proj;
+DMXProj &proj = _proj;
+
+void FakeProj::move(float pan, float tilt) {
     t_atom at[2];
     SETFLOAT(&at[0], pan);
     SETFLOAT(&at[1], tilt / config.proj_tilt_amp);
     outlet_anything(instance->x_msgout, gensym("proj_goto"), 2, at);
 }
 
-void Movobeam100::dimmer(uint8_t l) {
+void FakeProj::dimmer(uint8_t l) {
     t_atom at[1];
     SETFLOAT(&at[0], l);
     outlet_anything(instance->x_msgout, gensym("proj_dim"), 1, at);
 }
 
-void Movobeam100::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
+void FakeProj::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
     t_atom at[4];
     SETFLOAT(&at[0], r);
     SETFLOAT(&at[1], g);
@@ -310,6 +328,8 @@ void Movobeam100::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
     SETFLOAT(&at[3], w);
     outlet_anything(instance->x_msgout, gensym("proj_col"), 4, at);
 }
+
+/* -------------------------- pixels ------------------------------ */
 
 void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
     t_atom at[4];
