@@ -15,7 +15,7 @@ Collab collab_mode;
 
 void Game::init(int audio_pin, int tx_pin) {
     audio.init(audio_pin);
-    wavplayer.init(tx_pin);
+    speaker.init(tx_pin);
     prepare();
     if(!game_mode) game_mode = &collab_mode;
     chaser.set_mode(0);
@@ -66,9 +66,9 @@ void Game::standby() {
 void Game::change_players_count(int count) {
     game_players_count = count;
     if(game_players_count > 0) {
-        sayclear();
-        say((Words)((int)Words::_0 + game_players_count));
-        say(Words::joueur);
+        speaker.clear();
+        speaker.say((Words)((int)Words::_0 + game_players_count));
+        speaker.say(Words::joueur);
     }
 }
 
@@ -95,11 +95,11 @@ bool Game::update() {
     if(!time_reached(update_time)) return false;
     update_time = make_timeout_time_ms(PERIOD_MS);
 
-    wavplayer.update();
+    speaker.update();
     players.update();
 
     if(wait_saying) {
-        if(is_saying()) return true;
+        if(speaker.is_playing()) return true;
         else wait_saying = false;
     }
 
@@ -114,10 +114,10 @@ bool Game::update() {
             proj.dimmer(0);
             break;
         }
-        if(game_players_count && time_reached(players_ready_timeout) && !is_saying()) start();
+        if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing()) start();
         break;
     case RESTART:
-        if(!is_saying()) restart();
+        if(!speaker.is_playing()) restart();
         break;
     case PLAYING:
         game_mode->update();
@@ -135,7 +135,7 @@ void Game::receivebytes(const char* data, uint8_t len) {
         audio.receivebytes(data + 1, len - 1);
         break;
     case 2:
-        wavplayer.receivebytes(data + 1, len - 1);
+        speaker.receivebytes(data + 1, len - 1);
         break;
     }
 }

@@ -35,15 +35,15 @@ class Collab : public GameMode {
     }
 
     void say_score() {
-        say(Words((int)Words::_0 + score));
+        speaker.say(Words((int)Words::_0 + score));
     }
     void game_over() {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::LOOSE, 200);
         game.sfx(SoundCommand::buzz, 800);
-        saysilence(500);
-        say(Words::perdu);
-        saysilence(1000);
+        speaker.saysilence(500);
+        speaker.say(Words::perdu);
+        speaker.saysilence(1000);
         end_of_game = true;
         is_winner = false;
         lives = lives - 1;
@@ -52,8 +52,8 @@ class Collab : public GameMode {
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 200);
-        say(Words::gagne);
-        saysilence(2000);
+        speaker.say(Words::gagne);
+        speaker.saysilence(2000);
         end_of_game = true;
         is_winner = true;
         level = level + 1;
@@ -81,19 +81,19 @@ public:
         proj.dimmer(0);
         proj.color(0, 0, 0, 255);
         if(level > 1) {
-            if(lives == 1) say(Words::derniere_vie);
+            if(lives == 1) speaker.say(Words::derniere_vie);
             else {
-                saynumber(lives);
-                saysilence(50);
-                say(Words::vies);
+                speaker.saynumber(lives);
+                speaker.saysilence(50);
+                speaker.say(Words::vies);
             }
-            saysilence(350);
+            speaker.saysilence(350);
         }
-        saysilence(50);
-        say(Words::niveau);
-        saysilence(50);
-        saynumber(level);
-        saysilence(250);
+        speaker.saysilence(50);
+        speaker.say(Words::niveau);
+        speaker.saysilence(50);
+        speaker.saynumber(level);
+        speaker.saysilence(250);
         pad_width = 30;
         set_ring_mode(RingFx::START, 40);
         end_of_game = false;
@@ -122,12 +122,12 @@ public:
         if(tilt < 0) p = (p + 180) % 360;
         touched = game.players.presence_at(p, pad_width / 2 + 1);
         if(game.get_players_count() == 1) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
-        if(touched) sfx(SoundCommand::bounce, tilt > 0);
+        if(touched) game.sfx(SoundCommand::bounce, tilt > 0);
         else {
-            sfx(SoundCommand::buzz, 400);
+            game.sfx(SoundCommand::buzz, 400);
             set_ring_mode(RingFx::FAULT, 20);
         }
-        saysilence(300); // waits end of sfx before saying smth
+        speaker.saysilence(300); // waits end of sfx before saying smth
         return touched;
     }
 
@@ -181,7 +181,7 @@ public:
             game.sfx(SoundCommand::seqplay, 1);
         }
         if(end_of_game) {
-            if(!game.is_saying()) {
+            if(!speaker.is_playing()) {
                 if(!is_winner) {
                     if(level == 1 || lives == 0) game.prepare();
                     else game.prepare_restart();

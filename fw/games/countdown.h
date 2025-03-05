@@ -22,15 +22,15 @@ public:
             }
             return OFF;
         }
-        if(waiting_not_saying && !game.is_saying()) {
+        if(waiting_not_saying && !speaker.is_playing()) {
             waiting_not_saying = false;
         }
         if(countdown > 1) proj.dimmer(dim = dim * 0.5);
         else proj.dimmer(dim = dim * 0.8);
-        if(!game.is_saying() && time_reached(timeout)) {
+        if(!speaker.is_playing() && time_reached(timeout)) {
             if(!game.players.get_steady_count()) game.prepare();
             else {
-                game.saynumber(countdown);
+                speaker.saynumber(countdown);
                 timeout = make_timeout_time_ms(1000);
                 dim = 255.0;
                 countdown--;

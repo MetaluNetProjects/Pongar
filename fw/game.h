@@ -2,7 +2,7 @@
 
 #pragma once
 #include "sound.h"
-#include "wavplayer.h"
+#include "speaker.h"
 #include "players.h"
 #include "sound_command.h"
 #include "words.h"
@@ -21,13 +21,13 @@ private:
     int players_ready_okcount;
     GameMode *game_mode;
     AudioLayer audio;
-    WavPlayer wavplayer;
     Chaser chaser;
     int say_mode = 1;
     void change_players_count(int count);
     bool wait_saying = false;
 public:
     Game() {};
+    Speaker speaker;
     Players players;
     static const int PERIOD_MS = 40;
     void init(int audio_pin, int tx_pin);
@@ -42,21 +42,6 @@ public:
     inline int get_players_count() {
         return game_players_count;
     }
-    inline void say(Words w) {
-        wavplayer.play(say_mode, (int)w);
-    }
-    inline void saynumber(int n) {
-        say((Words)((int)Words::_0 + n));
-    }
-    inline void saysilence(int ms) {
-        wavplayer.silence(ms);
-    }
-    inline void sayclear() {
-        wavplayer.clear();
-    }
-    inline bool is_saying() {
-        return wavplayer.is_playing();
-    }
     inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {
         audio.command(c, p1, p2, p3);
     }
@@ -64,6 +49,7 @@ public:
 };
 
 extern Game game;
+#define speaker game.speaker
 
 class GameMode {
 public:
@@ -73,24 +59,6 @@ public:
     virtual void update() = 0;
     virtual void pixels_update() {
         game.pixels_update();
-    }
-    inline void say(Words w) {
-        game.say(w);
-    }
-    inline void saynumber(int n) {
-        game.saynumber(n);
-    }
-    inline void saysilence(int ms) {
-        game.saysilence(ms);
-    }
-    inline bool is_saying() {
-        return game.is_saying();
-    }
-    inline void sayclear() {
-        game.sayclear();
-    }
-    inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {
-        game.sfx(c, p1, p2, p3);
     }
 };
 
