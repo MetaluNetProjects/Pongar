@@ -72,7 +72,7 @@ void setup() {
 
     srandom(get_rand_32());
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
-    sleep_ms(200);
+    sleep_ms(800);
     lidar_change_state(START);
 }
 
