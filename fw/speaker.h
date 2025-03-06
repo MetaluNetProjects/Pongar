@@ -15,7 +15,7 @@ public:
 
     void init(int tx_pin) {
         WavPlayer::init(tx_pin);
-        set_mode(2);
+        set_mode(3);
     }
 
     void set_mode(int m) {
