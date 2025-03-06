@@ -27,6 +27,7 @@ void Game::prepare() {
     mode = PREPARE;
     wait_saying = true;
     game_players_count = 0;
+    noplayer_timeout = players_ready_timeout = players_stable_timeout = at_the_end_of_time;
     //printf("game::prepare\n");
 }
 
@@ -35,6 +36,7 @@ void Game::prepare_restart() {
     proj.move(180, 0);
     mode = RESTART;
     wait_saying = true;
+    noplayer_timeout = players_ready_timeout = players_stable_timeout = at_the_end_of_time;
     //printf("game::prepare_restart\n");
 }
 
@@ -61,15 +63,6 @@ void Game::stop() {
 
 void Game::standby() {
     mode = STANDBY;
-}
-
-void Game::change_players_count(int count) {
-    game_players_count = count;
-    if(game_players_count > 0) {
-        speaker.clear();
-        speaker.say((Words)((int)Words::_0 + game_players_count));
-        speaker.say(Words::joueur);
-    }
 }
 
 void Game::pixels_update() {
@@ -107,14 +100,38 @@ bool Game::update() {
     case STOP:
         break;
     case PREPARE:
-        if(game_players_count != players.get_steady_count()) {
-            players_ready_timeout = make_timeout_time_ms(3000);
-            change_players_count(players.get_steady_count());
-            players_ready_okcount = 0;
+        if(players.get_steady_count()) {
+            mode = WAIT_STABLE;
+            speaker.say(Words::bonjour);
+            noplayer_timeout = at_the_end_of_time;
+            players_stable_timeout = make_timeout_time_ms((PLAYERS_STABLE_SECONDS + 5) * 1000); // "+ 5" is for accounting 'say(bonjour)' time
+        }
+        break;
+    case WAIT_STABLE:
+        if(players.get_steady_count() != 0) noplayer_timeout = make_timeout_time_ms(NO_PLAYER_SECONDS * 1000);
+        if(players.get_steady_count() == 0 && time_reached(noplayer_timeout)) {
+            mode = PREPARE;
+            break;
+        }
+        if(game_players_count != players.get_steady_count() && !speaker.is_playing()) {
+            players_ready_timeout = make_timeout_time_ms(PLAYERS_READY_SECONDS * 1000);
+            game_players_count = players.get_steady_count();
+            if(time_reached(players_stable_timeout)) {
+                speaker.say(Words::attente_joueurs_stables);
+                players_stable_timeout = make_timeout_time_ms(PLAYERS_STABLE_SECONDS * 1000);
+            }
             proj.dimmer(0);
             break;
         }
-        if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing()) start();
+        if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing()) {
+            int max_players = game_mode->get_max_players();
+            if(game_players_count <= max_players) start();
+            else {
+                speaker.say(Words::trop_nombreux);
+            }
+        }
+        break;
+        
         break;
     case RESTART:
         if(!speaker.is_playing()) restart();

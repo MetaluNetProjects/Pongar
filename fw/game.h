@@ -13,23 +13,25 @@
 class GameMode;
 class Game {
 private:
-    static const int PLAYERS_READY_SECONDS = 4;
-    enum {STOP, PREPARE, PLAYING, RESTART, STANDBY} mode = STOP;
+    static const int PLAYERS_READY_SECONDS = 3;
+    static const int PLAYERS_STABLE_SECONDS = 8;
+    static const int NO_PLAYER_SECONDS = 8;
+    enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} mode = STOP;
     absolute_time_t update_time;
     int game_players_count;
     absolute_time_t players_ready_timeout;
-    int players_ready_okcount;
+    absolute_time_t players_stable_timeout;
+    absolute_time_t noplayer_timeout;
     GameMode *game_mode;
     AudioLayer audio;
     Chaser chaser;
     int say_mode = 1;
-    void change_players_count(int count);
     bool wait_saying = false;
 public:
     Game() {};
     Speaker speaker;
     Players players;
-    static const int PERIOD_MS = 40;
+    static const int PERIOD_MS = 10;
     void init(int audio_pin, int tx_pin);
     void prepare();
     void prepare_restart();
@@ -54,6 +56,7 @@ extern Game game;
 class GameMode {
 public:
     virtual ~GameMode() {};
+    virtual int get_max_players() = 0;
     virtual void start() = 0;
     virtual void restart() = 0;
     virtual void update() = 0;

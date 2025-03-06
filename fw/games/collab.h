@@ -29,39 +29,71 @@ class Collab : public GameMode {
     MoveBounce bounce;
     MoveArch arch;
     Movement *move = &cross;
+    int total_time;
+    std::set<int> time_results;
 
     void set_ring_mode(RingFx::MODE mode, int count) {
         ringfx.set_mode(mode, count);
     }
 
-    void say_score() {
-        speaker.say(Words((int)Words::_0 + score));
+    int get_rank(int ms) {
+        int rank = 1;
+        for(int t: time_results) {
+            if(t <= ms) rank++;
+            else break;
+        }
+        return rank;
     }
+
+    void say_win() {
+        speaker.say(Words::gagne_partie);
+        speaker.say_time(total_time);
+        int rank = get_rank(total_time);
+        time_results.insert(total_time);
+        if(rank <= 5) {
+            speaker.say(Words::champion_jour, rank - 1);
+        } else {
+            speaker.say(Words::classement_jour);
+            speaker.saynumber(rank);
+        }
+        // TODO: say global rank
+    }
+
     void game_over() {
+        lives = lives - 1;
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::LOOSE, 200);
         game.sfx(SoundCommand::buzz, 800);
         speaker.saysilence(500);
-        speaker.say(Words::perdu);
+        if(level == 1) {
+            speaker.say(Words::perdu_niveau1);
+        } else switch(lives) {
+            case 0: speaker.say(Words::perdu_partie); break;
+            case 1: speaker.say(Words::perdu_niveau_derniere); break;
+            case 2: speaker.say(Words::perdu_niveau); break;
+        }
         speaker.saysilence(1000);
         end_of_game = true;
         is_winner = false;
-        lives = lives - 1;
         score = 0;
     }
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 200);
-        speaker.say(Words::gagne);
+        switch(level) {
+            case 1: speaker.say(Words::gagne_niveau_1); break;
+            case 2: speaker.say(Words::gagne_niveau_2); break;
+            case 3: say_win(); break;
+        }
         speaker.saysilence(2000);
+        level = level + 1;
         end_of_game = true;
         is_winner = true;
-        level = level + 1;
         game.sfx(SoundCommand::seqnew);
         score = 0;
     }
     void init_move(int difficulty) {
-        move->init(pan, tilt, period_ms, difficulty);
+        move->init(pan, tilt, period_ms + (random() % 20), difficulty);
     }
     void set_seq_tempo() {
         game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
@@ -69,8 +101,9 @@ class Collab : public GameMode {
 
 public:
     virtual ~Collab() {};
+    virtual int get_max_players() { return 4; }
     void init() {
-        period_ms = INIT_PERIOD - (level - 1) * 1000;
+        period_ms = INIT_PERIOD - (level - 1) * 1000 + (random() % 50);
         score = 0;
         tilt = 0;
         pan = random() % 360;
@@ -80,20 +113,12 @@ public:
 
         proj.dimmer(0);
         proj.color(0, 0, 0, 255);
-        if(level > 1) {
-            if(lives == 1) speaker.say(Words::derniere_vie);
-            else {
-                speaker.saynumber(lives);
-                speaker.saysilence(50);
-                speaker.say(Words::vies);
-            }
-            speaker.saysilence(350);
+        if(level == 1) {
+            speaker.say(Words::debut_partie);
+            speaker.say((Words)((int)Words::_0 + game.get_players_count()));
+            speaker.say(Words::joueur);
         }
-        speaker.saysilence(50);
-        speaker.say(Words::niveau);
-        speaker.saysilence(50);
-        speaker.saynumber(level);
-        speaker.saysilence(250);
+        speaker.saysilence(350);
         pad_width = 30;
         set_ring_mode(RingFx::START, 40);
         end_of_game = false;
@@ -103,16 +128,16 @@ public:
     }
 
     virtual void start() {
-        printf("collab::start\n");
+        //printf("collab::start\n");
         level = 1;
         lives = 3;
+        total_time = 0;
         init();
         game.sfx(SoundCommand::seqnew);
     }
 
     virtual void restart() {
-        printf("collab::restart level=%d\n", level);
-        //level = level + 1;
+        //printf("collab::restart level=%d\n", level);
         init();
     }
 
@@ -143,7 +168,7 @@ public:
             win();
             return true;
         }
-        say_score();
+        speaker.saynumber(score);
         return false;
     }
 
@@ -192,7 +217,7 @@ public:
             return;
         }
         //if(game.get_players_count() == 1) {}
-
+        total_time += Game::PERIOD_MS;
         if(move->update(pan, tilt)) {
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
