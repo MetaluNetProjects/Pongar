@@ -9,10 +9,10 @@ private:
     int count_end;
 public:
     enum MODE {OFF, START, FAULT, WIN, LOOSE} mode;
-    void set_mode(MODE _mode, int _count) { // count is ws2812-rated, e.g 10ms.
+    void set_mode(MODE _mode, int ms) {
         mode = _mode;    
         count = 0;
-        count_end = _count;
+        count_end = ms / PIXEL_PERIOD_MS;
     }
     bool pixel_update() {
         if(mode == OFF) return false;

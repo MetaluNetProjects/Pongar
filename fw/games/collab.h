@@ -32,8 +32,8 @@ class Collab : public GameMode {
     int total_time;
     std::set<int> time_results;
 
-    void set_ring_mode(RingFx::MODE mode, int count) {
-        ringfx.set_mode(mode, count);
+    void set_ring_mode(RingFx::MODE mode, int ms) {
+        ringfx.set_mode(mode, ms);
     }
 
     int get_rank(int ms) {
@@ -62,7 +62,7 @@ class Collab : public GameMode {
     void game_over() {
         lives = lives - 1;
         game.sfx(SoundCommand::seqplay, 0);
-        set_ring_mode(RingFx::LOOSE, 200);
+        set_ring_mode(RingFx::LOOSE, 2000);
         game.sfx(SoundCommand::buzz, 800);
         speaker.saysilence(500);
         if(level == 1) {
@@ -79,7 +79,7 @@ class Collab : public GameMode {
     }
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
-        set_ring_mode(RingFx::WIN, 200);
+        set_ring_mode(RingFx::WIN, 2000);
         switch(level) {
             case 1: speaker.say(Words::gagne_niveau_1); break;
             case 2: speaker.say(Words::gagne_niveau_2); break;
@@ -120,7 +120,7 @@ public:
         }
         speaker.saysilence(350);
         pad_width = 30;
-        set_ring_mode(RingFx::START, 40);
+        set_ring_mode(RingFx::START, 400);
         end_of_game = false;
         is_winner = false;
         countdown.init(3);
@@ -150,7 +150,7 @@ public:
         if(touched) game.sfx(SoundCommand::bounce, tilt > 0);
         else {
             game.sfx(SoundCommand::buzz, 400);
-            set_ring_mode(RingFx::FAULT, 20);
+            set_ring_mode(RingFx::FAULT, 200);
         }
         speaker.saysilence(300); // waits end of sfx before saying smth
         return touched;
