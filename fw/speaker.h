@@ -9,25 +9,31 @@ class Speaker: public WavPlayer {
 private:
     int mode = 2;
 public:
-    void set_mode(int mode);
-    void say(Words w) {
-        play(mode, (int)w);
+    static const bool FEMALE = true;
+    static const bool MALE = false;
+
+    void set_mode(int m) {
+        mode = m;
     }
 
-    void saynumber(int n, bool female = false) {
+    void say(Words w, int offset = 0) {
+        play(mode, (int)w + offset);
+    }
+
+    void saynumber(int n, bool gender = MALE) {
         bool say_zero = true;
         if(n >= 1000) {
             int m = n / 1000;
             n %= 1000;
             m = m % 1000;
-            if(m > 1) saynumber(m, female);
+            if(m > 1) saynumber(m, gender);
             say(Words::_1000);
             say_zero = false;
         }
         if(n >= 100) {
             int m = n / 100;
             n %= 100;
-            if(m > 1) saynumber(m, female);
+            if(m > 1) saynumber(m, gender);
             say(Words::_100);
             say_zero = false;
         }
@@ -38,11 +44,12 @@ public:
             n -= m * 10;
             say((Words)((int)Words::_20 + m - 2));
             if((n == 1 || n == 11) && m != 8) say(Words::et);
-            if(n != 0) say((Words)((int)Words::_0 + n));
+            if(n != 0) saynumber(n, gender); //say(Words::_0, n);
         }
         else {
             if(n == 0 && !say_zero) return;
-            say((Words)((int)Words::_0 + n));
+            if(n == 1 && gender == FEMALE) say(Words::une);
+            else say(Words::_0, n);
         }
     }
 
@@ -53,6 +60,24 @@ public:
         if(m) {
             say(Words::et);
             saynumber(m);
+            say(Words::centieme);
+        }
+    }
+
+    void say_time(int ms) {
+        int mins = (ms / 1000) / 60;
+        int secs = (ms / 1000) % 60;
+        int cents = (ms % 1000) / 10;
+
+        if(mins) {
+            saynumber(mins, true);
+            say(Words::minute);
+        }
+        saynumber(secs, true);
+        say(Words::seconde);
+        if(cents) {
+            say(Words::et);
+            saynumber(cents);
             say(Words::centieme);
         }
     }
