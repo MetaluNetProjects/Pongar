@@ -2,23 +2,6 @@
 
 #pragma once
 
-/*
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-void mp3_putc(char c);
-void mp3_play(uint index);
-void mp3_folder_track(uint8_t folder, uint8_t track);
-void mp3_volume(uint volume);
-void setup_mp3(uint pin);
-void mp3_print_status();
-#ifdef __cplusplus
-}
-#endif
-*/
-
 #include <list>
 #include "romtable.h"
 
@@ -34,6 +17,7 @@ public:
     void silence(uint16_t ms);
     void clear();
     bool is_playing();
+    int get_duration_ms(uint8_t folder, uint8_t track);
     void update();
     void receivebytes(const char* data, uint8_t len);
 };

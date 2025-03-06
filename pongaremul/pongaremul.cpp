@@ -242,6 +242,9 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
             outlet_anything(instance->x_msgout, gensym("word"), 2, at);
         }
     }
+    else if (s == gensym("reload_words_duration")) {
+        speaker.init(0);
+    }
     else if (s == gensym("saynumber")) {
         int n = atom_getfloat(&argv[0]);
         speaker.saynumber(n);

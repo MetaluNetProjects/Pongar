@@ -87,6 +87,10 @@ bool WavPlayer::is_playing() {
     return !(time_reached(end_of_play) && waiting.empty());
 }
 
+int WavPlayer::get_duration_ms(uint8_t folder, uint8_t track) {
+    return wavsDuration.get_item(((int)folder - 1) * 256 + track) * 10;
+}
+
 void WavPlayer::update() {
     if((!time_reached(end_of_play)) || waiting.empty()) return;
     uint32_t next = waiting.front();
@@ -101,7 +105,7 @@ void WavPlayer::update() {
         if(folder < 1) folder = 1;
         uint8_t track = next & 255;
         mp3_folder_track(folder, track);
-        duration_ms = wavsDuration.get_item(((int)folder - 1) * 256 + track) * 10 + 50;
+        duration_ms = get_duration_ms(folder, track) + 50;
     }
     break;
     case 255:

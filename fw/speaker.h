@@ -8,16 +8,31 @@
 class Speaker: public WavPlayer {
 private:
     int mode = 2;
+    bool exists[256];
 public:
     static const bool FEMALE = true;
     static const bool MALE = false;
 
-    void set_mode(int m) {
-        mode = m;
+    void init(int tx_pin) {
+        WavPlayer::init(tx_pin);
+        set_mode(2);
     }
 
-    void say(Words w, int offset = 0) {
-        play(mode, (int)w + offset);
+    void set_mode(int m) {
+        mode = m;
+        for(int i = 0; i < 256; i++) exists[i] = get_duration_ms(mode, i) != 0;
+    }
+
+    void say(Words w, int offset = -1) {
+        int word = (int)w;
+        int final_offset = 0;
+        if(offset == -1) {
+            std::vector<uint8_t> existing;
+            for(int i = 0; i < 5; i++) if(exists[word + i]) existing.push_back(i);
+            if(!existing.size()) return;
+            final_offset = existing[random() % existing.size()];
+        }
+        play(mode, word + final_offset);
     }
 
     void saynumber(int n, bool gender = MALE) {
@@ -43,12 +58,12 @@ public:
             else if(m == 9) m = 8;
             n -= m * 10;
             say((Words)((int)Words::_20 + m - 2));
-            if((n == 1 || n == 11) && m != 8) say(Words::et);
+            if((n == 1 || n == 11) && m != 8) say(Words::et, 0);
             if(n != 0) saynumber(n, gender); //say(Words::_0, n);
         }
         else {
             if(n == 0 && !say_zero) return;
-            if(n == 1 && gender == FEMALE) say(Words::une);
+            if(n == 1 && gender == FEMALE) say(Words::une, 0);
             else say(Words::_0, n);
         }
     }
@@ -78,7 +93,7 @@ public:
         if(cents) {
             say(Words::et);
             saynumber(cents);
-            say(Words::centieme);
+            say(Words::centieme, 0);
         }
     }
 

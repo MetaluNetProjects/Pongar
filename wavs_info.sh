@@ -1,6 +1,8 @@
 #!/bin/bash
 
-WAVS=wavs
+WAVS=$1
+#echo wavs: $WAVS
+#exit
 
 for dirnum in {1..99} ; do
     dirname=$(printf %02d $dirnum)
