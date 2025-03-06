@@ -115,7 +115,7 @@ public:
         proj.color(0, 0, 0, 255);
         if(level == 1) {
             speaker.say(Words::debut_partie);
-            speaker.say((Words)((int)Words::_0 + game.get_players_count()));
+            speaker.saynumber(game.get_players_count());
             speaker.say(Words::joueur);
         }
         speaker.saysilence(350);
@@ -230,11 +230,13 @@ public:
         if(move == &bounce) {
             proj.color(255, 0, 0, 0);
             static int x = 0;
-            if((x++ % 4) != 0) game.sfx(SoundCommand::tut, 1500, 50);
+            if(((x / 40) % 4) != 0) game.sfx(SoundCommand::tut, 1500, 50);
+            x += Game::PERIOD_MS;
         } else if(move == &arch) {
             proj.color(0, 0, 255, 0);
             static int x = 0;
-            if((x++ % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
+            if(((x / 40) % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
+            x += Game::PERIOD_MS;
         }
         else proj.color(0, 0, 0, 255);
     }

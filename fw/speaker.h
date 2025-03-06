@@ -25,7 +25,7 @@ public:
 
     void say(Words w, int offset = -1) {
         int word = (int)w;
-        int final_offset = 0;
+        int final_offset = offset;
         if(offset == -1) {
             std::vector<uint8_t> existing;
             for(int i = 0; i < 5; i++) if(exists[word + i]) existing.push_back(i);
@@ -42,14 +42,14 @@ public:
             n %= 1000;
             m = m % 1000;
             if(m > 1) saynumber(m, gender);
-            say(Words::_1000);
+            say(Words::_1000, 0);
             say_zero = false;
         }
         if(n >= 100) {
             int m = n / 100;
             n %= 100;
             if(m > 1) saynumber(m, gender);
-            say(Words::_100);
+            say(Words::_100, 0);
             say_zero = false;
         }
         if(n >= 21) {
@@ -57,9 +57,9 @@ public:
             if(m == 7) m = 6;
             else if(m == 9) m = 8;
             n -= m * 10;
-            say((Words)((int)Words::_20 + m - 2));
+            say(Words::_20, m - 2);
             if((n == 1 || n == 11) && m != 8) say(Words::et, 0);
-            if(n != 0) saynumber(n, gender); //say(Words::_0, n);
+            if(n != 0) saynumber(n, gender);
         }
         else {
             if(n == 0 && !say_zero) return;
@@ -73,9 +73,9 @@ public:
         int m = (f - (float)n) * 100;
         saynumber(n);
         if(m) {
-            say(Words::et);
+            say(Words::et, 0);
             saynumber(m);
-            say(Words::centieme);
+            say(Words::centieme, 0);
         }
     }
 
@@ -91,7 +91,7 @@ public:
         saynumber(secs, true);
         say(Words::seconde);
         if(cents) {
-            say(Words::et);
+            say(Words::et, 0);
             saynumber(cents);
             say(Words::centieme, 0);
         }
