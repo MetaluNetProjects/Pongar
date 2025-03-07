@@ -9,6 +9,7 @@ class Speaker: public WavPlayer {
 private:
     int mode = 2;
     bool exists[256];
+    std::vector<uint16_t> alpagues;
 public:
     static const bool FEMALE = true;
     static const bool MALE = false;
@@ -21,6 +22,12 @@ public:
     void set_mode(int m) {
         mode = m;
         for(int i = 0; i < 256; i++) exists[i] = get_duration_ms(mode, i) != 0;
+        int alpague = (int)Words::alpague;
+        alpagues.clear();
+        for(uint8_t bank = 0; bank < 3; bank++)
+            for(uint8_t num = 0; num < 5; num++)
+                if(get_duration_ms(mode, alpague + bank * 5 + num))
+                    alpagues.push_back(alpague + bank * 5 + num);
     }
 
     void say(Words w, int offset = -1) {
@@ -99,6 +106,12 @@ public:
 
     void saysilence(int ms) {
         silence(ms);
+    }
+
+    void say_alpague() {
+        if(!alpagues.size()) return;
+        uint16_t num = alpagues[random() % alpagues.size()];
+        play(mode, num);
     }
 };
 

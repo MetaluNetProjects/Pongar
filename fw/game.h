@@ -22,11 +22,16 @@ private:
     absolute_time_t players_ready_timeout;
     absolute_time_t players_stable_timeout;
     absolute_time_t noplayer_timeout;
+    absolute_time_t last_game_endtime;
+    absolute_time_t next_alpague_time;
     GameMode *game_mode;
     AudioLayer audio;
     Chaser chaser;
     int say_mode = 1;
     bool wait_saying = false;
+    int get_ms_since_last_game() {
+        return to_ms_since_boot(get_absolute_time()) - to_ms_since_boot(last_game_endtime);
+    }
 public:
     Game() {};
     Speaker speaker;

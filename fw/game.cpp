@@ -28,6 +28,8 @@ void Game::prepare() {
     wait_saying = true;
     game_players_count = 0;
     noplayer_timeout = players_ready_timeout = players_stable_timeout = at_the_end_of_time;
+    last_game_endtime = get_absolute_time();
+    next_alpague_time = make_timeout_time_ms((5 + random() % 5) * 1000);
     //printf("game::prepare\n");
 }
 
@@ -100,6 +102,13 @@ bool Game::update() {
     case STOP:
         break;
     case PREPARE:
+        if(!speaker.is_playing() && time_reached(next_alpague_time)) {
+            static const int max_rnd_seconds = 5 * 60;
+            speaker.say_alpague();
+            int rnd_seconds = (get_ms_since_last_game() / 1000) / 20 + 10;
+            if(rnd_seconds > max_rnd_seconds) rnd_seconds = max_rnd_seconds;
+            next_alpague_time = make_timeout_time_ms((5 + random() % rnd_seconds) * 1000);
+        }
         if(players.get_steady_count()) {
             mode = WAIT_STABLE;
             speaker.say(Words::bonjour);
