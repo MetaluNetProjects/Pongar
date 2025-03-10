@@ -2,10 +2,10 @@
 
 #pragma once
 #include "sound.h"
-#include "speaker.h"
+#include "sound/speaker.h"
+#include "sound/sound_command.h"
+#include "sound/words.h"
 #include "players.h"
-#include "sound_command.h"
-#include "words.h"
 #include "gfx/gfx.h"
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))

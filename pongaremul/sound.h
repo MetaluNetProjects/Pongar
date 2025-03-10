@@ -1,7 +1,7 @@
 #pragma once
 #include "fraise.h"
 #include "sound/main_patch.h"
-#include "sound_command.h"
+#include "sound/sound_command.h"
 
 class AudioLayer {
 public:

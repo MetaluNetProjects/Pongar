@@ -7,7 +7,7 @@
 #include "config.h"
 #include <stdlib.h>
 
-#include "games/collab.h"
+#include "collab.h"
 
 Game game;
 
