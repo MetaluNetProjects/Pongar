@@ -263,7 +263,11 @@ public:
     Piece() {}
     ~Piece() {}
     void randomize_reverb() {
-        config_reverb(random() % 8000, random() % 16000);
+        float rev_feedback = (random() % 10000) / 10000.0;
+        rev_feedback *= rev_feedback;
+        float rev_vol = (random() % 10000) / 10000.0;
+        rev_vol *= rev_vol;
+        config_reverb(rev_feedback * 8000, rev_vol * 16000);
     }
     void randomize_voices() {
         int note_offset = (random() % 12) - 6;
@@ -314,9 +318,6 @@ public:
 
     void play_step(int step, int ms) {
         if(parts.empty() || plan.empty()) return;
-        /*if(play_once) {
-            if(((step - 1)/ plan_steps) >= (int)plan.size()) return;
-        }*/
         if(finished(step)) return;
         plan_index = (step / plan_steps) % plan.size();
         int current_part = plan[plan_index] % parts.size();
