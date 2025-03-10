@@ -153,7 +153,10 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0]));
     }
     else if(s == gensym("play")) {
-        if(argc > 0) x->x_patch->seq.set_playing(atom_getfloat(&argv[0]));
+        bool play = false, once = false;
+        if(argc > 0) play = atom_getfloat(&argv[0]) != 0;
+        if(argc > 1) once = atom_getfloat(&argv[0]) != 0;
+        x->x_patch->seq.set_playing(play, once);
     }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);

@@ -258,6 +258,7 @@ private:
     enum drumnames {HH = 0, SNARE, KICK};
     Reverb rev1;
     uint8_t mastervol = 150;
+    bool play_once = true;
 public:
     Piece() {}
     ~Piece() {}
@@ -313,6 +314,10 @@ public:
 
     void play_step(int step, int ms) {
         if(parts.empty() || plan.empty()) return;
+        /*if(play_once) {
+            if(((step - 1)/ plan_steps) >= (int)plan.size()) return;
+        }*/
+        if(finished(step)) return;
         plan_index = (step / plan_steps) % plan.size();
         int current_part = plan[plan_index] % parts.size();
         parts[current_part].play_step(step, ms, voices, drumvoices, mastervol);
@@ -325,6 +330,12 @@ public:
     }
     void config_reverb(uint16_t feedback, uint16_t volume) {
         rev1.config(feedback, volume);
+    }
+    void set_once(bool once) {
+        play_once = once;
+    }
+    bool finished(int step) {
+        return play_once && (((step - 1)/ plan_steps) >= (int)plan.size());
     }
 };
 
@@ -370,10 +381,12 @@ public:
         ms = m;
     }
 
-    void set_playing(bool p) {
+    void set_playing(bool p, bool once = false) {
         playing = p;
         if(p) step = 0;
+        piece.set_once(once);
         next_half = at_the_end_of_time;
+        next_beat = make_timeout_time_ms(0);
     }
 
     void make_new_piece() {
@@ -386,4 +399,7 @@ public:
         piece.config_reverb(feedback, volume);
     }
 
+    bool piece_finished() {
+        return piece.finished(step);
+    }
 };
