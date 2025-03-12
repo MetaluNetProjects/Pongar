@@ -22,8 +22,17 @@ public:
 
 extern PongarConfig config;
 
-#define WAVDUR_TABLE_COUNT (100 * 256)
-#define WAVDUR_TABLE_START (XIP_BASE + PICO_FLASH_SIZE_BYTES - (WAVDUR_TABLE_COUNT * 2)) // 51200 bytes = 12.5 * 4k
+#define CEILING(x,y) (((x) + (y) - 1) / (y))
+#define ROUND4K(x) (CEILING(x, 4096) * 4096)
+
+#define WAVDUR_TABLE_COUNT (100 * 256) // 51200 bytes = 12.5 * 4k
+#define WAVDUR_TABLE_FLASHSIZE ROUND4K(WAVDUR_TABLE_COUNT * 2)
+//static_assert(WAVDUR_TABLE_FLASHSIZE == 13 * 4096); // assert wavdur_table fits in 13 blocks.
+#define WAVDUR_TABLE_START (XIP_BASE + PICO_FLASH_SIZE_BYTES - WAVDUR_TABLE_FLASHSIZE)
+
+#define LOGGER_SIZE (1024 * 1024) // 1MB: 524288 x 16bits scores
+#define LOGGER_START (WAVDUR_TABLE_START - LOGGER_SIZE)
+//static_assert((LOGGER_START - XIP_BASE) / 1024 > 900); // assert there is at least 900kB left in flash.
 
 #ifndef AUDIO_SAMPLE_RATE
 #define AUDIO_SAMPLE_RATE 24000 //57439
