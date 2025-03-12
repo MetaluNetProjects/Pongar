@@ -195,7 +195,7 @@ public:
             seq.make_new_piece();
             break;
         case SoundCommand::seqplay:
-            seq.set_playing(p1);
+            seq.set_playing(p1, p2);
             break;
         case SoundCommand::seqms:
             seq.set_tempo_ms(p1);
