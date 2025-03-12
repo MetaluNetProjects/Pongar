@@ -42,8 +42,8 @@ public:
             for(int i = 0; i < total_leds; i++) {
                 set_pixel(i, 0, v, 0);
             }
-            proj.color(0, v, 0, 0);
-            proj.dimmer(128);
+            proj.color(DMXProj::green);
+            proj.dimmer(v / 2);
         }
         break;
         case LOOSE: {
@@ -52,8 +52,8 @@ public:
             for(int i = 0; i < total_leds; i++) {
                 set_pixel(i, v, 0, 0);
             }
-            proj.color(v, 0, 0, 0);
-            proj.dimmer(128);
+            proj.color(DMXProj::red);
+            proj.dimmer(v / 2);
         }
         break;
         default:

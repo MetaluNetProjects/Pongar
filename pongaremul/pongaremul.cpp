@@ -29,6 +29,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "proj.h"
 
 PongarConfig config;
+class Logger: public Scorelog{
+    virtual int get_rank(uint16_t score) { return 111; }
+    virtual void write(uint16_t score) {};
+    virtual uint16_t get_score(unsigned int num) {return 57; };
+} scorelog;
+
+Game game(scorelog);
+
+
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
     struct timeval tv;

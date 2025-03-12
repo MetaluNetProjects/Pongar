@@ -9,8 +9,6 @@
 
 #include "collab.h"
 
-Game game;
-
 Collab collab_mode;
 
 void Game::init(int audio_pin, int tx_pin) {
@@ -92,6 +90,7 @@ bool Game::update() {
 
     speaker.update();
     players.update();
+    proj.update();
 
     if(wait_saying) {
         if(speaker.is_playing()) return true;

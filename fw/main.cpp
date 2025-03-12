@@ -5,13 +5,15 @@
 #include "hardware/uart.h"
 #include "string.h"
 #include "fraise_eeprom.h"
-#include "dmx.h"
-//#include "wavplayer.h"
-#include "lidar.h"
+
+#include "hw/dmx.h"
+//#include "hw/wavplayer.h"
+#include "hw/lidar.h"
+#include "hw/proj.h"
+#include "hw/pixel.h"
+#include "hw/logger.h"
 #include "game/players.h"
-#include "proj.h"
 #include "game/game.h"
-#include "pixel.h"
 //#include "piotx.h"
 //#include "sound.h"
 #include "sound/osc.h"
@@ -19,6 +21,7 @@
 #include "cpuload.h"
 #include "pico/rand.h"
 
+#define printf fraise_printf
 
 const uint LED_PIN = PICO_DEFAULT_LED_PIN;
 int ledPeriod = 250;
@@ -48,8 +51,19 @@ CpuLoad pixel_load("pixel");
 CpuLoad lidar_load("lidar");
 CpuLoad game_load("game");
 
+/*class Logger: public Scorelog{
+    virtual int get_rank(uint16_t score) { return 0;};
+    virtual void write(uint16_t score) {};
+
+} scorelog;*/
+Logger scorelog;
+
+Game game(scorelog);
+
 void setup() {
     eeprom_load();
+
+    scorelog.init(LOGGER_START, LOGGER_SIZE);
 
     game.init(AUDIO_PWM_PIN, MP3_TX_PIN);
     Osc::setup();
@@ -74,6 +88,8 @@ void setup() {
     setup_lidar(LIDAR_TX_PIN, LIDAR_RX_PIN, LIDAR_UART);
     sleep_ms(800);
     lidar_change_state(START);
+
+    proj.color(DMXProj::white);
 }
 
 void game_pixels_update() {
@@ -246,6 +262,23 @@ void fraise_receivebytes(const char *data, uint8_t len) {
         game.receivebytes(data + 1, len - 1);
         break;
 
+    case 40:
+        printf("l logcount %d\n", scorelog.get_count());
+        break;
+    case 41:
+        {
+            int num = fraise_get_uint32();
+            printf("l logscore %d %d\n", num, scorelog.get_score(num));
+        }
+        break;
+    case 42:
+        {
+            int score = fraise_get_uint16();
+            printf("l new score %d %d/%d\n", score, scorelog.get_rank(score), scorelog.get_count());
+            scorelog.write(score);
+        }
+        break;
+
     case 100 :
         fraise_print_status();
         break;
@@ -306,6 +339,14 @@ void fraise_receivebytes(const char *data, uint8_t len) {
     case 204:
         dmx.status();
         break;
+    case 205: proj.dimmer(fraise_get_uint8()); break;
+    case 206:
+    {
+        float gain_pan = fraise_get_uint16() / 65536.0;
+        float gain_tilt = fraise_get_uint16() / 65536.0;
+        ((EVOBeam&)proj).set_gains(gain_pan, gain_tilt);
+    }
+    break;
     default:
         printf("rcvd ");
         for(int i = 0; i < len; i++) printf("%d ", (uint8_t)data[i]);
@@ -313,17 +354,26 @@ void fraise_receivebytes(const char *data, uint8_t len) {
     }
 }
 
+bool is_string(const char *in, uint8_t len, const char *str) {
+    return len >= strlen(str) && !strncmp(in, str, strlen(str));
+}
+
 void fraise_receivechars(const char *data, uint8_t len) {
     const char eesave_str[] = "SAVE_EEPROM";
+    const char clearlog_str[] = "CLEAR_LOG";
     if(data[0] == 'E') { // Echo
         printf("E%s\n", data + 1);
     }
-    else if(len >= strlen(eesave_str) && !strncmp(data, eesave_str, strlen(eesave_str))) {
+    else if(is_string(data, len, eesave_str) /*len >= strlen(eesave_str) && !strncmp(data, eesave_str, strlen(eesave_str))*/) {
         printf("l saving eeprom\n");
         lidar_stop();
         sleep_ms(500);
         eeprom_save();
         lidar_start();
+    }
+    else if(is_string(data, len, clearlog_str)) {
+        printf("l clearing log\n");
+        scorelog.clear_all();
     }
 }
 

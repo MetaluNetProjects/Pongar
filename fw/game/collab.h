@@ -29,7 +29,7 @@ class Collab : public GameMode {
     MoveBounce bounce;
     MoveArch arch;
     Movement *move = &cross;
-    int total_time;
+    int total_time_ms;
     std::set<int> time_results;
 
     void set_ring_mode(RingFx::MODE mode, int ms) {
@@ -47,16 +47,25 @@ class Collab : public GameMode {
 
     void say_win() {
         speaker.say(Words::gagne_partie);
-        speaker.say_time(total_time);
-        int rank = get_rank(total_time);
-        time_results.insert(total_time);
+        speaker.say_time(total_time_ms);
+        int rank = get_rank(total_time_ms);
+        time_results.insert(total_time_ms);
         if(rank <= 5) {
             speaker.say(Words::champion_jour, rank - 1);
         } else {
             speaker.say(Words::classement_jour);
             speaker.saynumber(rank);
         }
-        // TODO: say global rank
+
+        int total_time_cents = total_time_ms / 10;
+        int global_rank = game.scorelog.get_rank(total_time_cents);
+        if(global_rank <= 5) {
+            speaker.say(Words::champion, global_rank - 1);
+        } else {
+            speaker.say(Words::classement_general);
+            speaker.saynumber(global_rank);
+        }
+        game.scorelog.write(total_time_cents);
     }
 
     void game_over() {
@@ -112,7 +121,7 @@ public:
         init_move(0);
 
         proj.dimmer(0);
-        proj.color(0, 0, 0, 255);
+        proj.color(DMXProj::white);
         if(level == 1) {
             speaker.say(Words::debut_partie);
             speaker.saynumber(game.get_players_count());
@@ -131,7 +140,7 @@ public:
         //printf("collab::start\n");
         level = 1;
         lives = 3;
-        total_time = 0;
+        total_time_ms = 0;
         init();
         game.sfx(SoundCommand::seqnew);
     }
@@ -217,7 +226,7 @@ public:
             return;
         }
         //if(game.get_players_count() == 1) {}
-        total_time += Game::PERIOD_MS;
+        total_time_ms += Game::PERIOD_MS;
         if(move->update(pan, tilt)) {
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
@@ -228,17 +237,17 @@ public:
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
 
         if(move == &bounce) {
-            proj.color(255, 0, 0, 0);
+            proj.color(DMXProj::red);
             static int x = 0;
-            if(((x / 40) % 4) != 0) game.sfx(SoundCommand::tut, 1500, 50);
+            if(((x / 40) % 4) == 0) game.sfx(SoundCommand::tut, 1500, 50);
             x += Game::PERIOD_MS;
         } else if(move == &arch) {
-            proj.color(0, 0, 255, 0);
+            proj.color(DMXProj::blue);
             static int x = 0;
             if(((x / 40) % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
             x += Game::PERIOD_MS;
         }
-        else proj.color(0, 0, 0, 255);
+        else proj.color(DMXProj::white);
     }
 
     virtual void pixels_update() {

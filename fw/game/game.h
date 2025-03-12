@@ -7,6 +7,7 @@
 #include "sound/words.h"
 #include "players.h"
 #include "gfx/gfx.h"
+#include "scorelog.h"
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
@@ -33,9 +34,10 @@ private:
         return to_ms_since_boot(get_absolute_time()) - to_ms_since_boot(last_game_endtime);
     }
 public:
-    Game() {};
+    Game(Scorelog &_log): scorelog(_log) {};
     Speaker speaker;
     Players players;
+    Scorelog &scorelog;
     static const int PERIOD_MS = 10;
     void init(int audio_pin, int tx_pin);
     void prepare();
