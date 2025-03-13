@@ -108,46 +108,8 @@ class Collab : public GameMode {
         game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
     }
 
-public:
-    virtual ~Collab() {};
-    virtual int get_max_players() { return 4; }
-    void init() {
-        period_ms = INIT_PERIOD - (level - 1) * 1000 + (random() % 50);
-        score = 0;
-        tilt = 0;
-        pan = random() % 360;
-
-        move = &cross;
-        init_move(0);
-
-        proj.dimmer(0);
-        proj.color(DMXProj::white);
-        if(level == 1) {
-            speaker.say(Words::debut_partie);
-            speaker.saynumber(game.get_players_count());
-            speaker.say(Words::joueur);
-        }
-        speaker.saysilence(350);
-        pad_width = 30;
-        set_ring_mode(RingFx::START, 400);
-        end_of_game = false;
-        is_winner = false;
-        countdown.init(3);
-        set_seq_tempo();
-    }
-
-    virtual void start() {
-        //printf("collab::start\n");
-        level = 1;
-        lives = 3;
-        total_time_ms = 0;
-        init();
-        game.sfx(SoundCommand::seqnew);
-    }
-
-    virtual void restart() {
-        //printf("collab::restart level=%d\n", level);
-        init();
+    bool mirror_pad() {
+        return game.players.get_steady_count() /*game.get_players_count()*/ == 1;
     }
 
     bool test_touched() {
@@ -155,7 +117,7 @@ public:
         bool touched = false;
         if(tilt < 0) p = (p + 180) % 360;
         touched = game.players.presence_at(p, pad_width / 2 + 1);
-        if(game.get_players_count() == 1) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
+        if(mirror_pad()) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
         if(touched) game.sfx(SoundCommand::bounce, tilt > 0);
         else {
             game.sfx(SoundCommand::buzz, 400);
@@ -206,6 +168,49 @@ public:
         init_move(difficulty);
         set_seq_tempo();
     }
+
+public:
+    virtual ~Collab() {};
+    virtual int get_max_players() { return 4; }
+    void init() {
+        period_ms = INIT_PERIOD - (level - 1) * 1000 + (random() % 50);
+        score = 0;
+        tilt = 0;
+        pan = random() % 360;
+
+        move = &cross;
+        init_move(0);
+
+        proj.dimmer(0);
+        proj.color(DMXProj::white);
+        if(level == 1) {
+            speaker.say(Words::debut_partie);
+            speaker.saynumber(game.get_players_count());
+            speaker.say(Words::joueur);
+        }
+        speaker.saysilence(350);
+        pad_width = 30;
+        set_ring_mode(RingFx::START, 400);
+        end_of_game = false;
+        is_winner = false;
+        countdown.init(3);
+        set_seq_tempo();
+    }
+
+    virtual void start() {
+        //printf("collab::start\n");
+        level = 1;
+        lives = 3;
+        total_time_ms = 0;
+        init();
+        game.sfx(SoundCommand::seqnew);
+    }
+
+    virtual void restart() {
+        //printf("collab::restart level=%d\n", level);
+        init();
+    }
+
 
     virtual void update() {
         auto countstate = countdown.update();
@@ -277,7 +282,7 @@ public:
         b = col[c][2];
 
         int width = pad_width / 2;
-        if(game.players.get_steady_count() /*game.get_players_count()*/ == 1) { // double the pad
+        if(mirror_pad()) { // double the pad
             for(int i = 0; i < total_leds; i++) {
                 int angle = (360 * i) / total_leds - config.leds_angle_offset;
                 if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);
