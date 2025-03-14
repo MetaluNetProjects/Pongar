@@ -38,20 +38,25 @@ WORDS_MACRO(virgule,    32)
 WORDS_MACRO(centieme,   33)
 WORDS_MACRO(millieme,   34)
 
+WORDS_MACRO(minute,     35)
+WORDS_MACRO(seconde,    36)
+WORDS_MACRO(joueur,     37)
+WORDS_MACRO(parmi,      38)
+
 #define WORDS_MULTIPLE_NITEMS 5
 #define WORDS_MULTIPLE_OFFSET 40
 #define WORDS_MULTIPLE(n) (WORDS_MULTIPLE_OFFSET + WORDS_MULTIPLE_NITEMS * n)
+// 43 WORDS_MULTIPLE maximum (40 + 43 * 5) = 255
 
-WORDS_MACRO(partie                  , WORDS_MULTIPLE(0))
-WORDS_MACRO(joueur                  , WORDS_MULTIPLE(1))
-WORDS_MACRO(niveau                  , WORDS_MULTIPLE(2))
-
-WORDS_MACRO(minute                  , WORDS_MULTIPLE(3))
-WORDS_MACRO(seconde                 , WORDS_MULTIPLE(4))
-WORDS_MACRO(place                   , WORDS_MULTIPLE(5))
+WORDS_MACRO(vous_etes_trop_pres     , WORDS_MULTIPLE(0))    // Attention, il est interdit de vous approcher trop près du Pong, ne franchissez pas la limite
+WORDS_MACRO(trop_pres               , WORDS_MULTIPLE(1))    // "Trop près !" "Vous avez mordu la ligne" (doit être court)
+WORDS_MACRO(temps_ecoule            , WORDS_MULTIPLE(2))    // Vous avez dépassé le temps maximum imparti.
+WORDS_MACRO(pas_extra_balle         , WORDS_MULTIPLE(3))    // Vous avez fait trop de fautes lors de cette première manche, vous n'avez droit à aucune extra balle.
+WORDS_MACRO(une_extra_balle         , WORDS_MULTIPLE(4))    // Votre performance moyenne lors de cette manche de qualification vous donne droit à une extra balle.
+WORDS_MACRO(deux_extra_balles       , WORDS_MULTIPLE(5))    // Bravo, votre bonne performance lors de cette manche de qualification vous donne droit à deux extra balles.
 
 WORDS_MACRO(alpague                 , WORDS_MULTIPLE(7))    // Allez, venez jouer au Pong !
-WORDS_MACRO(alpague2                , WORDS_MULTIPLE(8))    
+WORDS_MACRO(alpague2                , WORDS_MULTIPLE(8))    // donner les règles du jeu
 WORDS_MACRO(alpague3                , WORDS_MULTIPLE(9))    
 WORDS_MACRO(hiscore_jour            , WORDS_MULTIPLE(10))   // Nous vous rappelons que le meilleur temps aujourd'hui est de:
 WORDS_MACRO(hiscore_general         , WORDS_MULTIPLE(11))   // Nous vous rappelons que le meilleur temps au classement général est de:
@@ -73,9 +78,7 @@ WORDS_MACRO(champion                , WORDS_MULTIPLE(24))   // 1: bravo champion
 WORDS_MACRO(perdu_niveau1           , WORDS_MULTIPLE(25))   // Vous avez perdu dès le premier niveau, laissez la place à des meilleurs que vous.
 WORDS_MACRO(perdu_partie            , WORDS_MULTIPLE(26))   // Zut, c'était votre dernière chance, et vous avez perdu la partie ! N'hésitez pas à réessayer une prochaine fois.
 
-WORDS_MACRO(perdu                   , WORDS_MULTIPLE(29))
-WORDS_MACRO(gagne                   , WORDS_MULTIPLE(30))
-WORDS_MACRO(vies                    , WORDS_MULTIPLE(32))
-WORDS_MACRO(derniere_vie            , WORDS_MULTIPLE(33)) // attention dernière vie !
+WORDS_MACRO(temps_intermediaire     , WORDS_MULTIPLE(27))    // Votre temps de parcours est pour l'instant de:
+WORDS_MACRO(nombre_vainqueurs       , WORDS_MULTIPLE(28))    // Le nombre total de joueurs ayant gagné la partie est de:
 
 #undef WORDS_MACRO // need to redefine WORDS_MACRO each time

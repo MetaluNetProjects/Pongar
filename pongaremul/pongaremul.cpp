@@ -265,6 +265,10 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         float f = atom_getfloat(&argv[0]);
         speaker.say_hundredths(f);
     }
+    else if (s == gensym("say_time")) {
+        float f = atom_getfloat(&argv[0]);
+        speaker.say_time(f);
+    }
 }
 
 //#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)

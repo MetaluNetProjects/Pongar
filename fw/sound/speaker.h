@@ -93,12 +93,14 @@ public:
 
         if(mins) {
             saynumber(mins, true);
-            say(Words::minute);
+            say(Words::minute, 0);
         }
-        saynumber(secs, true);
-        say(Words::seconde);
+        if(secs != 0) {
+            saynumber(secs, true);
+            say(Words::seconde, 0);
+        }
         if(cents) {
-            say(Words::et, 0);
+            if(mins != 0 || secs != 0) say(Words::et, 0);
             saynumber(cents);
             say(Words::centieme, 0);
         }

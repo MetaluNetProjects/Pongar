@@ -186,10 +186,12 @@ public:
 
         proj.dimmer(0);
         proj.color(DMXProj::white);
+        proj.move(pan, 0);
+
         if(level == 1) {
             speaker.say(Words::debut_partie);
             speaker.saynumber(game.get_players_count());
-            speaker.say(Words::joueur);
+            speaker.say(Words::joueur, 0);
         }
         speaker.saysilence(350);
         pad_width = 30;
