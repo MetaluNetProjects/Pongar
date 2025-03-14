@@ -110,7 +110,7 @@ private:
     int players_count = 0;
     int steady_count = 0;
     int pre_steady_count = 0;
-    absolute_time_t steady_timeout;
+    absolute_time_t steady_timeout = at_the_end_of_time;
     Position raw_positions[PLAYERS_MAX];
     int raw_count = 0;
     int raw_separation_mm = 150;
@@ -136,6 +136,9 @@ public:
     void find_players(const uint16_t *distance_array);
     void set_raw_pos(Position *pos, int count); // for debugging from Pd
     void update();
+    bool count_is_steady() {
+        return time_reached(steady_timeout);
+    }
     inline int get_steady_count() {
         return steady_count;
     }

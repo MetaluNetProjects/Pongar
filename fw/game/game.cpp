@@ -111,8 +111,10 @@ bool Game::update() {
         if(players.get_steady_count()) {
             mode = WAIT_STABLE;
             speaker.say(Words::bonjour);
+            speaker.saysilence(1000);
             noplayer_timeout = at_the_end_of_time;
-            players_stable_timeout = make_timeout_time_ms((PLAYERS_STABLE_SECONDS + 5) * 1000); // "+ 5" is for accounting 'say(bonjour)' time
+            players_stable_timeout = make_timeout_time_ms(PLAYERS_STABLE_SECONDS * 1000);
+            players_say_stable_timeout = players_stable_timeout;
         }
         break;
     case WAIT_STABLE:
@@ -121,25 +123,28 @@ bool Game::update() {
             mode = PREPARE;
             break;
         }
-        if(game_players_count != players.get_steady_count() && !speaker.is_playing()) {
-            players_ready_timeout = make_timeout_time_ms(PLAYERS_READY_SECONDS * 1000);
-            game_players_count = players.get_steady_count();
-            if(time_reached(players_stable_timeout)) {
-                speaker.say(Words::attente_joueurs_stables);
-                players_stable_timeout = make_timeout_time_ms(PLAYERS_STABLE_SECONDS * 1000);
+        if(players.count_is_steady()) {
+            if(game_players_count != players.get_steady_count()) {
+                players_ready_timeout = make_timeout_time_ms(PLAYERS_READY_SECONDS * 1000);
+                game_players_count = players.get_steady_count();
             }
-            proj.dimmer(0);
+        } else {
+            if(!speaker.is_playing() && time_reached(players_say_stable_timeout)) {
+                speaker.say(Words::attente_joueurs_stables);
+                players_stable_timeout = at_the_end_of_time;
+                players_say_stable_timeout = make_timeout_time_ms(PLAYERS_STABLE_SECONDS * 1000);
+            }
             break;
         }
+
         if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing()) {
             int max_players = game_mode->get_max_players();
             if(game_players_count <= max_players) start();
             else {
                 speaker.say(Words::trop_nombreux);
+                speaker.saysilence(1000);
             }
         }
-        break;
-        
         break;
     case RESTART:
         if(!speaker.is_playing()) restart();

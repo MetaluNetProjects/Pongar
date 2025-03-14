@@ -22,6 +22,7 @@ private:
     int game_players_count;
     absolute_time_t players_ready_timeout;
     absolute_time_t players_stable_timeout;
+    absolute_time_t players_say_stable_timeout;
     absolute_time_t noplayer_timeout;
     absolute_time_t last_game_endtime;
     absolute_time_t next_alpague_time;

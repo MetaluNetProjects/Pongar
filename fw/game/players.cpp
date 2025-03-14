@@ -349,7 +349,6 @@ void Players::set_raw_pos(Position *pos, int count) {
 
 void Players::update() {
     if(steady_count == players_count) {
-        steady_timeout = at_the_end_of_time;
         pre_steady_count = -1;
         return;
     }
@@ -360,7 +359,6 @@ void Players::update() {
     }
     if(time_reached(steady_timeout)) {
         steady_count = pre_steady_count;
-        steady_timeout = at_the_end_of_time;
     }
 }
 
