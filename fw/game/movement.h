@@ -16,6 +16,7 @@ protected:
     float pan_change_amp = 45.0;
     float pan_delta = 0, tilt_delta = 0;
     int new_pan;
+    bool pan_upward;
     static const int INIT_PAN = 15;
     static const int MAX_PAN = 75;
     static const int INC_PAN = 6;
@@ -27,7 +28,8 @@ public:
         pan_change_amp = INIT_PAN + INC_PAN * difficulty;
         pan_change_amp = CLIP(pan_change_amp, INIT_PAN, MAX_PAN);
         int pan_change = (0.5 + 0.5 * (random() % 1024) / 1024.0) * pan_change_amp;
-        if(random() % 2) pan_change = -pan_change;
+        if(tilt > 0) pan_upward = random() % 2;
+        if(!pan_upward) pan_change = -pan_change;
         new_pan = pan + pan_change;
         new_pan = CLIP(new_pan, 0.0, 360.0);
         pan_delta = 2.0 * ((new_pan - pan) * Game::PERIOD_MS) / period_ms;
@@ -75,14 +77,14 @@ public:
         inc = (1.0 * Game::PERIOD_MS) / period_ms;
         index = 0;
 
-        int pan_change = 180 + ((random() % 60 - 30) * (difficulty + 10)) / 20;
+        int pan_change = 180 + ((random() % 120 - 60) * (difficulty + 10)) / 20;
         if(pan < 180) new_pan = pan + pan_change;
         else new_pan = pan - pan_change;
     }
 
     virtual bool update(float &pan, float &tilt) {
         index += inc;
-        tilt = init_tilt * (0.5 + 0.5 * (index * 2.0 - 1.0) * (index * 2.0 - 1.0));
+        tilt = init_tilt * (0.3 + 0.7 * (index * 2.0 - 1.0) * (index * 2.0 - 1.0));
         pan = init_pan + (1.0 - cos(index * 3.14159)) * 0.5 * (new_pan - init_pan);
         bool finished = (index > 1.0);
         return finished;

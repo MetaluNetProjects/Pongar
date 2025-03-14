@@ -151,20 +151,21 @@ class Collab : public GameMode {
             difficulty = score / 2;
             break;
         case 2:
-            difficulty = (score * 2) / 3;
+            difficulty = 2 + (score * 2) / 3;
             if(score > 8 && (random() % 5 == 0)) move = &bounce;
             if(score > 6 && (random() % 5 == 0)) move = &arch;
             break;
         case 3:
-            difficulty = score;
-            if(score > 5 && (random() % 3 == 0)) move = &bounce;
-            if(score > 3 && (random() % 3 == 0)) move = &arch;
+            difficulty = 4 + score;
+            if(score > 7 && (random() % 3 == 0)) move = &bounce;
+            if(score > 5 && (random() % 3 == 0)) move = &arch;
             break;
         }
         if(touched) {
             period_ms = period_ms * 0.85;
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
+        //move = &bounce; // DEBUG!!
         init_move(difficulty);
         set_seq_tempo();
     }
@@ -173,7 +174,7 @@ public:
     virtual ~Collab() {};
     virtual int get_max_players() { return 4; }
     void init() {
-        period_ms = INIT_PERIOD - (level - 1) * 1000 + (random() % 50);
+        period_ms = INIT_PERIOD - (level - 1) * 1500 + (random() % 30);
         score = 0;
         tilt = 0;
         pan = random() % 360;
@@ -244,7 +245,11 @@ public:
         if(move == &bounce) {
             proj.color(DMXProj::red);
             static int x = 0;
-            if(((x / 40) % 4) == 0) game.sfx(SoundCommand::tut, 1500, 50);
+            static int d;
+            if(d != x / 75) {
+                d = x / 75;
+                if((d % 5) != 0) game.sfx(SoundCommand::tut, 1500, 50);
+            }
             x += Game::PERIOD_MS;
         } else if(move == &arch) {
             proj.color(DMXProj::blue);
