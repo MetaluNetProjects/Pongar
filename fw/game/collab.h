@@ -28,6 +28,7 @@ class Collab : public GameMode {
     MoveCross cross;
     MoveBounce bounce;
     MoveArch arch;
+    MoveZigzag zigzag;
     Movement *move = &cross;
     int total_time_ms;
     std::set<int> time_results;
@@ -152,20 +153,21 @@ class Collab : public GameMode {
             break;
         case 2:
             difficulty = 2 + (score * 2) / 3;
-            if(score > 8 && (random() % 5 == 0)) move = &bounce;
+            if(score > 5 && (random() % 5 == 0)) move = &bounce;
             if(score > 6 && (random() % 5 == 0)) move = &arch;
             break;
         case 3:
             difficulty = 4 + score;
-            if(score > 7 && (random() % 3 == 0)) move = &bounce;
-            if(score > 5 && (random() % 3 == 0)) move = &arch;
+            if(score > 2 && (random() % 3 == 0)) move = &bounce;
+            if(score > 3 && (random() % 4 == 0)) move = &arch;
+            if(score > 4 && (random() % 5 == 0)) move = &zigzag;
             break;
         }
         if(touched) {
             period_ms = period_ms * 0.85;
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
-        //move = &bounce; // DEBUG!!
+        //move = &zigzag; // DEBUG!!
         init_move(difficulty);
         set_seq_tempo();
     }
@@ -242,22 +244,7 @@ public:
         proj.dimmer(128);
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
 
-        if(move == &bounce) {
-            proj.color(DMXProj::red);
-            static int x = 0;
-            static int d;
-            if(d != x / 75) {
-                d = x / 75;
-                if((d % 5) != 0) game.sfx(SoundCommand::tut, 1500, 50);
-            }
-            x += Game::PERIOD_MS;
-        } else if(move == &arch) {
-            proj.color(DMXProj::blue);
-            static int x = 0;
-            if(((x / 40) % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
-            x += Game::PERIOD_MS;
-        }
-        else proj.color(DMXProj::white);
+        move->fx_update();
     }
 
     virtual void pixels_update() {

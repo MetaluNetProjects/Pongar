@@ -9,6 +9,7 @@ private:
 public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) = 0;
     virtual bool update(float &pan, float &tilt) = 0; // return true if finished
+    virtual void fx_update() = 0;
 };
 
 class MoveCross: public Movement {
@@ -43,15 +44,22 @@ public:
         bool finished = ((tilt_delta > 0 && tilt >= config.proj_tilt_amp) || (tilt_delta < 0 && tilt <= -config.proj_tilt_amp));
         return finished;
     }
+
+    virtual void fx_update() {
+        proj.color(DMXProj::white);
+    }
 };
 
 class MoveBounce: public MoveCross {
 private:
     bool tilt_bounce;
+    int ms;
+    int sfxcount;
 public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         MoveCross::init(pan, tilt, period_ms, difficulty);
         tilt_bounce = true;
+        ms = sfxcount = 0;
     }
 
     virtual bool update(float &pan, float &tilt) {
@@ -60,6 +68,15 @@ public:
             tilt_bounce = false;
         }
         return MoveCross::update(pan, tilt);
+    }
+
+    virtual void fx_update() {
+        proj.color(DMXProj::red);
+        if(sfxcount != ms / 75) {
+            sfxcount = ms / 75;
+            if((sfxcount % 5) != 0) game.sfx(SoundCommand::tut, 1500, 50);
+        }
+        ms += Game::PERIOD_MS;
     }
 };
 
@@ -70,6 +87,8 @@ protected:
     float init_tilt;
     float init_pan;
     int new_pan;
+    int ms;
+    int sfxcount;
 public:
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         init_tilt = tilt;
@@ -80,6 +99,7 @@ public:
         int pan_change = 180 + ((random() % 120 - 60) * (difficulty + 10)) / 20;
         if(pan < 180) new_pan = pan + pan_change;
         else new_pan = pan - pan_change;
+        ms = 0;
     }
 
     virtual bool update(float &pan, float &tilt) {
@@ -89,5 +109,47 @@ public:
         bool finished = (index > 1.0);
         return finished;
     }
+
+    virtual void fx_update() {
+        proj.color(DMXProj::blue);
+        if(sfxcount != ms / 40) {
+            sfxcount = ms / 40;
+            if((sfxcount % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
+        }
+        ms += Game::PERIOD_MS;
+    }
 };
+
+class MoveZigzag: public MoveCross {
+private:
+    float index;
+    float inc;
+    float old_pan;
+    int ms;
+public:
+    virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
+        MoveCross::init(pan, tilt, period_ms, difficulty);
+        inc = (1.0 * Game::PERIOD_MS) / period_ms;
+        index = 0;
+        old_pan = pan;
+        ms = 0;
+    }
+
+    virtual bool update(float &pan, float &tilt) {
+        pan = old_pan;
+        bool finished = MoveCross::update(pan, tilt);
+        old_pan = pan;
+        index += inc;
+        pan += sin(index * 3.14158 * 6) * sin(index * 3.14158) * 20;
+        pan = CLIP(pan, 0.0, 360.0);
+        return finished;
+    }
+
+    virtual void fx_update() {
+        proj.color(DMXProj::green);
+        game.sfx(SoundCommand::tut, 700 + 250 * sinf((ms * 8.0 * 3.14) / 1000.0), 80);
+        ms += Game::PERIOD_MS;
+    }
+};
+
 
