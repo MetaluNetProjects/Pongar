@@ -360,7 +360,7 @@ public:
             if(time_reached(next_beat)) {
                 play_step();
                 next_beat = make_timeout_time_ms(ms);
-                next_half = make_timeout_time_ms(ms / 2 + ms * (shuffle / 4.0));
+                next_half = make_timeout_time_ms(ms / 2 + ms * (shuffle / 5.0));
             }
             if(time_reached(next_half)) {
                 play_step();
