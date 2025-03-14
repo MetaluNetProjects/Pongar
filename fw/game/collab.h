@@ -23,6 +23,7 @@ class Collab : public GameMode {
     bool is_winner = false;
     int level = 1;
     int lives;
+    int faults;
     Countdown countdown;
     RingFx ringfx;
     MoveCross cross;
@@ -91,8 +92,29 @@ class Collab : public GameMode {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 2000);
         switch(level) {
-            case 1: speaker.say(Words::gagne_niveau_1); break;
-            case 2: speaker.say(Words::gagne_niveau_2); break;
+            case 1:
+                speaker.say(Words::gagne_niveau_1);
+                speaker.saysilence(300);
+                speaker.say(Words::temps_intermediaire);
+                speaker.say_time(total_time_ms);
+                speaker.saysilence(300);
+                if(faults < 3) {
+                    speaker.say(Words::deux_extra_balles);
+                    lives = 3;
+                } else if(faults < 6) {
+                    speaker.say(Words::une_extra_balle);
+                    lives = 2;
+                } else {
+                    speaker.say(Words::pas_extra_balle);
+                    lives = 1;
+                }
+                break;
+            case 2:
+                speaker.say(Words::gagne_niveau_2);
+                speaker.saysilence(300);
+                speaker.say(Words::temps_intermediaire);
+                speaker.say_time(total_time_ms);
+                break;
             case 3: say_win(); break;
         }
         speaker.saysilence(2000);
@@ -123,6 +145,7 @@ class Collab : public GameMode {
         else {
             game.sfx(SoundCommand::buzz, 400);
             set_ring_mode(RingFx::FAULT, 200);
+            faults++;
         }
         speaker.saysilence(300); // waits end of sfx before saying smth
         return touched;
@@ -206,6 +229,7 @@ public:
         //printf("collab::start\n");
         level = 1;
         lives = 3;
+        faults = 0;
         total_time_ms = 0;
         init();
         game.sfx(SoundCommand::seqnew);
