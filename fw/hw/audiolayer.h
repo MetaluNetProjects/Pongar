@@ -2,18 +2,17 @@
 
 #pragma once
 #include "fraise.h"
-#include "sound/main_patch.h"
-#include "sound/sound_command.h"
+#include "sound/patch.h"
 
 class AudioLayer {
 private:
     float cpu_avg;
+    Patch &main_patch;
 public:
-    MainPatch main_patch;
+    AudioLayer(Patch &patch): main_patch(patch) {}
     void init(int audio_pin);
 
     void audio_task();
     void receivebytes(const char* data, uint8_t len);
     void print_cpu();
-    void command(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0);
 };

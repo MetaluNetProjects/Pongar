@@ -6,6 +6,7 @@
 #include "pico/multicore.h"
 
 #include "sound/osc.h"
+#include "sound/sound_command.h"
 
 struct audio_buffer_pool *producer_pool;
 
@@ -56,7 +57,7 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
     case 1:
         print_cpu();
         break;
-    case 2: {
+    /*case 2: {
         main_patch.buzzer.osc1.setFreq(fraise_get_int16());
         main_patch.buzzer.osc1.setVol(fraise_get_int16());
         main_patch.buzzer.osc2.setFreq(fraise_get_int16());
@@ -84,9 +85,9 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
             //case 6: main_patch.seq.make_melodies(); break;
         }
     }
-    break;
+    break;*/
     case 4: {
-        command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+        main_patch.command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
     }
     break;
     }
@@ -118,6 +119,6 @@ void AudioLayer::print_cpu() {
           );
 }
 
-void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
+/*void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
     main_patch.command(c, p1, p2, p3);
-}
+}*/

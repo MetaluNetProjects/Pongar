@@ -16,6 +16,7 @@
 #include "game/players.h"
 #include "game/game.h"
 #include "sound/osc.h"
+#include "sound/main_patch.h"
 #include "config.h"
 #include "pico/rand.h"
 
@@ -50,9 +51,10 @@ CpuLoad lidar_load("lidar");
 CpuLoad game_load("game");
 
 Logger scorelog;
-AudioLayer audio;
+MainPatch main_patch;
+AudioLayer audio(main_patch);
 
-Game game(scorelog, audio.main_patch);
+Game game(scorelog, main_patch);
 
 void setup() {
     eeprom_load();
@@ -262,7 +264,10 @@ void fraise_receivebytes(const char *data, uint8_t len) {
     case 32:
         audio.receivebytes(data + 1, len - 1);
         break;
-
+    case 33:
+        main_patch.command((SoundCommand)fraise_get_uint8(),
+            fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+        break;
     case 40:
         printf("l logcount %d\n", scorelog.get_count());
         break;

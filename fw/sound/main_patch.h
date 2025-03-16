@@ -7,6 +7,7 @@
 #include "enveloppe.h"
 #include "seq.h"
 #include "sound_command.h"
+#include "patch.h"
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 
@@ -134,8 +135,7 @@ public:
     }
 };
 
-class MainPatch {
-private:
+class MainPatch: public Patch {
 public:
     Buzzer buzzer;
     Bouncer bouncer;
@@ -144,7 +144,7 @@ public:
     Sequencer seq;
     Blosc osc1;
     enum WF {SIN, SAW, SQU, BLSAW, BLSQU} osc1_waveform = BLSAW;
-    void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
+    virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
         seq.mix(out_buffer); // seq adds reverb!
@@ -176,7 +176,7 @@ public:
         else bouncer.bounce(120, 1000, -3000);
     }
 
-    void command(SoundCommand c, int p1, int p2, int p3) {
+    virtual void command(SoundCommand c, int p1, int p2, int p3) {
         switch(c) {
         case SoundCommand::buzz:
             buzzer.buzz(p1);
