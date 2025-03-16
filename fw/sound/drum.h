@@ -13,10 +13,10 @@ private:
 protected:
     Enveloppe env1;
     absolute_time_t stop_time;
-    int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
-    int next_vol, next_ms;
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER] = {0};
+    int next_vol = 0, next_ms;
     int A = 1, S = 10, R = 200; // millis
-    int volume;
+    int volume = 0;
     Drum() {}
 public:
     virtual ~Drum() {}
@@ -56,12 +56,12 @@ public:
 class Hihat : public Drum {
 private:
     Bandpass bp1;
-    int bpf_offset;
-    int bpf_random;
-    float bpf_current;
-    float bpf_dest;
-    float bpf_portamento;
-    float bpq;
+    int bpf_offset = 0;
+    int bpf_random = 0;
+    float bpf_current = 0;
+    float bpf_dest = 0;
+    float bpf_portamento = 0;
+    float bpq = 0;
 public:
     Hihat() : bp1(8000, 30, 8) {
         R = 100;
@@ -94,12 +94,12 @@ public:
 class Snare : public Drum {
 private:
     Bandpass bp1;
-    int bpf_offset;
-    int bpf_random;
-    float bpf_current;
-    float bpf_dest;
-    float bpf_portamento;
-    float bpq;
+    int bpf_offset = 0;
+    int bpf_random = 0;
+    float bpf_current = 0;
+    float bpf_dest = 0;
+    float bpf_portamento = 0;
+    float bpq = 0;
 public:
     Snare() : bp1(8000, 30, 8) {
         R = 100;

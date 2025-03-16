@@ -10,7 +10,7 @@ class Enveloppe {
 public:
     int Sms;
     int Ainc, Sinc, Rinc;
-    int level;
+    int level = 0;
     static const int MAX_LEVEL_BITS = 24;
     static const int MAX_LEVEL = 1 << MAX_LEVEL_BITS;
     enum {OFF, A, S, R} state = OFF;

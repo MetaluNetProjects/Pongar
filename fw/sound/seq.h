@@ -189,8 +189,8 @@ class Reverb {
 private:
     Echo<5011> echo1;
     Echo<7529> echo2;
-    int32_t buf[AUDIO_SAMPLES_PER_BUFFER];
-    int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER];
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER] = {0};
+    int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER] = {0};
     uint16_t feedback = 3000;
     uint16_t volume = 5000;
     int16_t lop_last;

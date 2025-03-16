@@ -39,10 +39,6 @@ class Logger: public Scorelog{
     virtual uint16_t get_score(unsigned int num) {return 57; };
 };
 
-/*Logger scorelog;
-MainPatch main_patch;
-Game game(scorelog, main_patch);*/
-
 #define speaker x->x_game->speaker
 
 /* -------------------------- pico sdk compat --------------------------*/

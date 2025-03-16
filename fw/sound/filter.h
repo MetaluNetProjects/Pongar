@@ -10,8 +10,8 @@
 // Pd bp~ converted to integer computation
 class Bandpass {
 private:
-    int32_t last, prev;
-    float coef1, coef2, gain;
+    int32_t last = 0, prev = 0;
+    float coef1 = 0, coef2 = 0, gain = 0;
 public:
     Bandpass(float f, float q, float g) {
         setFQ(f, q, g);
@@ -74,8 +74,8 @@ public:
 // Pd hip~ converted to integer computation
 class Hip {
 private:
-    int32_t last;
-    uint16_t coeff;
+    int32_t last = 0;
+    uint16_t coeff = 0;
 public:
     Hip(int f) {
         setFreq(f);
@@ -108,8 +108,8 @@ public:
 // Pd lop~ converted to integer computation
 class Lop {
 private:
-    int32_t last;
-    uint16_t coeff;
+    int32_t last = 0;
+    uint16_t coeff = 0;
 public:
     Lop(int f) {
         setFreq(f);

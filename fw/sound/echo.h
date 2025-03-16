@@ -3,10 +3,10 @@
 template <unsigned SIZE> class Echo {
 private:
     uint16_t length;
-    int16_t buffer[SIZE];
+    int16_t buffer[SIZE] = {0};
     uint16_t pos;
-    uint16_t feedback;
-    uint16_t volume;
+    uint16_t feedback = 0;
+    uint16_t volume = 0;
 public:
     Echo(uint16_t _length = SIZE) {
         if(_length > SIZE) length = SIZE;
