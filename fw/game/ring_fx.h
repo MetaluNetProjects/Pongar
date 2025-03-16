@@ -1,7 +1,8 @@
 // ring effects
 
 #pragma once
-#include "game.h"
+#include "config.h"
+
 class RingFx {
 private:
     float dim;

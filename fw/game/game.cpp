@@ -9,12 +9,10 @@
 
 #include "collab.h"
 
-Collab collab_mode;
-
 void Game::init(int tx_pin) {
     speaker.init(tx_pin);
     prepare();
-    if(!game_mode) game_mode = &collab_mode;
+    if(!game_mode) game_mode = new Collab(*this);
     chaser.set_mode(0);
 }
 
@@ -78,7 +76,7 @@ void Game::pixels_update() {
 
     for(int i = 0; i < total_leds; i++) {
         int angle = (360 * i) / total_leds - config.leds_angle_offset;
-        if(game.players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
+        if(players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
         else set_pixel(i, 0, 0, 0);
     }
 }

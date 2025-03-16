@@ -26,13 +26,14 @@ class Collab : public GameMode {
     int faults;
     Countdown countdown;
     RingFx ringfx;
-    MoveCross cross;
-    MoveBounce bounce;
-    MoveArch arch;
-    MoveZigzag zigzag;
-    Movement *move = &cross;
+    Movement *move = nullptr;
     int total_time_ms;
     std::set<int> time_results;
+
+    void set_move(Movement *newmove) {
+        if(move) delete move;
+        move = newmove;
+    }
 
     void set_ring_mode(RingFx::MODE mode, int ms) {
         ringfx.set_mode(mode, ms);
@@ -169,33 +170,36 @@ class Collab : public GameMode {
 
     void next_move(bool touched) {
         int difficulty = score;
-        move = &cross;
+        set_move(new MoveCross(game));
         switch(level) {
         case 1:
             difficulty = score / 2;
             break;
         case 2:
             difficulty = 2 + (score * 2) / 3;
-            if(score > 5 && (random() % 5 == 0)) move = &bounce;
-            if(score > 6 && (random() % 5 == 0)) move = &arch;
+            if(score > 5 && (random() % 5 == 0)) set_move(new MoveBounce(game));
+            if(score > 6 && (random() % 5 == 0)) set_move(new MoveArch(game));
             break;
         case 3:
             difficulty = 4 + score;
-            if(score > 2 && (random() % 3 == 0)) move = &bounce;
-            if(score > 3 && (random() % 4 == 0)) move = &arch;
-            if(score > 4 && (random() % 5 == 0)) move = &zigzag;
+            if(score > 2 && (random() % 3 == 0)) set_move(new MoveBounce(game));
+            if(score > 3 && (random() % 4 == 0)) set_move(new MoveArch(game));
+            if(score > 4 && (random() % 5 == 0)) set_move(new MoveZigzag(game));
             break;
         }
         if(touched) {
             period_ms = period_ms * 0.85;
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
-        //move = &zigzag; // DEBUG!!
+        //set_move(new MoveZigzag(game)); // DEBUG!!
         init_move(difficulty);
         set_seq_tempo();
     }
 
 public:
+    Collab(Game &_game) : GameMode(_game), countdown(_game) {
+        set_move(new MoveCross(game));
+    }
     virtual ~Collab() {};
     virtual int get_max_players() { return 4; }
     void init() {
@@ -204,7 +208,7 @@ public:
         tilt = 0;
         pan = random() % 360;
 
-        move = &cross;
+        set_move(new MoveCross(game));
         init_move(0);
 
         proj.dimmer(0);
@@ -316,5 +320,4 @@ public:
         }
     }
 };
-
 

@@ -58,11 +58,12 @@ public:
     void pixels_update();
 };
 
-extern Game game;
-#define speaker game.speaker
-
 class GameMode {
+protected:
+    Game &game;
+    Speaker &speaker;
 public:
+    GameMode(Game &_game): game(_game), speaker(game.speaker) {};
     virtual ~GameMode() {};
     virtual int get_max_players() = 0;
     virtual void start() = 0;
@@ -72,5 +73,4 @@ public:
         game.pixels_update();
     }
 };
-
 

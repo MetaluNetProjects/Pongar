@@ -9,8 +9,10 @@ private:
     float dim;
     bool armed;
     bool waiting_not_saying;
+    Game &game;
 public:
     enum State {OFF, RUNNING, FIRED};
+    Countdown(Game &_game): game(_game) {}
     bool running() {
         return ((countdown != 0) || !time_reached(timeout));
     }
@@ -22,15 +24,15 @@ public:
             }
             return OFF;
         }
-        if(waiting_not_saying && !speaker.is_playing()) {
+        if(waiting_not_saying && !game.speaker.is_playing()) {
             waiting_not_saying = false;
         }
         if(countdown > 1) proj.dimmer(dim = dim * 0.5);
         else proj.dimmer(dim = dim * 0.8);
-        if(!speaker.is_playing() && time_reached(timeout)) {
+        if(!game.speaker.is_playing() && time_reached(timeout)) {
             if(!game.players.get_steady_count()) game.prepare();
             else {
-                speaker.saynumber(countdown);
+                game.speaker.saynumber(countdown);
                 timeout = make_timeout_time_ms(1000);
                 dim = 255.0;
                 countdown--;

@@ -49,11 +49,6 @@ CpuLoad pixel_load("pixel");
 CpuLoad lidar_load("lidar");
 CpuLoad game_load("game");
 
-/*class Logger: public Scorelog{
-    virtual int get_rank(uint16_t score) { return 0;};
-    virtual void write(uint16_t score) {};
-
-} scorelog;*/
 Logger scorelog;
 AudioLayer audio;
 
@@ -262,7 +257,7 @@ void fraise_receivebytes(const char *data, uint8_t len) {
         game.receivebytes(data + 1, len - 1);
         break;
     case 31:
-        speaker.receivebytes(data + 1, len - 1);
+        game.speaker.receivebytes(data + 1, len - 1);
         break;
     case 32:
         audio.receivebytes(data + 1, len - 1);

@@ -5,8 +5,11 @@
 #include "config.h"
 #include <math.h>
 class Movement {
-private:
+protected:
+    Game &game;
 public:
+    Movement(Game &_game): game(_game) {}
+    virtual ~Movement() {}
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) = 0;
     virtual bool update(float &pan, float &tilt) = 0; // return true if finished
     virtual void fx_update() = 0;
@@ -22,6 +25,8 @@ protected:
     static const int MAX_PAN = 75;
     static const int INC_PAN = 6;
 public:
+    MoveCross(Game &_game): Movement(_game) {}
+
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         tilt_delta = (2.0 * config.proj_tilt_amp * Game::PERIOD_MS) / period_ms;
         if(tilt > 0) tilt_delta = -tilt_delta;
@@ -56,6 +61,8 @@ private:
     int ms;
     int sfxcount;
 public:
+    MoveBounce(Game &_game): MoveCross(_game) {}
+
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         MoveCross::init(pan, tilt, period_ms, difficulty);
         tilt_bounce = true;
@@ -90,6 +97,8 @@ protected:
     int ms;
     int sfxcount;
 public:
+    MoveArch(Game &_game): Movement(_game) {}
+
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         init_tilt = tilt;
         init_pan = pan;
@@ -127,6 +136,8 @@ private:
     float old_pan;
     int ms;
 public:
+    MoveZigzag(Game &_game): MoveCross(_game) {}
+
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         MoveCross::init(pan, tilt, period_ms, difficulty);
         inc = (1.0 * Game::PERIOD_MS) / period_ms;

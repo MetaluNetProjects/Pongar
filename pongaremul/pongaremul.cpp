@@ -39,9 +39,11 @@ class Logger: public Scorelog{
     virtual uint16_t get_score(unsigned int num) {return 57; };
 };
 
-Logger scorelog;
+/*Logger scorelog;
 MainPatch main_patch;
-Game game(scorelog, main_patch);
+Game game(scorelog, main_patch);*/
+
+#define speaker x->x_game->speaker
 
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
@@ -103,15 +105,18 @@ static void *pongaremul_new(void)
     x->x_msgout = outlet_new(&x->x_obj, &s_anything);
     instance = x;
     x->x_wav_is_playing = false;
-    x->x_scorelog = &scorelog;
-    x->x_patch = &main_patch;
-    x->x_game = &game;
+    x->x_scorelog = new Logger;
+    x->x_patch = new MainPatch;
+    x->x_game = new Game(*x->x_scorelog, *x->x_patch);
     x->x_game->init(0);
     return (x);
 }
 
 static void pongaremul_free(t_pongaremul *x)
 {
+    delete x->x_game;
+    delete x->x_patch;
+    delete x->x_scorelog;
 }
 
 static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *argv)
