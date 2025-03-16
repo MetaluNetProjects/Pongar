@@ -2,7 +2,7 @@
 
 #include <math.h>
 #include <string.h>
-#include "config.h"
+#include "sound.h"
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 

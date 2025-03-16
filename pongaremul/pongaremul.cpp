@@ -23,20 +23,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include <stdlib.h>
 
 #include "compat.h"
+#include "sound.h"
 #include "config.h"
 #include "players.h"
 #include "game.h"
 #include "proj.h"
 
 PongarConfig config;
+
 class Logger: public Scorelog{
+  public:
+    virtual ~Logger() {}
     virtual int get_rank(uint16_t score) { return 111; }
     virtual void write(uint16_t score) {};
     virtual uint16_t get_score(unsigned int num) {return 57; };
-} scorelog;
+};
 
-Game game(scorelog);
-
+Logger scorelog;
+MainPatch main_patch;
+Game game(scorelog, main_patch);
 
 /* -------------------------- pico sdk compat --------------------------*/
 absolute_time_t make_timeout_time_ms(int ms) {
@@ -82,9 +87,11 @@ typedef struct _pongaremul
     t_object x_obj;
     t_float x_f;
     t_outlet *x_msgout;
-    MainPatch *x_patch;
     bool x_wav_is_playing;
     uint16_t x_lidar[360];
+    Logger *x_scorelog;
+    MainPatch *x_patch;
+    Game *x_game;
 } t_pongaremul;
 
 t_pongaremul *instance;
@@ -96,7 +103,10 @@ static void *pongaremul_new(void)
     x->x_msgout = outlet_new(&x->x_obj, &s_anything);
     instance = x;
     x->x_wav_is_playing = false;
-    game.init(0, 0);
+    x->x_scorelog = &scorelog;
+    x->x_patch = &main_patch;
+    x->x_game = &game;
+    x->x_game->init(0);
     return (x);
 }
 
@@ -108,8 +118,8 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
 {
     //post("pongaremul rvc %s", s->s_name);
     if(s == &s_bang) {
-        game.update();
-        game.pixels_update();
+        x->x_game->update();
+        x->x_game->pixels_update();
     }
     else if(s == gensym("players")) {
         /*players_count = argc;
@@ -117,24 +127,24 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         int count = argc;
         Position pos[Players::PLAYERS_MAX];
         for(int i = 0; i < argc; i++) pos[i].angle = atom_getfloat(&argv[i]);
-        game.players.set_raw_pos(pos, count);
+        x->x_game->players.set_raw_pos(pos, count);
 
         t_atom at[3 * Players::PLAYERS_MAX];
-        for(int i = 0; i < game.players.get_count(); i++) {
-            SETFLOAT(&at[3 * i], game.players.get_pos(i).angle);
-            SETFLOAT(&at[3 * i + 1], game.players.get_pos(i).distance);
-            SETFLOAT(&at[3 * i + 2], game.players.get_pos(i).size);
+        for(int i = 0; i < x->x_game->players.get_count(); i++) {
+            SETFLOAT(&at[3 * i], x->x_game->players.get_pos(i).angle);
+            SETFLOAT(&at[3 * i + 1], x->x_game->players.get_pos(i).distance);
+            SETFLOAT(&at[3 * i + 2], x->x_game->players.get_pos(i).size);
         }
-        outlet_anything(instance->x_msgout, gensym("fplayers"), game.players.get_count() * 3, at);
+        outlet_anything(instance->x_msgout, gensym("fplayers"), x->x_game->players.get_count() * 3, at);
     }
     else if(s == gensym("prepare")) {
-        game.prepare();
+        x->x_game->prepare();
     }
     else if(s == gensym("start")) {
-        game.start();
+        x->x_game->start();
     }
     else if(s == gensym("stop")) {
-        game.stop();
+        x->x_game->stop();
     }
     else if(s == gensym("wav_playing")) {
         x->x_wav_is_playing = argc > 0 ? atom_getfloat(&argv[0]) : 0;
@@ -142,7 +152,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     else if(s == gensym("buzz")) x->x_patch->buzz();
     else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
     else if(s == gensym("tut")) {
-        if(argc > 1) game.sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));
+        if(argc > 1) x->x_game->sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));
     }
     else if(s == gensym("buzzcfg")) {
         if(argc > 3)
@@ -180,17 +190,17 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         else
         {
             for(int i = 0; i < 360 && i < npoints; i++) x->x_lidar[i] = vec[i].w_float;
-            //game.players.find_players(x->x_lidar);
-            game.players.find_players_light(x->x_lidar);
+            //x->x_game->players.find_players(x->x_lidar);
+            x->x_game->players.find_players_light(x->x_lidar);
 
             t_atom at[4 * Players::PLAYERS_MAX];
-            if(game.players.get_object_set().size() >= Players::PLAYERS_MAX) {
+            if(x->x_game->players.get_object_set().size() >= Players::PLAYERS_MAX) {
                 pd_error(x, "too many objects!");
             } else {
                 int n = 0;
-                //printf("nb objs:%ld\n", game.players.get_object_set().size());
-                for(int i : game.players.get_object_set()) {
-                    Position &p = game.players.get_object_pos(i);
+                //printf("nb objs:%ld\n", x->x_game->players.get_object_set().size());
+                for(int i : x->x_game->players.get_object_set()) {
+                    Position &p = x->x_game->players.get_object_pos(i);
                     if(&p != &null_position) {
                         //printf("obj %d angle:%d\n", i, p.angle);
                         SETFLOAT(&at[n], i);
@@ -207,12 +217,12 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
                 outlet_anything(instance->x_msgout, gensym("fobjects"), n, at);
             }
 
-            if(game.players.get_set().size() >= Players::PLAYERS_MAX) {
+            if(x->x_game->players.get_set().size() >= Players::PLAYERS_MAX) {
                 pd_error(x, "too many players!");
             } else {
                 int n = 0;
-                for(int i : game.players.get_set()) {
-                    Position &p = game.players.get_pos(i);
+                for(int i : x->x_game->players.get_set()) {
+                    Position &p = x->x_game->players.get_pos(i);
                     if(&p != &null_position) {
                         SETFLOAT(&at[n], i);
                         n++;
@@ -271,7 +281,6 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     }
 }
 
-//#define CLIPUNIT(x) (x > 1.0 ? 1.0 : x < -1.0 ? -1.0 : x)
 static t_int *pongaremul_perform(t_int *w)
 {
     t_pongaremul *x = (t_pongaremul *)(w[1]);
@@ -291,16 +300,6 @@ static t_int *pongaremul_perform(t_int *w)
 static void pongaremul_dsp(t_pongaremul *x, t_signal **sp)
 {
     dsp_add(pongaremul_perform, 3, x, sp[0]->s_vec, sp[0]->s_n);
-}
-
-/* -------------------------- audio layer ------------------------------ */
-
-void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    main_patch.command(c, p1, p2, p3);
-}
-
-void AudioLayer::init(int audio_pin) {
-    instance->x_patch = &main_patch;
 }
 
 /* -------------------------- wav player ------------------------------ */

@@ -1,11 +1,11 @@
 // audio layer
 
 #include "sound.h"
+#include "audiolayer.h"
 #include "pico/audio_pwm.h"
 #include "pico/multicore.h"
 
 #include "sound/osc.h"
-#include "config.h"
 
 struct audio_buffer_pool *producer_pool;
 

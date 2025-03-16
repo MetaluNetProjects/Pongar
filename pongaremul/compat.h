@@ -6,9 +6,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-//#define AUDIO_SAMPLE_RATE 48000 //57439
-//#define AUDIO_SAMPLES_PER_BUFFER 64
-
 #include <sys/time.h>
 typedef struct timeval absolute_time_t;
 
@@ -22,5 +19,4 @@ uint32_t to_ms_since_boot (absolute_time_t t);
 #define MIN(x,m) ((m) < (x) ? (m) : (x))
 
 uint8_t fraise_get_uint8();
-#define AUDIO_SAMPLE_RATE 44100
 

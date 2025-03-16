@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "fraise.h"
 #include "pixel.h"
-#include "../config.h"
+#include "config.h"
 
 uint32_t framebuffers[2][NUM_PIXELS];
 uint32_t *framebuffer = framebuffers[0];

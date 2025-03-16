@@ -3,7 +3,7 @@
 #include "fraise.h"
 #include "lidar.h"
 #include "string.h"
-#include "../config.h"
+#include "config.h"
 
 lidar_state_t lidar_state;
 uint16_t lidar_distance[360];

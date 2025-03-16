@@ -60,7 +60,7 @@ void mp3_putc(char c) {
 }
 
 //-----------------------------
-#include "../config.h"
+#include "config.h"
 
 RomTable<uint16_t> WavPlayer::wavsDuration;
 

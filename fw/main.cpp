@@ -7,18 +7,16 @@
 #include "fraise_eeprom.h"
 
 #include "hw/dmx.h"
-//#include "hw/wavplayer.h"
 #include "hw/lidar.h"
 #include "hw/proj.h"
 #include "hw/pixel.h"
 #include "hw/logger.h"
+#include "hw/audiolayer.h"
+#include "hw/cpuload.h"
 #include "game/players.h"
 #include "game/game.h"
-//#include "piotx.h"
-//#include "sound.h"
 #include "sound/osc.h"
 #include "config.h"
-#include "cpuload.h"
 #include "pico/rand.h"
 
 #define printf fraise_printf
@@ -57,15 +55,17 @@ CpuLoad game_load("game");
 
 } scorelog;*/
 Logger scorelog;
+AudioLayer audio;
 
-Game game(scorelog);
+Game game(scorelog, audio.main_patch);
 
 void setup() {
     eeprom_load();
 
     scorelog.init(LOGGER_START, LOGGER_SIZE);
 
-    game.init(AUDIO_PWM_PIN, MP3_TX_PIN);
+    audio.init(AUDIO_PWM_PIN);
+    game.init(MP3_TX_PIN);
     Osc::setup();
     Blosc::setup();
 
@@ -260,6 +260,12 @@ void fraise_receivebytes(const char *data, uint8_t len) {
 
     case 30:
         game.receivebytes(data + 1, len - 1);
+        break;
+    case 31:
+        speaker.receivebytes(data + 1, len - 1);
+        break;
+    case 32:
+        audio.receivebytes(data + 1, len - 1);
         break;
 
     case 40:

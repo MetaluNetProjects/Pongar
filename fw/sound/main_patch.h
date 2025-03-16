@@ -6,6 +6,7 @@
 #include "filter.h"
 #include "enveloppe.h"
 #include "seq.h"
+#include "sound_command.h"
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
 

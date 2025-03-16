@@ -11,8 +11,7 @@
 
 Collab collab_mode;
 
-void Game::init(int audio_pin, int tx_pin) {
-    audio.init(audio_pin);
+void Game::init(int tx_pin) {
     speaker.init(tx_pin);
     prepare();
     if(!game_mode) game_mode = &collab_mode;
@@ -159,14 +158,5 @@ bool Game::update() {
 }
 
 void Game::receivebytes(const char* data, uint8_t len) {
-    char command = fraise_get_uint8();
-    switch(command) {
-    case 1:
-        audio.receivebytes(data + 1, len - 1);
-        break;
-    case 2:
-        speaker.receivebytes(data + 1, len - 1);
-        break;
-    }
 }
 

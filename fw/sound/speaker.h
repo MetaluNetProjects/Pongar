@@ -1,9 +1,9 @@
 // global game
 
 #pragma once
-#include "sound.h"
 #include "wavplayer.h"
 #include "words.h"
+#include <vector>
 
 class Speaker: public WavPlayer {
 private:

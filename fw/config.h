@@ -34,9 +34,3 @@ extern PongarConfig config;
 #define LOGGER_START (WAVDUR_TABLE_START - LOGGER_SIZE)
 //static_assert((LOGGER_START - XIP_BASE) / 1024 > 900); // assert there is at least 900kB left in flash.
 
-#ifndef AUDIO_SAMPLE_RATE
-#define AUDIO_SAMPLE_RATE 24000 //57439
-#endif
-
-#define AUDIO_SAMPLES_PER_BUFFER 64
-
