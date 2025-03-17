@@ -157,13 +157,19 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         if(commands.empty()) {
             for(int i = 0; i < 256; i++) {
                 const char *w = get_sound_command_string(i);
-                if(!w) w = "_none_";
-                commands[gensym(w)] = i;
+                if(w) commands[gensym(w)] = i;
             }
         }
         int com = 0;
         if(argc > 0) {
-            if((&argv[0])->a_type == A_SYMBOL) com = commands[atom_getsymbol(&argv[0])];
+            if((&argv[0])->a_type == A_SYMBOL) {
+                t_symbol *sym = atom_getsymbol(&argv[0]);
+                if(commands.count(sym) == 0) {
+                    pd_error(x, "%s: no such sfx command!", sym->s_name);
+                    return;
+                }
+                com = commands[atom_getsymbol(&argv[0])];
+            }
             else com = atom_getfloat(&argv[0]);
         }
         int p1 = argc > 1 ? atom_getfloat(&argv[1]) : 0;
@@ -259,7 +265,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         }
     }
     else if (s == gensym("reload_words_duration")) {
-        speaker.init(0);
+        speaker.reload_durations();
     }
     else if (s == gensym("saynumber")) {
         int n = atom_getfloat(&argv[0]);

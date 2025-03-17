@@ -19,6 +19,10 @@ public:
         set_mode(3);
     }
 
+    virtual void reload_durations() {
+        set_mode(mode);
+    }
+
     void set_mode(int m) {
         mode = m;
         for(int i = 0; i < 256; i++) exists[i] = get_duration_ms(mode, i) != 0;

@@ -134,6 +134,7 @@ void WavPlayer::receivebytes(const char* data, uint8_t len) {
     break;
     case 12:
         wavsDuration.save_ram_to_flash();
+        reload_durations();
         break;
     case 13:
     {

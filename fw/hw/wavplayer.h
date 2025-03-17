@@ -13,6 +13,7 @@ private:
     static RomTable<uint16_t> wavsDuration;
 public:
     void init(int tx_pin);
+    virtual void reload_durations() {}
     void play(uint8_t folder, uint8_t track);
     void silence(uint16_t ms);
     void clear();
