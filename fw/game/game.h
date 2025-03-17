@@ -4,7 +4,7 @@
 #include "sound/speaker.h"
 #include "sound/sound_command.h"
 #include "sound/words.h"
-#include "sound/patch.h"
+#include "sound/audiolayer.h"
 #include "players.h"
 #include "gfx/gfx.h"
 #include "scorelog.h"
@@ -27,7 +27,7 @@ private:
     absolute_time_t last_game_endtime;
     absolute_time_t next_alpague_time;
     GameMode *game_mode;
-    Patch &main_patch;
+    AudioLayer &audio;
     Chaser chaser;
     int say_mode = 1;
     bool wait_saying = false;
@@ -35,7 +35,7 @@ private:
         return to_ms_since_boot(get_absolute_time()) - to_ms_since_boot(last_game_endtime);
     }
 public:
-    Game(Scorelog &_log, Patch &patch): main_patch(patch), scorelog(_log) {};
+    Game(Scorelog &_log, AudioLayer &_audio): audio(_audio), scorelog(_log) {};
     Speaker speaker;
     Players players;
     Scorelog &scorelog;
@@ -53,7 +53,7 @@ public:
         return game_players_count;
     }
     inline void sfx(SoundCommand c, int p1 = 0, int p2 = 0, int p3 = 0) {
-        main_patch.command(c, p1, p2, p3);
+        audio.command(c, p1, p2, p3);
     }
     void pixels_update();
 };

@@ -1,12 +1,11 @@
 // audio layer
 
 #include "sound.h"
-#include "audiolayer.h"
+#include "sound/audiolayer.h"
+#include "sound/main_patch.h"
 #include "pico/audio_pwm.h"
 #include "pico/multicore.h"
-
 #include "sound/osc.h"
-#include "sound/sound_command.h"
 
 struct audio_buffer_pool *producer_pool;
 
@@ -45,7 +44,13 @@ static void core1_task() {
     while(1) core1_layer->audio_task();
 }
 
+MainPatch main_patch;
+
+AudioLayer::AudioLayer(): patch(main_patch) {}
+
 void AudioLayer::init(int audio_pin) {
+    Osc::setup();
+    Blosc::setup();
     sound_init(AUDIO_SAMPLE_RATE, AUDIO_SAMPLES_PER_BUFFER, 3, audio_pin);
     core1_layer = this;
     multicore_launch_core1(core1_task);
@@ -87,10 +92,14 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
     }
     break;*/
     case 4: {
-        main_patch.command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+        patch.command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
     }
     break;
     }
+}
+
+void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
+    patch.command(c, p1, p2, p3);
 }
 
 void AudioLayer::audio_task() {
@@ -99,7 +108,7 @@ void AudioLayer::audio_task() {
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
     absolute_time_t start = get_absolute_time();
 
-    main_patch.mix(int_samples, 0);
+    mix(int_samples, 0);
     for (uint i = 0; i < buffer->max_sample_count; i++) {
         samples[i] = clip(int_samples[i]);
     }
@@ -119,6 +128,3 @@ void AudioLayer::print_cpu() {
           );
 }
 
-/*void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    main_patch.command(c, p1, p2, p3);
-}*/

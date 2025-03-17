@@ -11,12 +11,10 @@
 #include "hw/proj.h"
 #include "hw/pixel.h"
 #include "hw/logger.h"
-#include "hw/audiolayer.h"
 #include "hw/cpuload.h"
 #include "game/players.h"
 #include "game/game.h"
-#include "sound/osc.h"
-#include "sound/main_patch.h"
+#include "sound/audiolayer.h"
 #include "config.h"
 #include "pico/rand.h"
 
@@ -51,10 +49,9 @@ CpuLoad lidar_load("lidar");
 CpuLoad game_load("game");
 
 Logger scorelog;
-MainPatch main_patch;
-AudioLayer audio(main_patch);
+AudioLayer audio;
 
-Game game(scorelog, main_patch);
+Game game(scorelog, audio);
 
 void setup() {
     eeprom_load();
@@ -63,8 +60,6 @@ void setup() {
 
     audio.init(AUDIO_PWM_PIN);
     game.init(MP3_TX_PIN);
-    Osc::setup();
-    Blosc::setup();
 
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
@@ -265,7 +260,7 @@ void fraise_receivebytes(const char *data, uint8_t len) {
         audio.receivebytes(data + 1, len - 1);
         break;
     case 33:
-        main_patch.command((SoundCommand)fraise_get_uint8(),
+        audio.command((SoundCommand)fraise_get_uint8(),
             fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
         break;
     case 40:

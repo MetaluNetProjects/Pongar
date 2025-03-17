@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "m_pd.h"
 #include "math.h"
 #include <stdlib.h>
+#include <map>
 
 #include "compat.h"
 #include "sound.h"
@@ -28,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "players.h"
 #include "game.h"
 #include "proj.h"
-#include "sound/main_patch.h"
+#include "sound/audiolayer.h"
 
 PongarConfig config;
 
@@ -89,7 +90,7 @@ typedef struct _pongaremul
     bool x_wav_is_playing;
     uint16_t x_lidar[360];
     Logger *x_scorelog;
-    MainPatch *x_patch;
+    AudioLayer *x_audio;
     Game *x_game;
 } t_pongaremul;
 
@@ -103,8 +104,8 @@ static void *pongaremul_new(void)
     instance = x;
     x->x_wav_is_playing = false;
     x->x_scorelog = new Logger;
-    x->x_patch = new MainPatch;
-    x->x_game = new Game(*x->x_scorelog, *x->x_patch);
+    x->x_audio = new AudioLayer;
+    x->x_game = new Game(*x->x_scorelog, *x->x_audio);
     x->x_game->init(0);
     return (x);
 }
@@ -112,7 +113,7 @@ static void *pongaremul_new(void)
 static void pongaremul_free(t_pongaremul *x)
 {
     delete x->x_game;
-    delete x->x_patch;
+    delete x->x_audio;
     delete x->x_scorelog;
 }
 
@@ -151,33 +152,24 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     else if(s == gensym("wav_playing")) {
         x->x_wav_is_playing = argc > 0 ? atom_getfloat(&argv[0]) : 0;
     }
-    else if(s == gensym("buzz")) x->x_patch->buzz();
-    else if(s == gensym("bounce")) x->x_patch->bounce(argc > 0 ? atom_getfloat(&argv[0]) : 0);
-    else if(s == gensym("tut")) {
-        if(argc > 1) x->x_game->sfx(SoundCommand::tut, atom_getfloat(&argv[0]), atom_getfloat(&argv[1]));
-    }
-    else if(s == gensym("buzzcfg")) {
-        if(argc > 3)
-            x->x_patch->buzzer.config(atom_getfloat(&argv[0]), atom_getfloat(&argv[1]), atom_getfloat(&argv[2]), atom_getfloat(&argv[3]));
-    }
     else if(s == gensym("sfx")) {
-        int com = argc > 0 ? atom_getfloat(&argv[0]) : 0;
+        static std::map<t_symbol*, int> commands;
+        if(commands.empty()) {
+            for(int i = 0; i < 256; i++) {
+                const char *w = get_sound_command_string(i);
+                if(!w) w = "_none_";
+                commands[gensym(w)] = i;
+            }
+        }
+        int com = 0;
+        if(argc > 0) {
+            if((&argv[0])->a_type == A_SYMBOL) com = commands[atom_getsymbol(&argv[0])];
+            else com = atom_getfloat(&argv[0]);
+        }
         int p1 = argc > 1 ? atom_getfloat(&argv[1]) : 0;
         int p2 = argc > 2 ? atom_getfloat(&argv[2]) : 0;
         int p3 = argc > 3 ? atom_getfloat(&argv[3]) : 0;
-        x->x_patch->command((SoundCommand)com, p1, p2, p3);
-    }
-    else if(s == gensym("shuffle")) {
-        if(argc > 0) x->x_patch->seq.set_shuffle(atom_getfloat(&argv[0]));
-    }
-    else if(s == gensym("tempoms")) {
-        if(argc > 0) x->x_patch->seq.set_tempo_ms(atom_getfloat(&argv[0]));
-    }
-    else if(s == gensym("play")) {
-        bool play = false, once = false;
-        if(argc > 0) play = atom_getfloat(&argv[0]) != 0;
-        if(argc > 1) once = atom_getfloat(&argv[0]) != 0;
-        x->x_patch->seq.set_playing(play, once);
+        x->x_audio->command((SoundCommand)com, p1, p2, p3);
     }
     else if(s == gensym("lidar")) {
         t_symbol *tabname = atom_getsymbol(&argv[0]);
@@ -291,7 +283,7 @@ static t_int *pongaremul_perform(t_int *w)
     int i;
     int32_t intbuf[AUDIO_SAMPLES_PER_BUFFER] = {0};
 
-    x->x_patch->mix(intbuf, 0);
+    x->x_audio->mix(intbuf, 0);
     for (i = 0; i < n; i++)
     {
         *out++ = CLIP(intbuf[i] / 32768.0, -1.0, 1.0);
@@ -376,8 +368,6 @@ extern "C" {
 
 void pongaremul_setup(void)
 {
-    Osc::setup();
-    Blosc::setup();
     pongaremul_class = class_new(gensym("pongaremul"), (t_newmethod)pongaremul_new,
                                  (t_method)pongaremul_free, sizeof(t_pongaremul), 0, A_NULL);
     class_addanything(pongaremul_class, pongaremul_anything);
