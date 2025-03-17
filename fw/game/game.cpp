@@ -156,5 +156,11 @@ bool Game::update() {
 }
 
 void Game::receivebytes(const char* data, uint8_t len) {
+    char command = fraise_get_uint8();
+    switch(command) {
+    case 2:
+        speaker.receivebytes(data + 1, len - 1);
+        break;
+    }
 }
 
