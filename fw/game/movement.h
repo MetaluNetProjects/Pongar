@@ -35,8 +35,9 @@ public:
         pan_change_amp = CLIP(pan_change_amp, INIT_PAN, MAX_PAN);
         int pan_change = (0.5 + 0.5 * (random() % 1024) / 1024.0) * pan_change_amp;
         if(tilt > 0) pan_upward = random() % 2;
-        if(!pan_upward) pan_change = -pan_change;
-        new_pan = pan + pan_change;
+        if(pan + pan_change > 360) pan_upward = false;
+        if(pan - pan_change < 0) pan_upward = true;
+        new_pan = pan_upward ? pan + pan_change : pan - pan_change;
         new_pan = CLIP(new_pan, 0.0, 360.0);
         pan_delta = 2.0 * ((new_pan - pan) * Game::PERIOD_MS) / period_ms;
     }
@@ -106,8 +107,9 @@ public:
         index = 0;
 
         int pan_change = 180 + ((random() % 120 - 60) * (difficulty + 10)) / 20;
-        if(pan < 180) new_pan = pan + pan_change;
-        else new_pan = pan - pan_change;
+        if(pan + pan_change > 360 || pan + pan_change < 0) new_pan = pan - pan_change;
+        else new_pan = pan + pan_change;
+        new_pan = CLIP(new_pan, 0.0, 360.0);
         ms = 0;
     }
 
@@ -151,7 +153,7 @@ public:
         bool finished = MoveCross::update(pan, tilt);
         old_pan = pan;
         index += inc;
-        pan += sin(index * 3.14158 * 6) * sin(index * 3.14158) * 20;
+        pan += sin(index * 3.14158 * 3) * sin(index * 3.14158) * 20;
         pan = CLIP(pan, 0.0, 360.0);
         return finished;
     }
