@@ -100,10 +100,11 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
 //    patch.command(c, p1, p2, p3);
-    multicore_fifo_push_blocking(((int)c & 0x0fff) | 0x1000);
-    multicore_fifo_push_blocking((p1 & 0x0fff));
-    multicore_fifo_push_blocking((p2 & 0x0fff));
-    multicore_fifo_push_blocking((p3 & 0x0fff));
+    const uint64_t timeout_us = 30000;
+    multicore_fifo_push_timeout_us(((int)c & 0x0fff) | 0x1000, timeout_us);
+    multicore_fifo_push_timeout_us((p1 & 0x0fff), timeout_us);
+    multicore_fifo_push_timeout_us((p2 & 0x0fff), timeout_us);
+    multicore_fifo_push_timeout_us((p3 & 0x0fff), timeout_us);
 }
 
 void AudioLayer::audio_task() {
@@ -126,7 +127,8 @@ void AudioLayer::audio_task() {
     give_audio_buffer(producer_pool, buffer);
 
     while(multicore_fifo_rvalid()) {
-        uint32_t word = multicore_fifo_pop_blocking();
+        uint32_t word;
+        if(! multicore_fifo_pop_timeout_us(1, &word)) break;
         if((word & 0xf000) == 0x1000) {
             buf[0] = word & 0x0fff;
             bufcount = 1;
