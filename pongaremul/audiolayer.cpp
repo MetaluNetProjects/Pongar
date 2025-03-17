@@ -6,12 +6,12 @@
 
 MainPatch main_patch;
 
-AudioLayer::AudioLayer(): patch(main_patch){}
-
-void AudioLayer::init(int audio_pin) {
+AudioLayer::AudioLayer(): patch(main_patch){
     Osc::setup();
     Blosc::setup();
 }
+
+void AudioLayer::init(int audio_pin) {}
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
     patch.command(c, p1, p2, p3);
