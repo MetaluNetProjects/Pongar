@@ -1,4 +1,4 @@
-#N canvas 100 412 1279 537 12;
+#N canvas 103 335 1279 537 12;
 #X declare -path Fraise;
 #X declare -path pdlua -lib pdlua;
 #X declare -path moonlib;
@@ -1257,8 +1257,8 @@
 #X msg 280 130 6 i \$1;
 #X msg 302 271 0 i 500;
 #X msg 315 315 1 i \$1;
-#X msg 304 359 2 i 1000 400;
 #X text 399 360 tut;
+#X msg 304 359 2 i 1000 40;
 #X connect 1 0 14 0;
 #X connect 4 0 5 0;
 #X connect 5 0 6 0;
@@ -1277,7 +1277,7 @@
 #X connect 22 0 19 0;
 #X connect 23 0 1 0;
 #X connect 23 0 19 0;
-#X connect 24 0 19 0;
+#X connect 25 0 19 0;
 #X restore 119 199 pd audio_test;
 #N canvas 229 33 878 696 wavs_duration 0;
 #X obj 166 85 table \$0-wavdur 25600;
