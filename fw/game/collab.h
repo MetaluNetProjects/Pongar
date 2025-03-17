@@ -15,19 +15,19 @@ class Collab : public GameMode {
     static const int SCORE_MAX = 12;
 
     int period_ms = INIT_PERIOD;
-    float pan, tilt;
-    int score;
+    float pan = 0, tilt = 0;
+    int score = 0;
     int pad_width = 30;
-    int flash_count;
-    bool end_of_game;
+    int flash_count = 0;
+    bool end_of_game = false;
     bool is_winner = false;
     int level = 1;
-    int lives;
-    int faults;
+    int lives = 0;
+    int faults = 0;
     Countdown countdown;
     RingFx ringfx;
     Movement *move = nullptr;
-    int total_time_ms;
+    int total_time_ms = 0;
     std::set<int> time_results;
 
     void set_move(Movement *newmove) {
