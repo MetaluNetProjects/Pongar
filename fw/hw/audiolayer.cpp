@@ -99,10 +99,16 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
 }
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-    patch.command(c, p1, p2, p3);
+//    patch.command(c, p1, p2, p3);
+    multicore_fifo_push_blocking(((int)c & 0x0fff) | 0x1000);
+    multicore_fifo_push_blocking((p1 & 0x0fff));
+    multicore_fifo_push_blocking((p2 & 0x0fff));
+    multicore_fifo_push_blocking((p3 & 0x0fff));
 }
 
 void AudioLayer::audio_task() {
+    static uint32_t buf[4];
+    static int bufcount = 0;
     struct audio_buffer *buffer = take_audio_buffer(producer_pool, true);
     int16_t *samples = (int16_t *) buffer->buffer->bytes;
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
@@ -118,6 +124,19 @@ void AudioLayer::audio_task() {
 
     buffer->sample_count = buffer->max_sample_count;
     give_audio_buffer(producer_pool, buffer);
+
+    while(multicore_fifo_rvalid()) {
+        uint32_t word = multicore_fifo_pop_blocking();
+        if((word & 0xf000) == 0x1000) {
+            buf[0] = word & 0x0fff;
+            bufcount = 1;
+        } else if(bufcount < 4) {
+            buf[bufcount++] = word & 0x0fff;
+            if(bufcount == 4) {
+                patch.command((SoundCommand)buf[0], buf[1], buf[2], buf[3]);
+            }
+        }
+    }
 }
 
 void AudioLayer::print_cpu() {
