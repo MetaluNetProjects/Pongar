@@ -105,7 +105,7 @@ void WavPlayer::update() {
         if(folder < 1) folder = 1;
         uint8_t track = next & 255;
         mp3_folder_track(folder, track);
-        duration_ms = get_duration_ms(folder, track) + 50;
+        duration_ms = get_duration_ms(folder, track) + duration_offset;
     }
     break;
     case 255:
@@ -143,6 +143,9 @@ void WavPlayer::receivebytes(const char* data, uint8_t len) {
         printf("l wavdur[%d]=%d\n", index, res);
     }
     break;
+    case 20:
+        duration_offset = fraise_get_int16();
+        break;
     case 30:
         mp3_play(fraise_get_uint16());
         break;
@@ -168,6 +171,9 @@ void WavPlayer::receivebytes(const char* data, uint8_t len) {
     break;
     case 50:
         printf("l playing %d\n", is_playing());
+        break;
+    case 60:
+        clear();
         break;
     }
 }

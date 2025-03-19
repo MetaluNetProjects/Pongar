@@ -263,6 +263,28 @@ void fraise_receivebytes(const char *data, uint8_t len) {
         audio.command((SoundCommand)fraise_get_uint8(),
             fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
         break;
+    case 34:
+        {
+            uint8_t wordnum = fraise_get_uint8();
+            int8_t offset = -1;
+            if(len < 3) {
+                if(wordnum < WORDS_MULTIPLE_OFFSET) offset = 0;
+            } else offset = fraise_get_int8();
+            game.speaker.say((Words)wordnum, offset);
+        }
+        break;
+    case 35:
+        game.speaker.set_mode(fraise_get_uint8());
+        break;
+    case 36:
+        game.speaker.say_time(fraise_get_uint32());
+        break;
+    case 37:
+        game.speaker.silence(fraise_get_uint16());
+        break;
+    case 38:
+        game.speaker.say_alpague();
+        break;
     case 40:
         printf("l logcount %d\n", scorelog.get_count());
         break;

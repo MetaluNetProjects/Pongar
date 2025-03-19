@@ -11,6 +11,7 @@ private:
     std::list<uint32_t> waiting;
     absolute_time_t end_of_play;
     static RomTable<uint16_t> wavsDuration;
+    int duration_offset = 0;
 public:
     void init(int tx_pin);
     virtual void reload_durations() {}
