@@ -115,6 +115,7 @@ private:
     int raw_count = 0;
     int raw_separation_mm = 150;
     const uint16_t *lidar_tab = 0;
+    bool too_close = false;
 
     Element objects[PLAYERS_MAX];
     std::set<int> objects_set;
@@ -162,6 +163,9 @@ public:
         return players[player].visible();
     }
     bool presence_at(int angle, int tolerance);
+    bool get_too_close() {
+        return too_close;
+    }
 };
 
 

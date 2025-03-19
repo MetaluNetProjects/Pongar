@@ -23,6 +23,8 @@ public:
     int32_t buf2[AUDIO_SAMPLES_PER_BUFFER];
     int gain = 3 * 256;
     int squthres = 0;
+    int f1 = 85, f2 = 91;
+    int randf = 5;
     Buzzer() : osc1(100, 20000), osc2(103, -20000), hip1(600), bp1(1111, 200, 100) {}
     void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         if(time_reached(stop_time)) return;
@@ -36,21 +38,34 @@ public:
         for (uint i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
             *out_buffer++ = CLIP(((buf[i] + buf2[i] / 16) * gain) / 256, -65536, 65535);
         }
-        osc1.setFreq(85 + random() % 5);
-        osc2.setFreq(91 + random() % 5);
+        osc1.setFreq(f1 + random() % randf);
+        osc2.setFreq(f2 + random() % randf);
     }
     void buzz(uint ms) {
         stop_time = make_timeout_time_ms(ms);
     }
 
-    void config(int f, int thr, int hipf, int g) {
-        osc1.setFreq(f);
-        //osc2.setFreq(f2);
-        squthres = thr;
+    void configOsc(int _f1, int v1, int _f2, int v2, int g) {
+        f1 = _f1;
+        f2 = _f2;
+        osc1.setVol(v1);
+        osc1.setVol(v2);
+        gain = g * 256;
+    }
+
+    void configFilt(int hipf, float f, float q, float g) {
         hip1.setFreq(hipf);
-        gain = g;
+        bp1.setFQ(f, q, g);
     }
 };
+
+/*class BuzzerTooClose: public Buzzer {
+    BuzzerTooClose(): Buzzer() {
+        osc1.setFreq(340);
+        osc1.setFreq(343);
+        bp1.setFQ(2468, 200, 100);
+    }
+};*/
 
 class Ring {
 public:
@@ -138,18 +153,25 @@ public:
 class MainPatch: public Patch {
 public:
     Buzzer buzzer;
+    Buzzer buzzer_too_close;
     Bouncer bouncer;
     Tut tut;
     Ring ring;
     Sequencer seq;
     Blosc osc1;
     enum WF {SIN, SAW, SQU, BLSAW, BLSQU} osc1_waveform = BLSAW;
+    MainPatch() {
+        buzzer_too_close.configOsc(340, 20000, 343, -20000, 3);
+        buzzer_too_close.configFilt(600, /*2468*/ 1867, 200, 200);
+        buzzer_too_close.randf = 50;
+    }
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
         bouncer.mix(out_buffer);
         tut.mix(out_buffer);
         seq.mix(out_buffer); // seq adds reverb!
         ring.mix(out_buffer);
         buzzer.mix(out_buffer);
+        buzzer_too_close.mix(out_buffer);
         switch(osc1_waveform) {
         case SIN:
             osc1.mix_sin(out_buffer);
@@ -180,6 +202,9 @@ public:
         switch(c) {
         case SoundCommand::buzz:
             buzzer.buzz(p1);
+            break;
+        case SoundCommand::tooclose:
+            buzzer_too_close.buzz(p1);
             break;
         case SoundCommand::bounce:
             bounce(p1 > 0);

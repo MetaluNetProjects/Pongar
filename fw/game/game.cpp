@@ -89,6 +89,8 @@ bool Game::update() {
     players.update();
     proj.update();
 
+    if(mode != STANDBY && players.get_too_close()) sfx(SoundCommand::tooclose, 20);
+
     if(wait_saying) {
         if(speaker.is_playing()) return true;
         else wait_saying = false;
@@ -98,6 +100,10 @@ bool Game::update() {
     case STOP:
         break;
     case PREPARE:
+        if(players.get_too_close()) {
+            if(!speaker.is_playing()) speaker.say(Words::vous_etes_trop_pres);
+            break;
+        }
         if(!speaker.is_playing() && time_reached(next_alpague_time)) {
             static const int max_rnd_seconds = 5 * 60;
             speaker.say_alpague();
@@ -115,6 +121,10 @@ bool Game::update() {
         }
         break;
     case WAIT_STABLE:
+        if(players.get_too_close()) {
+            if(!speaker.is_playing()) speaker.say(Words::vous_etes_trop_pres);
+            break;
+        }
         if(players.get_steady_count() != 0) noplayer_timeout = make_timeout_time_ms(NO_PLAYER_SECONDS * 1000);
         if(players.get_steady_count() == 0 && time_reached(noplayer_timeout)) {
             mode = PREPARE;
@@ -134,7 +144,7 @@ bool Game::update() {
             break;
         }
 
-        if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing()) {
+        if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing() && !players.get_too_close()) {
             int max_players = game_mode->get_max_players();
             if(game_players_count <= max_players) start();
             else {

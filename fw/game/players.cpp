@@ -7,7 +7,11 @@
 #include <math.h>
 #include <vector>
 
-Position null_position;
+Position null_position{
+    .angle = 0,
+    .distance = 12000,
+    .size = 0
+};
 
 #define angle_distance(a, b) abs(((a) - (b) + 180 + 720) % 360 - 180)
 
@@ -37,9 +41,14 @@ void Players::find_players_light(const uint16_t *distance_array) {
             if(hole_width >= players_separation) {
                 // create new raw
                 if(raw_count >= PLAYERS_MAX) break;
+                uint16_t distance = config.distance_max;
+                for(int i = 0; i < player_width; i++) {
+                    int d = distance_array[(player_start + i) % 360];
+                    if(distance > d) distance = d;
+                }
                 raw_positions[raw_count] = {
                     .angle = (uint16_t)((player_start + player_width / 2 + config.lidar_angle_offset) % 360),
-                    .distance = distance_array[INDEX],
+                    .distance = distance,
                     .size = 200
                 };
                 raw_count++;
@@ -56,6 +65,7 @@ void Players::find_players_light(const uint16_t *distance_array) {
     }
     //follow_players();
     //printf("raw count= %d\n", raw_count);
+    too_close = false;
     std::set<int> positions;
     for(int i = 0; i < raw_count; i++) {
         int a = raw_positions[i].angle;
@@ -67,6 +77,7 @@ void Players::find_players_light(const uint16_t *distance_array) {
             }
         }
         if(!found) positions.insert(a);
+        if(raw_positions[i].distance < config.game_distance_min) too_close = true;
     }
     players_count = positions.size();
 

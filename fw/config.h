@@ -18,6 +18,8 @@ public:
 
     int16_t proj_tilt_amp = 45;
     uint16_t proj_pan_amp = 44850;
+
+    int16_t game_distance_min = 700;
 };
 
 extern PongarConfig config;

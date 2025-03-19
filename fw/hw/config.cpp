@@ -49,6 +49,9 @@ void PongarConfig::receivebytes(const char* data, uint8_t len) {
     case 7:
         proj_pan_amp = fraise_get_uint16();
         break;
+    case 8:
+        game_distance_min = fraise_get_uint16();
+        break;
     case 100:
         printf("cfg %d %d %d %d %d %d %d\n",
                total_leds, leds_angle_offset,
@@ -65,6 +68,7 @@ void PongarConfig::receivebytes(const char* data, uint8_t len) {
         fraise_put_int16(lidar_angle_offset);
         fraise_put_int16(proj_tilt_amp);
         fraise_put_uint16(proj_pan_amp);
+        fraise_put_uint16(game_distance_min);
         fraise_put_send();
         break;
     }

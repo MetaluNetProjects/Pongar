@@ -11,5 +11,6 @@ SFX_MACRO(osc1wf      , 9)
 SFX_MACRO(rev1        , 10)
 SFX_MACRO(seqnew      , 11)
 SFX_MACRO(seqvol      , 12)
+SFX_MACRO(tooclose    , 13)
 
 #undef SFX_MACRO // need to redefine SFX_MACRO each time

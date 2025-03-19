@@ -13,6 +13,7 @@ class Collab : public GameMode {
     static const int MIN_PERIOD = 1000;
 
     static const int SCORE_MAX = 12;
+    static const int TOO_CLOSE_MS = 1000;
 
     int period_ms = INIT_PERIOD;
     float pan = 0, tilt = 0;
@@ -29,6 +30,8 @@ class Collab : public GameMode {
     Movement *move = nullptr;
     int total_time_ms = 0;
     std::set<int> time_results;
+    absolute_time_t too_close_timeout = at_the_end_of_time;
+    bool too_close = false;
 
     void set_move(Movement *newmove) {
         if(move) delete move;
@@ -118,7 +121,7 @@ class Collab : public GameMode {
                 break;
             case 3: say_win(); break;
         }
-        speaker.silence(2000);
+        speaker.silence(1000);
         level = level + 1;
         end_of_game = true;
         is_winner = true;
@@ -220,7 +223,7 @@ public:
             speaker.saynumber(game.get_players_count());
             speaker.say(Words::joueur, 0);
         }
-        speaker.silence(350);
+        speaker.silence(1500);
         pad_width = 30;
         set_ring_mode(RingFx::START, 400);
         end_of_game = false;
@@ -246,6 +249,11 @@ public:
 
 
     virtual void update() {
+        if(game.players.get_too_close() != too_close) {
+            too_close = game.players.get_too_close();
+            if(! too_close) too_close_timeout = at_the_end_of_time;
+            else too_close_timeout = make_timeout_time_ms(TOO_CLOSE_MS);
+        }
         auto countstate = countdown.update();
         if(countstate == countdown.RUNNING) return;
         if(countstate == countdown.FIRED) {
@@ -269,6 +277,13 @@ public:
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
             next_move(touched);
+        }
+
+        if(time_reached(too_close_timeout)) {
+            too_close_timeout = make_timeout_time_ms(TOO_CLOSE_MS);
+            speaker.clear();
+            speaker.say(Words::trop_pres);
+            update_score(false);
         }
 
         proj.dimmer(128);
