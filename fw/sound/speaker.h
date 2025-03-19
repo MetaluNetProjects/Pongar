@@ -110,10 +110,6 @@ public:
         }
     }
 
-    void saysilence(int ms) {
-        silence(ms);
-    }
-
     void say_alpague() {
         if(!alpagues.size()) return;
         uint16_t num = alpagues[random() % alpagues.size()];

@@ -76,7 +76,7 @@ class Collab : public GameMode {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::LOOSE, 2000);
         game.sfx(SoundCommand::buzz, 800);
-        speaker.saysilence(500);
+        speaker.silence(500);
         if(level == 1) {
             speaker.say(Words::perdu_niveau1);
         } else switch(lives) {
@@ -84,7 +84,7 @@ class Collab : public GameMode {
             case 1: speaker.say(Words::perdu_niveau_derniere); break;
             case 2: speaker.say(Words::perdu_niveau); break;
         }
-        speaker.saysilence(1000);
+        speaker.silence(1000);
         end_of_game = true;
         is_winner = false;
         score = 0;
@@ -95,10 +95,10 @@ class Collab : public GameMode {
         switch(level) {
             case 1:
                 speaker.say(Words::gagne_niveau_1);
-                speaker.saysilence(300);
+                speaker.silence(300);
                 speaker.say(Words::temps_intermediaire);
                 speaker.say_time(total_time_ms);
-                speaker.saysilence(300);
+                speaker.silence(300);
                 if(faults < 3) {
                     speaker.say(Words::deux_extra_balles);
                     lives = 3;
@@ -112,13 +112,13 @@ class Collab : public GameMode {
                 break;
             case 2:
                 speaker.say(Words::gagne_niveau_2);
-                speaker.saysilence(300);
+                speaker.silence(300);
                 speaker.say(Words::temps_intermediaire);
                 speaker.say_time(total_time_ms);
                 break;
             case 3: say_win(); break;
         }
-        speaker.saysilence(2000);
+        speaker.silence(2000);
         level = level + 1;
         end_of_game = true;
         is_winner = true;
@@ -148,7 +148,7 @@ class Collab : public GameMode {
             set_ring_mode(RingFx::FAULT, 200);
             faults++;
         }
-        speaker.saysilence(300); // waits end of sfx before saying smth
+        speaker.silence(300); // waits end of sfx before saying smth
         return touched;
     }
 
@@ -220,7 +220,7 @@ public:
             speaker.saynumber(game.get_players_count());
             speaker.say(Words::joueur, 0);
         }
-        speaker.saysilence(350);
+        speaker.silence(350);
         pad_width = 30;
         set_ring_mode(RingFx::START, 400);
         end_of_game = false;

@@ -108,7 +108,7 @@ bool Game::update() {
         if(players.get_steady_count()) {
             mode = WAIT_STABLE;
             speaker.say(Words::bonjour);
-            speaker.saysilence(1000);
+            speaker.silence(1000);
             noplayer_timeout = at_the_end_of_time;
             players_stable_timeout = make_timeout_time_ms(PLAYERS_STABLE_SECONDS * 1000);
             players_say_stable_timeout = players_stable_timeout;
@@ -139,7 +139,7 @@ bool Game::update() {
             if(game_players_count <= max_players) start();
             else {
                 speaker.say(Words::trop_nombreux);
-                speaker.saysilence(1000);
+                speaker.silence(1000);
             }
         }
         break;
