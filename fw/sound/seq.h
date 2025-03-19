@@ -257,7 +257,7 @@ private:
     Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
     enum drumnames {HH = 0, SNARE, KICK};
     Reverb rev1;
-    uint8_t mastervol = 150;
+    uint8_t mastervol = 190;
     bool play_once = true;
 public:
     Piece() {}
@@ -338,6 +338,9 @@ public:
     bool finished(int step) {
         return play_once && (((step - 1)/ plan_steps) >= (int)plan.size());
     }
+    void set_mastervol(uint8_t vol) {
+        mastervol = vol;
+    }
 };
 
 class Sequencer {
@@ -402,5 +405,9 @@ public:
 
     bool piece_finished() {
         return piece.finished(step);
+    }
+
+    void set_mastervol(uint8_t vol) {
+        piece.set_mastervol(vol);
     }
 };

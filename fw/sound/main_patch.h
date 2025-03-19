@@ -201,6 +201,9 @@ public:
         case SoundCommand::seqms:
             seq.set_tempo_ms(p1);
             break;
+        case SoundCommand::seqvol:
+            seq.set_mastervol(p1);
+            break;
         case SoundCommand::osc1:
             osc1.setVol(p1);
             osc1.setFreq8(p2);
