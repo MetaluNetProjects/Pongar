@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+    <p>Flash page 0</p>
+    <iframe width="100%" height="400px" id="chatbox""></iframe>
+    <div>
+        <input type="range" id="volume" name="volume" min="0" max="255" />
+        <label for="volume">Volume</label>
+    </div>
+    <script type="text/javascript">
+        const logbox = document.getElementById("chatbox");
+        const volume = document.getElementById("volume");
+
+        function log(text) {
+            logbox.contentDocument.write(text + "<br>");
+            logbox.contentWindow.scrollByPages(1);
+        }
+        const sock = new WebSocket(`ws://${window.location.hostname}/`);
+        sock.onopen = () => {
+            console.log('onopen');
+            log('onopen');
+            sock.send("Hi from client!");
+            //const volume = document.getElementById("volume");
+            
+            /*volume.addEventListener("input", (event) => {
+                sock.send(`volume ${event.target.value}`);
+                console.log(`volume ${event.target.value}`);
+            });*/
+        };
+        sock.onclose = (event) => {
+          console.log('onclose');
+          log('onclose: ' + event.reason);
+        };
+        sock.onmessage = (msg) => {
+          //console.log('onmessage', msg);
+          var text = "Message: <em>" + msg.data + "</em>";
+          log(text);
+        };
+        volume.addEventListener("input", (event) => {
+            sock.send(`volume ${event.target.value}`);
+            log(`volume ${event.target.value}`);
+        });
+
+        console.log('connecting');
+        log(`connecting to ws://${window.location.hostname}/`);
+    </script>
+</body>
+</html>
