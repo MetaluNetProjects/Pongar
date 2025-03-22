@@ -14,6 +14,15 @@ extern "C" {
 
 #define BOARD pico_w
 
+#if __has_include ("wifi_config.h")
+#include "wifi_config.h"
+#else
+#define WIFI_AP 1
+#define WIFI_SSID "picow_test"
+//#define WIFI_PASS NULL
+#define WIFI_PASS "password"
+#endif
+
 extern unsigned char static_html_gz[];
 extern unsigned int static_html_gz_len;
 extern unsigned int html_gz_len;
@@ -37,6 +46,7 @@ FlashHTML flashHTML;
 
 bool cyw43ok = false;
 bool connected = false;
+int led_ms = 200;
 
 void setled(bool on) {
     if(cyw43ok) cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, on);
@@ -46,12 +56,12 @@ void setled(bool on) {
 WebSocketServer wsserver;
 
 void on_connect(WebSocketServer& server, uint32_t conn_id) {
-  printf("WebSocket opened\n");
-  server.sendMessage(conn_id, "hello web socket!");
+    printf("WebSocket opened\n");
+    server.sendMessage(conn_id, "hello web socket!");
 }
 
 void on_disconnect(WebSocketServer& server, uint32_t conn_id) {
-  printf("WebSocket closed\n");
+    printf("WebSocket closed\n");
 }
 
 void on_message(WebSocketServer& server, uint32_t conn_id, const void* data, size_t len) {
@@ -69,6 +79,7 @@ void on_message(WebSocketServer& server, uint32_t conn_id, const void* data, siz
         char buf[128];
         sprintf(buf, "volume=%d", val);
         wsserver.broadcastMessage(buf);
+        led_ms = val;
     }
 }
 #endif
@@ -79,7 +90,7 @@ absolute_time_t count_timeout;
 void process_count() {
     //char buf[256];
     if(! time_reached(count_timeout)) return;
-    count_timeout = make_timeout_time_ms(200);
+    count_timeout = make_timeout_time_ms(led_ms);
     //sprintf(buf, "counter=%d", counter);
     //wsserver.broadcastMessage(buf);
     counter++;
@@ -92,9 +103,11 @@ dns_server_t dns_server;
 void setup() {
     //stdio_init_all();
     flashHTML.init(HTML_TABLE_START, HTML_TABLE_FLASHSIZE);
-
-    html_gz_len = flashHTML.get_html_size();
-    html_gz = flashHTML.html_data_p();
+    int flash_html_len = flashHTML.get_html_size();
+    if(flash_html_len != -1) {
+        html_gz_len = flashHTML.get_html_size();
+        html_gz = flashHTML.html_data_p();
+    }
 
     if (cyw43_arch_init() != 0) {
         printf("cyw43_arch_init failed\n");
@@ -103,15 +116,15 @@ void setup() {
     cyw43ok = true;
 
     setled(1);
-    sleep_ms(1000);
+    sleep_ms(500);
     setled(0);
-
-#if 0
-    const char *ap_name = "picow_test";
-    const char *password = "password";
+    
+#if WIFI_AP
+    //const char *ap_name = "picow_test";
+    //const char *password = "password";
     //const char *password = NULL;
 
-    cyw43_arch_enable_ap_mode(ap_name, password, CYW43_AUTH_WPA2_AES_PSK);
+    cyw43_arch_enable_ap_mode(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK);
 
     ip4_addr_t ip;
     ip4_addr_t mask;
@@ -127,7 +140,7 @@ void setup() {
     cyw43_arch_enable_sta_mode();
 
     printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms("Oeil", NULL, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
         printf("failed to connect.\n");
         return;
     }
@@ -188,6 +201,8 @@ void fraise_receivebytes(const char *data, uint8_t len){
                 }
                 fraise_put_send();
             }
+        case 111: // get HTML size
+            printf("html size: %d\n", (int)flashHTML.get_html_size());
             break;
     }
 }
