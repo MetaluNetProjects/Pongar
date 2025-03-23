@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <label id="first-label"></label><br><br>
+
+  <script>
+    let label = document.getElementById('first-label');
+    
+    if (window.location.protocol == "https:") {
+        label.innerHTML = "Hello from websocket test app. Webpage served securely over HTTPS. For HTTP use: <a href=\"http://" + location.hostname + ":80\">this link</a>";
+    }
+    else if (window.location.protocol == "http:") {
+        label.innerHTML = "Hello from websocket test app. Webpage served insecurely over HTTP. For HTTPS use: <a href=\"https://" + location.hostname + ":443\">this link</a>";
+    }
+    else if (window.location.protocol == "file:") {
+        label.innerHTML = "Hello from websocket test app. Webpage served locally from a file, connecting websocket to localhost.";
+    }
+
+        let count = 0;
+    class WebSocketHandler {
+        periodic(event) {
+            if(count > 5)
+                this.ws.send("hello from websocket");
+            count++;
+        }
+        constructor() {
+            //this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+            count = 0;
+            if (window.location.protocol == "https:") {
+                this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+            }
+            else if (window.location.protocol == "http:") {
+                this.ws = new WebSocket("ws://" + location.hostname + ":80/websocket");
+            }
+            else if (window.location.protocol == "file:") {
+                this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
+            }
+
+            this.timer = setInterval(() => this.periodic(), 1000);
+
+            this.ws.addEventListener("error", (event) => {
+                console.log("WebSocket error: ", event);
+            });
+      
+            this.ws.addEventListener("message", (event) => {
+                console.log("Message from server ", event.data);
+            });
+      }
+    }
+    let handler = new WebSocketHandler();
+  </script>
+
+  
+</body>
+</html>

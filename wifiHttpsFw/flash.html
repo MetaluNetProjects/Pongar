@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Flash page 0</title>
+</head>
+<body>
+    <p>Flash page 4</p>
+    <iframe width="50%" height="300px" id="chatbox"></iframe>
+    <div>
+        <input type="range" id="volume" name="volume" min="20" max="255" />
+        <label for="volume">Vitesse Led</label>
+    </div>
+    <div>
+        <input type="button" id="openws" name="openws" />
+        <label for="openws">Re-open WebSocket</label>
+    </div>
+    <script type="text/javascript">
+        const logbox = document.getElementById("chatbox");
+        const volume = document.getElementById("volume");
+        const openws = document.getElementById("openws");
+        //var sock;
+        function log(text) {
+            //logbox.contentDocument.write(text + "<br>");
+            //logbox.contentWindow.scrollTo( 0, 999999 );
+        }
+        class WebSocketHandler {
+            periodic(event) {
+                if(this.count > 5)
+                    this.ws.send("hello from websocket");
+                this.count++;
+            }
+            constructor() {
+                //this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+                this.count = 0;
+                if (window.location.protocol == "https:") {
+                    this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+                }
+                else if (window.location.protocol == "http:") {
+                    this.ws = new WebSocket("ws://" + location.hostname + ":80/websocket");
+                }
+                else if (window.location.protocol == "file:") {
+                    this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
+                }
+
+                this.timer = setInterval(() => this.periodic(), 1000);
+
+                this.ws.addEventListener("error", (event) => {
+                    console.log("WebSocket error: ", event);
+                });
+          
+                this.ws.addEventListener("message", (event) => {
+                    console.log("Message from server ", event.data);
+                    var text = "Message: <em>" + event.data + "</em>";
+                    log(text);
+                });
+            }
+        }
+        let handler = new WebSocketHandler();
+
+        openws.onclick = (event) => {}
+        volume.addEventListener("input", (event) => {
+            log(`volume ${event.target.value}`);
+            handler.ws.send(`volume ${event.target.value}`);
+        });
+        log("c'est parti");
+    </script>
+</body>
+</html>
