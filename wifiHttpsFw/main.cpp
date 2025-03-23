@@ -117,8 +117,8 @@ void setup() {
     start_logging_server("build/" PICO_BOARD "/docker/hello_world/hello_world_https", PICO_BOARD, "1.0", 15000);
     trace("Starting");
     // Listens on 433 for https
-    TLSListener *tls_listener = new TLSListener();
-    tls_listener->listen(443, RequestHandler::create);
+    //TLSListener *tls_listener = new TLSListener();
+    //tls_listener->listen(443, RequestHandler::create);
 
     // Listens on 80 for http
     Listener *tcp_listener = new Listener();
