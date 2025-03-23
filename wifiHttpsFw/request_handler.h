@@ -26,11 +26,12 @@ SOFTWARE.
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include "http_session.h"
+#include <set>
 
 class RequestHandler : public HTTPSession {
 public:
     static void create(void *arg, bool tls);
-
+    static void broadcastWebSocketData(u8_t *data, size_t len, RequestHandler *except = nullptr);
     virtual bool onRequestReceived(HTTPHeader& header) override;
 
     bool onHttpData(u8_t *data, size_t len) override;
@@ -38,7 +39,8 @@ public:
 
 protected:
     RequestHandler(void *arg, bool tls);
-    virtual ~RequestHandler() {};
+    virtual ~RequestHandler();
+    static std::set<RequestHandler*> handlers;
 };
 
 extern unsigned int html_gz_len;

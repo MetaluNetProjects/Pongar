@@ -43,16 +43,20 @@
                     this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
                 }
 
-                this.timer = setInterval(() => this.periodic(), 1000);
+                //this.timer = setInterval(() => this.periodic(), 1000);
 
                 this.ws.addEventListener("error", (event) => {
                     console.log("WebSocket error: ", event);
                 });
           
                 this.ws.addEventListener("message", (event) => {
-                    console.log("Message from server ", event.data);
-                    var text = "Message: <em>" + event.data + "</em>";
-                    log(text);
+                    event.data.text().then(text => {
+                        console.log("Message from server ", text);
+                        var text2 = "Message: <em>" + event.data + "</em>";
+                        log(text2);
+                        const words = text.split(" ");
+                        if(words[0] === "volume") volume.value = words[1];
+                    });
                 });
             }
         }

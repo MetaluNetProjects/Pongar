@@ -27,16 +27,14 @@ SOFTWARE.
 #include "pico/cyw43_arch.h"
 
 #include "request_handler.h"
-#include "pico_logger.h"
+//#include "pico_logger.h"
 
 #include "fraise.h"
-//#include "rc/index.html.gz.hex.h"
 
-//#define trace(...) fraise_printf("%s: ", __func__), fraise_printf(__VA_ARGS__), fraise_printf("\n")
-#define trace(...) fraise_printf(__VA_ARGS__), fraise_printf("\n")
+//#define trace(...) fraise_printf(__VA_ARGS__), fraise_printf("\n")
+#define trace(...)
 
-//const unsigned int HTTP_BODY_LEN = _source_hello_world_rc_index_html_gz_len;
-//const u8_t *HTTP_BODY = &_source_hello_world_rc_index_html_gz[0];
+std::set<RequestHandler*> RequestHandler::handlers;
 
 void RequestHandler::create(void *arg, bool tls) {
     new RequestHandler(arg, tls);
@@ -46,6 +44,13 @@ RequestHandler::RequestHandler(void *arg, bool tls)
     : HTTPSession(arg, tls)
 {
     trace("RH::RequestHandler: this=%p arg=%p", this, arg);
+    handlers.insert(this);
+}
+
+RequestHandler::~RequestHandler()
+{
+    trace("RH::RequestHandler: remove %p", this);
+    handlers.erase(this);
 }
 
 bool RequestHandler::onRequestReceived(HTTPHeader& header)
@@ -86,12 +91,14 @@ bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
     if(ret == 2) fraise_printf("%s %d\n", name, val);
 
     if(!strcmp(name, "volume")) {
-        /*char buf[128];
-        sprintf(buf, "volume=%d", val);
-        wsserver.broadcastMessage(buf);*/
         led_ms = val;
     }
 
-    //return sendWebSocketData(data, len);
-    return sendWebSocketData((const uint8_t*)"OK", 3);
+    broadcastWebSocketData(data, len, this);
+    return true;
+}
+
+void RequestHandler::broadcastWebSocketData(u8_t *data, size_t len, RequestHandler *except)
+{
+    for(auto handler: handlers) if(handler != except) handler->sendWebSocketData(data, len);
 }
