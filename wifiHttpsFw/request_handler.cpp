@@ -29,7 +29,7 @@ SOFTWARE.
 #include "request_handler.h"
 //#include "pico_logger.h"
 
-#include "fraise.h"
+#include "fraise_master.h"
 
 //#define trace(...) fraise_printf(__VA_ARGS__), fraise_printf("\n")
 #define trace(...)
@@ -82,19 +82,47 @@ bool RequestHandler::onHttpData(u8_t *data, size_t len)
 
 bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
 {
-    //trace("RH::onWebSocketData: this=%p len=%d data=[%.*s]", this, len, len, data);
-    char name[128];
-    int val;
-    data[len] = 0;
-    int ret = sscanf((const char*)data, "%127s %d", name, &val);
-
-    if(ret == 2) fraise_printf("%s %d\n", name, val);
-
-    if(!strcmp(name, "volume")) {
-        led_ms = val;
-    }
-
     broadcastWebSocketData(data, len, this);
+
+    char *indata = (char*)data;
+    indata[len] = 0; // terminate string
+    //trace("RH::onWebSocketData: this=%p len=%d data=[%.*s]", this, len, len, data);
+    if(indata[0] == 'f') {
+        indata += 2; // remove "f "
+        char *token = strsep(&indata, " ");
+        if(token) {
+            int fruit_id;
+            fruit_id = atoi(token);
+            if(fruit_id > 0 && fruit_id < 127) {
+                char buf[64];
+                int buflen = 0;
+                while(indata && (token = strsep(&indata, " "))) {
+                    buf[buflen++] = atoi(token);
+                }
+                fraise_master_sendbytes(fruit_id, buf, buflen);
+            }
+        }
+    }
+    if(indata[0] == 'F') {
+        indata += 2; // remove "F "
+        char *token = strsep(&indata, " ");
+        if(token) {
+            int fruit_id;
+            fruit_id = atoi(token);
+            if(fruit_id > 0 && fruit_id < 127) {
+                fraise_master_sendchars(fruit_id, indata);
+            }
+        }
+    }
+    else if(indata[0] == 'v') { // test
+        char name[128];
+        int val;
+        int ret = sscanf((const char*)data, "%127s %d", name, &val);
+        if(ret == 2) fraise_printf("%s %d\n", name, val);
+        if(!strcmp(name, "volume")) {
+            led_ms = val;
+        }
+    }
     return true;
 }
 
@@ -102,3 +130,24 @@ void RequestHandler::broadcastWebSocketData(u8_t *data, size_t len, RequestHandl
 {
     for(auto handler: handlers) if(handler != except) handler->sendWebSocketData(data, len);
 }
+
+void fraise_master_fruit_detected(uint8_t fruit_id, bool detected) {
+    printf("pied detect fruit %d %d\n", fruit_id, detected);
+}
+
+void fraise_master_receivebytes(uint8_t fruit_id, const char *data, uint8_t len) {
+    char buf[256];
+    int buflen = 0;
+    buflen = snprintf(buf, sizeof(buf), "f %d", fruit_id);
+    for(int i = 0; i < len; i++) buflen += snprintf(buf + buflen, sizeof(buf) - buflen," %d", data[i]);
+    RequestHandler::broadcastWebSocketData((u8_t *)buf, buflen);
+}
+
+void fraise_master_receivechars(uint8_t fruit_id, const char *data, uint8_t len) {
+    //printf("pied fruit %d: %s\n", fruit_id, data);
+    char buf[256];
+    snprintf(buf, 256, "F %d %*s", fruit_id, len , data);
+    RequestHandler::broadcastWebSocketData((u8_t *)buf, strlen(buf));
+}
+
+
