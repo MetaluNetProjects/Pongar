@@ -17,7 +17,6 @@ private:
     static const int PLAYERS_READY_SECONDS = 3;
     static const int PLAYERS_STABLE_SECONDS = 8;
     static const int NO_PLAYER_SECONDS = 8;
-    enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} mode = STOP;
     absolute_time_t update_time = get_absolute_time();
     int game_players_count = 0;
     absolute_time_t players_ready_timeout = get_absolute_time();
@@ -35,6 +34,7 @@ private:
         return to_ms_since_boot(get_absolute_time()) - to_ms_since_boot(last_game_endtime);
     }
 public:
+    enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} mode = STOP;
     Game(Scorelog &_log, AudioLayer &_audio): audio(_audio), scorelog(_log) {};
     Speaker speaker;
     Players players;
@@ -56,6 +56,9 @@ public:
         audio.command(c, p1, p2, p3);
     }
     void pixels_update();
+    int get_mode() {
+        return mode;
+    }
 };
 
 class GameMode {

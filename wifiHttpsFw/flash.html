@@ -2,72 +2,218 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Flash page 0</title>
+    <title>Pong control room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+    /*body {background-color: lightblue; font-size: 200%}
+    h1   {color: blue;}
+    .slider {width: 70%;height: 10%;}
+    #title {font-size: 200%; text-align: top;}*/
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Style the header */
+header {
+  background-color: #666;
+  padding: 10px;
+  text-align: center;
+  font-size: 25px;
+  color: white;
+}
+
+/* Container for flexboxes */
+section {
+  display: -webkit-flex;
+  display: flex;
+}
+
+/* Style the navigation menu */
+nav {
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 3;
+  background: #ccc;
+  padding: 20px;
+}
+
+/* Style the list inside the menu */
+nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+/* Style the content */
+article {
+  -webkit-flex: 3;
+  -ms-flex: 3;
+  flex: 1;
+  background-color: #f1f1f1;
+  padding: 10px;
+}
+
+/* Style the footer */
+footer {
+  background-color: #777;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+
+/* Responsive layout - makes the menu and the content (inside the section) sit on top of each other instead of next to each other */
+@media (max-width: 600px) {
+  section {
+    -webkit-flex-direction: column;
+    flex-direction: column;
+  }
+}
+
+    </style>
 </head>
 <body>
-    <p>Flash page 4</p>
-    <iframe width="50%" height="300px" id="chatbox"></iframe>
+
+<header>
+  <h2>Pong control room</h2>
+</header>
+
+<section>
+  <nav>
+    <ul>
+    <h1>Controls</h1>
     <div>
-        <input type="range" id="volume" name="volume" min="20" max="255" />
+        <input type="range" class="slider" id="volume" name="volume" min="20" max="255"/>
         <label for="volume">Vitesse Led</label>
     </div>
+    <br>
     <div>
-        <input type="button" id="openws" name="openws" />
-        <label for="openws">Re-open WebSocket</label>
+        <input type="button" class="button" id="buzz" name="buzz"/>
+        <label for="buzz">Buzz!</label>
     </div>
-    <script type="text/javascript">
-        const logbox = document.getElementById("chatbox");
-        const volume = document.getElementById("volume");
-        const openws = document.getElementById("openws");
-        //var sock;
-        function log(text) {
-            //logbox.contentDocument.write(text + "<br>");
-            //logbox.contentWindow.scrollTo( 0, 999999 );
+    <br>
+    <div>
+        <!-- enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} -->
+        <input type="radio" name="GameMode" value="0" id="stop"/>
+        <label for="stop">Stop</label>
+        <input type="radio" name="GameMode" value="1" id="prepare"/>
+        <label for="prepare">Prepare</label>
+        <input type="radio" name="GameMode" value="2" id="waitstable"/>
+        <label for="waitstable">Wait stable</label>
+        <input type="radio" name="GameMode" value="3" id="playing"/>
+        <label for="playing">Playing</label>
+        <input type="radio" name="GameMode" value="4" id="restart"/>
+        <label for="restart">Restart</label>
+        <input type="radio" name="GameMode" value="5" id="standby"/>
+        <label for="standby">Standby</label>
+    </div>
+    </ul>
+  </nav>
+  
+  <article>
+      <h1>Log</h1>
+      <textarea id='chatbox' rows=20 cols=40 autofocus> </textarea>
+  </article>
+</section>
+
+<footer>
+  <p>Footer</p>
+</footer>
+
+<script type="text/javascript">
+const logbox = document.getElementById("chatbox");
+const volume = document.getElementById("volume");
+const buzz = document.getElementById("buzz");
+const gamemode = document.getElementsByName("GameMode");
+
+function log(text) {
+    logbox.value += '\n' + text;
+    logbox.scrollTo( 0, 999999 );
+}
+
+function get_fraise_chars(words) {
+    const id = parseInt(words.shift());
+    if(id != 1) return;
+    command = words.shift();
+    switch(command) {
+        case "mode": 
+            const mode = parseInt(words.shift());
+            const mode_button = Array.from(gamemode).find((el)=>el.value == mode);
+            mode_button.checked = true;
+            break;
+    }
+}
+
+function get_fraise_bytes(words) {
+}
+
+class WebSocketHandler {
+    periodic(event) {
+        if(this.count > 5)
+            this.ws.send("hello from websocket");
+        this.count++;
+    }
+    constructor() {
+        //this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+        this.count = 0;
+        if (window.location.protocol == "https:") {
+            this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
         }
-        class WebSocketHandler {
-            periodic(event) {
-                if(this.count > 5)
-                    this.ws.send("hello from websocket");
-                this.count++;
-            }
-            constructor() {
-                //this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
-                this.count = 0;
-                if (window.location.protocol == "https:") {
-                    this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
-                }
-                else if (window.location.protocol == "http:") {
-                    this.ws = new WebSocket("ws://" + location.hostname + ":80/websocket");
-                }
-                else if (window.location.protocol == "file:") {
-                    this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
-                }
-
-                //this.timer = setInterval(() => this.periodic(), 1000);
-
-                this.ws.addEventListener("error", (event) => {
-                    console.log("WebSocket error: ", event);
-                });
-          
-                this.ws.addEventListener("message", (event) => {
-                    event.data.text().then(text => {
-                        console.log("Message from server ", text);
-                        var text2 = "Message: <em>" + event.data + "</em>";
-                        log(text2);
-                        const words = text.split(" ");
-                        if(words[0] === "volume") volume.value = words[1];
-                    });
-                });
-            }
+        else if (window.location.protocol == "http:") {
+            this.ws = new WebSocket("ws://" + location.hostname + ":80/websocket");
         }
-        let handler = new WebSocketHandler();
+        else if (window.location.protocol == "file:") {
+            this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
+        }
 
-        openws.onclick = (event) => {}
-        volume.addEventListener("input", (event) => {
-            log(`volume ${event.target.value}`);
-            handler.ws.send(`volume ${event.target.value}`);
+        //this.timer = setInterval(() => this.periodic(), 1000);
+
+        this.ws.addEventListener("error", (event) => {
+            console.log("WebSocket error: ", event);
         });
-        log("c'est parti");
-    </script>
+
+        this.ws.addEventListener("message", (event) => {
+            event.data.text().then(text => {
+                console.log("Message from server ", text);
+                var text2 = "Message: " + text;
+                log(text2);
+                const words = text.split(" ");
+                const command = words.shift();
+                switch(command) {
+                    case "volume": volume.value = words[0]; break;
+                    case "F": get_fraise_chars(words); break;
+                    case "f": get_fraise_bytes(words); break;
+                }
+            });
+        });
+    }
+}
+let handler = new WebSocketHandler();
+
+buzz.onclick = (event) => {
+    handler.ws.send("f 1 33 0 1 244");
+}
+volume.addEventListener("input", (event) => {
+    log(`volume ${event.target.value}`);
+    handler.ws.send(`volume ${event.target.value}`);
+});
+
+gamemode.forEach((element) => {
+    element.onclick = () => {
+        log("element: " + element.id + ' ' + element.value);
+        var num = element.value;
+        switch(element.id) {
+            case "stop": handler.ws.send("f 1 150"); break;
+            case "prepare": handler.ws.send("f 1 153"); break;
+            case "standby": handler.ws.send("f 1 149"); break;
+        }
+    }
+});
+
+chatbox.value='';
+log("c'est parti");
+</script>
 </body>
 </html>

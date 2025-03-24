@@ -120,6 +120,15 @@ void send_positions() {
     }
 }
 
+void send_game_mode() {
+    static int last_mode =-1;
+    int mode = game.get_mode();
+    if(last_mode != mode) {
+        last_mode = mode;
+        printf("mode %d\n", mode);
+    }
+}
+
 void loop() {
     static absolute_time_t nextLed;
     static bool led = false;
@@ -166,6 +175,8 @@ void loop() {
     if(dmx.transfer_finished()) {
         dmx.transfer_frame(dmxBuf, DMX_CHAN_COUNT);
     }
+
+    send_game_mode();
 }
 
 void fraise_receivebytes(const char *data, uint8_t len) {

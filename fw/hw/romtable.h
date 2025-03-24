@@ -23,6 +23,10 @@ public:
     void copy_flash_to_ram() { // create the ram_buffer and copy flash to it.
         if(is_in_ram()) return;
         ram_buffer = (T *)calloc(item_count, sizeof(T));
+        if(!ram_buffer) {
+            printf("l reftable couldn't alloc %ld bytes in ram!\n", item_count * sizeof(T));
+            return;
+        }
         printf("l reftable alloc %ld bytes in ram\n", item_count * sizeof(T));
         for(uint32_t i = 0; i < item_count; i++) {
             memcpy(&ram_buffer[i], &(((T*)start_address)[i]), sizeof(T));
