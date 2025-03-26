@@ -28,13 +28,13 @@ private:
     GameMode *game_mode = nullptr;
     AudioLayer &audio;
     Chaser chaser;
-    int say_mode = 1;
+    uint8_t volume = 255;
     bool wait_saying = false;
     int get_ms_since_last_game() {
         return to_ms_since_boot(get_absolute_time()) - to_ms_since_boot(last_game_endtime);
     }
 public:
-    enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} mode = STOP;
+    enum GameState {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} state = STOP;
     Game(Scorelog &_log, AudioLayer &_audio): audio(_audio), scorelog(_log) {};
     Speaker speaker;
     Players players;
@@ -56,9 +56,11 @@ public:
         audio.command(c, p1, p2, p3);
     }
     void pixels_update();
-    int get_mode() {
-        return mode;
+    int get_state() {
+        return state;
     }
+    void set_volume(uint8_t vol);
+    uint8_t get_volume() { return volume; }
 };
 
 class GameMode {

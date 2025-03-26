@@ -7,8 +7,9 @@
 
 class AudioLayer {
 private:
-    float cpu_avg;
+    float cpu_avg = 0;
     Patch &patch;
+    uint8_t volume = 255;
 public:
     AudioLayer();
     void init(int audio_pin);
@@ -20,5 +21,6 @@ public:
         patch.mix(out_buffer, in_buffer);
     }
     void print_cpu();
+    void set_volume(uint8_t vol) { volume = vol; }
 };
 

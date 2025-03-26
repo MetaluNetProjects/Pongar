@@ -19,7 +19,7 @@ void Game::init(int tx_pin) {
 void Game::prepare() {
     proj.dimmer(0);
     proj.move(180, 0);
-    mode = PREPARE;
+    state = PREPARE;
     wait_saying = true;
     game_players_count = 0;
     noplayer_timeout = players_ready_timeout = players_stable_timeout = at_the_end_of_time;
@@ -31,7 +31,7 @@ void Game::prepare() {
 void Game::prepare_restart() {
     proj.dimmer(0);
     proj.move(180, 0);
-    mode = RESTART;
+    state = RESTART;
     wait_saying = true;
     noplayer_timeout = players_ready_timeout = players_stable_timeout = at_the_end_of_time;
     //printf("game::prepare_restart\n");
@@ -40,7 +40,7 @@ void Game::prepare_restart() {
 void Game::start() {
     if(!game_players_count) prepare();
     else {
-        mode = PLAYING;
+        state = PLAYING;
         game_mode->start();
     }
 }
@@ -48,28 +48,28 @@ void Game::start() {
 void Game::restart() {
     if(!game_players_count) prepare();
     else {
-        mode = PLAYING;
+        state = PLAYING;
         game_mode->restart();
     }
 }
 
 void Game::stop() {
-    mode = STOP;
+    state = STOP;
     proj.dimmer(0);
 }
 
 void Game::standby() {
-    mode = STANDBY;
+    state = STANDBY;
 }
 
 void Game::pixels_update() {
-    if(mode == STANDBY) return;
-    if(mode == PLAYING) {
+    if(state == STANDBY) return;
+    if(state == PLAYING) {
         game_mode->pixels_update();
         return;
     }
     int total_leds = MIN(config.total_leds, NUM_PIXELS);
-    if(mode == PREPARE && players.get_steady_count() == 0) {
+    if(state == PREPARE && players.get_steady_count() == 0) {
         chaser.update();
         return;
     }
@@ -89,14 +89,14 @@ bool Game::update() {
     players.update();
     proj.update();
 
-    if(mode != STANDBY && players.get_too_close()) sfx(SoundCommand::tooclose, 20);
+    if(state != STANDBY && players.get_too_close()) sfx(SoundCommand::tooclose, 20);
 
     if(wait_saying) {
         if(speaker.is_playing()) return true;
         else wait_saying = false;
     }
 
-    switch(mode) {
+    switch(state) {
     case STOP:
         break;
     case PREPARE:
@@ -112,7 +112,7 @@ bool Game::update() {
             next_alpague_time = make_timeout_time_ms((5 + random() % rnd_seconds) * 1000);
         }
         if(players.get_steady_count()) {
-            mode = WAIT_STABLE;
+            state = WAIT_STABLE;
             speaker.say(Words::bonjour);
             speaker.silence(1000);
             noplayer_timeout = at_the_end_of_time;
@@ -127,7 +127,7 @@ bool Game::update() {
         }
         if(players.get_steady_count() != 0) noplayer_timeout = make_timeout_time_ms(NO_PLAYER_SECONDS * 1000);
         if(players.get_steady_count() == 0 && time_reached(noplayer_timeout)) {
-            mode = PREPARE;
+            state = PREPARE;
             break;
         }
         if(players.count_is_steady()) {
@@ -174,3 +174,8 @@ void Game::receivebytes(const char* data, uint8_t len) {
     }
 }
 
+void Game::set_volume(uint8_t vol) {
+    volume = vol;
+    audio.set_volume(volume);
+    speaker.set_volume(volume);
+}

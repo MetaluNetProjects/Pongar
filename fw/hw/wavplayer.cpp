@@ -177,3 +177,7 @@ void WavPlayer::receivebytes(const char* data, uint8_t len) {
         break;
     }
 }
+
+void WavPlayer::set_volume(uint8_t vol) { 
+    mp3_volume((vol * 30) / 255);
+}

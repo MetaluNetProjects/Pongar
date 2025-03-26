@@ -22,6 +22,7 @@ public:
     int get_duration_ms(uint8_t folder, uint8_t track);
     void update();
     void receivebytes(const char* data, uint8_t len);
+    void set_volume(uint8_t vol);
 };
 
 

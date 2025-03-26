@@ -63,38 +63,39 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
         print_cpu();
         break;
     /*case 2: {
-        main_patch.buzzer.osc1.setFreq(fraise_get_int16());
-        main_patch.buzzer.osc1.setVol(fraise_get_int16());
-        main_patch.buzzer.osc2.setFreq(fraise_get_int16());
-        main_patch.buzzer.osc2.setVol(fraise_get_int16());
-    }
-    break;
-    case 3: {
-        char type = fraise_get_uint8();
-        switch(type) {
-        case 1:
-            main_patch.buzz();
-            break;
-        case 2:
-            main_patch.bounce();
-            break;
-        case 3:
-            main_patch.bouncer.bounce(fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
-            break;
-        case 4:
-            main_patch.tut.tut(fraise_get_int16(), fraise_get_int16());
-            break;
-        case 5:
-            main_patch.buzzer.config(fraise_get_int16(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
-            break;
-            //case 6: main_patch.seq.make_melodies(); break;
+            main_patch.buzzer.osc1.setFreq(fraise_get_int16());
+            main_patch.buzzer.osc1.setVol(fraise_get_int16());
+            main_patch.buzzer.osc2.setFreq(fraise_get_int16());
+            main_patch.buzzer.osc2.setVol(fraise_get_int16());
         }
-    }
-    break;*/
+        break;
+    case 3: {
+            char type = fraise_get_uint8();
+            switch(type) {
+            case 1:
+                main_patch.buzz();
+                break;
+            case 2:
+                main_patch.bounce();
+                break;
+            case 3:
+                main_patch.bouncer.bounce(fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+                break;
+            case 4:
+                main_patch.tut.tut(fraise_get_int16(), fraise_get_int16());
+                break;
+            case 5:
+                main_patch.buzzer.config(fraise_get_int16(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+                break;
+                //case 6: main_patch.seq.make_melodies(); break;
+            }
+        }
+        break;*/
     case 4: {
-        patch.command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
-    }
-    break;
+            patch.command((SoundCommand)fraise_get_uint8(), fraise_get_int16(), fraise_get_int16(), fraise_get_int16());
+        }
+        break;
+    case 5: set_volume(fraise_get_uint8()); break;
     }
 }
 
@@ -114,10 +115,11 @@ void AudioLayer::audio_task() {
     int16_t *samples = (int16_t *) buffer->buffer->bytes;
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
     absolute_time_t start = get_absolute_time();
+    int vol = (volume * volume) / 16;
 
     mix(int_samples, 0);
     for (uint i = 0; i < buffer->max_sample_count; i++) {
-        samples[i] = clip(int_samples[i]);
+        samples[i] = (clip(int_samples[i]) * vol) / (256 * 16);
     }
 
     int us = absolute_time_diff_us(start, get_absolute_time());
