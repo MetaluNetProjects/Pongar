@@ -17,6 +17,7 @@
 #include "sound/audiolayer.h"
 #include "config.h"
 #include "pico/rand.h"
+#include "remote.h"
 
 #define printf fraise_printf
 
@@ -82,6 +83,7 @@ void setup() {
     lidar_change_state(START);
 
     proj.color(DMXProj::white);
+    game.set_volume(192);
 }
 
 void game_pixels_update() {
@@ -117,15 +119,6 @@ void send_positions() {
             fraise_put_uint16(p.size);
             fraise_put_send();
         }
-    }
-}
-
-void send_game_mode() {
-    static int last_mode =-1;
-    int mode = game.get_mode();
-    if(last_mode != mode) {
-        last_mode = mode;
-        printf("mode %d\n", mode);
     }
 }
 
@@ -176,7 +169,7 @@ void loop() {
         dmx.transfer_frame(dmxBuf, DMX_CHAN_COUNT);
     }
 
-    send_game_mode();
+    remote_update();
 }
 
 void fraise_receivebytes(const char *data, uint8_t len) {
@@ -388,7 +381,7 @@ void fraise_receivebytes(const char *data, uint8_t len) {
     }
 }
 
-bool is_string(const char *in, uint8_t len, const char *str) {
+bool string_equal(const char *in, uint8_t len, const char *str) {
     return len >= strlen(str) && !strncmp(in, str, strlen(str));
 }
 
@@ -398,14 +391,17 @@ void fraise_receivechars(const char *data, uint8_t len) {
     if(data[0] == 'E') { // Echo
         printf("E%s\n", data + 1);
     }
-    else if(is_string(data, len, eesave_str) /*len >= strlen(eesave_str) && !strncmp(data, eesave_str, strlen(eesave_str))*/) {
+    if(data[0] == 'R') { // Remote command
+        remote_command(data + 1);
+    }
+    else if(string_equal(data, len, eesave_str)) {
         printf("l saving eeprom\n");
         lidar_stop();
         sleep_ms(500);
         eeprom_save();
         lidar_start();
     }
-    else if(is_string(data, len, clearlog_str)) {
+    else if(string_equal(data, len, clearlog_str)) {
         printf("l clearing log\n");
         scorelog.clear_all();
     }

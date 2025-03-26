@@ -5,10 +5,6 @@
     <title>Pong control room</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-    /*body {background-color: lightblue; font-size: 200%}
-    h1   {color: blue;}
-    .slider {width: 70%;height: 10%;}
-    #title {font-size: 200%; text-align: top;}*/
 * {
   box-sizing: border-box;
 }
@@ -19,11 +15,11 @@ body {
 
 /* Style the header */
 header {
-  background-color: #666;
-  padding: 10px;
+  background-color: #444;
+  padding: 5px;
   text-align: center;
-  font-size: 25px;
-  color: white;
+  font-size: 20px;
+  color: #d55;
 }
 
 /* Container for flexboxes */
@@ -72,6 +68,10 @@ footer {
   }
 }
 
+.button {
+  padding: 10px;
+  font-size: 16px;
+}
     </style>
 </head>
 <body>
@@ -85,63 +85,55 @@ footer {
     <ul>
     <h1>Controls</h1>
     <div>
-        <input type="range" class="slider" id="volume" name="volume" min="20" max="255"/>
-        <label for="volume">Vitesse Led</label>
+        <input type="range" class="slider" id="volume" name="volume" min="10" max="255"/>
+        <label for="volume">Master volume</label>
+        <input type="button" class="button" id="buzz" value="Buzz !"/>
     </div>
     <br>
     <div>
-        <input type="button" class="button" id="buzz" name="buzz"/>
-        <label for="buzz">Buzz!</label>
+        <input type="button" class="button" id="gamestop" value="STOP"/>
+        <input type="button" class="button" id="gameprepare" value="PLAY"/>
+        <input type="button" class="button" id="gamestandby" value="STANDBY"/>
+        <nobr> Game state: <b id="gamestate" >Unknown</b> </nobr>
     </div>
     <br>
-    <div>
-        <!-- enum {STOP, PREPARE, WAIT_STABLE, PLAYING, RESTART, STANDBY} -->
-        <input type="radio" name="GameMode" value="0" id="stop"/>
-        <label for="stop">Stop</label>
-        <input type="radio" name="GameMode" value="1" id="prepare"/>
-        <label for="prepare">Prepare</label>
-        <input type="radio" name="GameMode" value="2" id="waitstable"/>
-        <label for="waitstable">Wait stable</label>
-        <input type="radio" name="GameMode" value="3" id="playing"/>
-        <label for="playing">Playing</label>
-        <input type="radio" name="GameMode" value="4" id="restart"/>
-        <label for="restart">Restart</label>
-        <input type="radio" name="GameMode" value="5" id="standby"/>
-        <label for="standby">Standby</label>
-    </div>
     </ul>
   </nav>
-  
+
   <article>
       <h1>Log</h1>
-      <textarea id='chatbox' rows=20 cols=40 autofocus> </textarea>
+      <textarea id='chatbox' rows=12 cols=40 readonly> </textarea>
   </article>
 </section>
 
 <footer>
-  <p>Footer</p>
+  <p></p>
 </footer>
 
 <script type="text/javascript">
-const logbox = document.getElementById("chatbox");
-const volume = document.getElementById("volume");
-const buzz = document.getElementById("buzz");
-const gamemode = document.getElementsByName("GameMode");
+
+document.getElementById("gamestate").textContent = "unknown";
 
 function log(text) {
-    logbox.value += '\n' + text;
+    const logbox = document.getElementById("chatbox");
+    logbox.value += text + '\n';
     logbox.scrollTo( 0, 999999 );
 }
 
 function get_fraise_chars(words) {
     const id = parseInt(words.shift());
     if(id != 1) return;
+    let command = words.shift();
+    if(command !== "R") return;
     command = words.shift();
     switch(command) {
-        case "mode": 
-            const mode = parseInt(words.shift());
-            const mode_button = Array.from(gamemode).find((el)=>el.value == mode);
-            mode_button.checked = true;
+        case "state": 
+            const state = parseInt(words.shift());
+            const statenames = ["Stop", "Prepare", "Wait stable", "Playing", "Restart", "Stand by"];
+            document.getElementById("gamestate").textContent = statenames[state];
+            break;
+        case "volume":
+            document.getElementById("volume").value = parseInt(words.shift());
             break;
     }
 }
@@ -156,7 +148,6 @@ class WebSocketHandler {
         this.count++;
     }
     constructor() {
-        //this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
         this.count = 0;
         if (window.location.protocol == "https:") {
             this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
@@ -168,17 +159,18 @@ class WebSocketHandler {
             this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
         }
 
-        //this.timer = setInterval(() => this.periodic(), 1000);
-
-        this.ws.addEventListener("error", (event) => {
+        this.ws.onerror = (event) => {
             console.log("WebSocket error: ", event);
-        });
+        };
 
-        this.ws.addEventListener("message", (event) => {
+        this.ws.onopen = (event) => {
+            ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
+        };
+
+        this.ws.onmessage = (event) => {
             event.data.text().then(text => {
                 console.log("Message from server ", text);
-                var text2 = "Message: " + text;
-                log(text2);
+                log("Message: " + text);
                 const words = text.split(" ");
                 const command = words.shift();
                 switch(command) {
@@ -187,30 +179,22 @@ class WebSocketHandler {
                     case "f": get_fraise_bytes(words); break;
                 }
             });
-        });
+        };
     }
 }
 let handler = new WebSocketHandler();
 
-buzz.onclick = (event) => {
+document.getElementById("buzz").onclick = (event) => {
     handler.ws.send("f 1 33 0 1 244");
 }
 volume.addEventListener("input", (event) => {
     log(`volume ${event.target.value}`);
-    handler.ws.send(`volume ${event.target.value}`);
+    handler.ws.send(`F 1 Rset volume ${event.target.value}`);
 });
 
-gamemode.forEach((element) => {
-    element.onclick = () => {
-        log("element: " + element.id + ' ' + element.value);
-        var num = element.value;
-        switch(element.id) {
-            case "stop": handler.ws.send("f 1 150"); break;
-            case "prepare": handler.ws.send("f 1 153"); break;
-            case "standby": handler.ws.send("f 1 149"); break;
-        }
-    }
-});
+document.getElementById("gamestop").onclick = () => handler.ws.send("F 1 Rset state 0");
+document.getElementById("gameprepare").onclick = () => handler.ws.send("F 1 Rset state 1");
+document.getElementById("gamestandby").onclick = () => handler.ws.send("F 1 Rset state 5");
 
 chatbox.value='';
 log("c'est parti");

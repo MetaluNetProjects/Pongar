@@ -82,8 +82,6 @@ bool RequestHandler::onHttpData(u8_t *data, size_t len)
 
 bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
 {
-    broadcastWebSocketData(data, len, this);
-
     char *indata = (char*)data;
     indata[len] = 0; // terminate string
     //trace("RH::onWebSocketData: this=%p len=%d data=[%.*s]", this, len, len, data);
