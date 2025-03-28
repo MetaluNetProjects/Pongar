@@ -1,32 +1,23 @@
+//#define DISABLE_PICOW
+
 #include <stdio.h>
 #include "fraise.h"
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
-
-// pico_https
-#include "tls_listener.h"
-#include "listener.h"
-#include "request_handler.h"
-#include "pico_nologger.h"
 #include <malloc.h>
-#include "lwip/timeouts.h"
-
-// pico_ap
-extern "C" {
-#include "dhcpserver.h"
-#include "dnsserver.h"
-}
 
 #include "flash_html.h"
 
 #define BOARD pico_w
 
-#if __has_include ("wifi_config.h")
-#include "wifi_config.h"
-#else
-#define WIFI_AP 1
-#define WIFI_SSID "picow_test"
-#define WIFI_PASS "password"
+#include "fraise_manager.h"
+#define FRAISE_DISABLE_PIN 5
+FraiseManager fraise;
+
+#ifndef DISABLE_PICOW
+    #include "wifi_manager.h"
+    #define WIFI_STA_PIN 4
+    WifiManager wifi;
 #endif
 
 unsigned char empty_html_gz[] = {
@@ -52,7 +43,9 @@ bool connected = false;
 int led_ms = 200;
 
 void setled(bool on) {
+#ifndef DISABLE_PICOW
     if(cyw43ok) cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, on);
+#endif
 }
 
 int counter = 0;
@@ -65,9 +58,6 @@ void process_count() {
     setled(counter % 2);
 }
 
-dhcp_server_t dhcp_server;
-dns_server_t dns_server;
-
 void setup() {
     mallopt(M_TRIM_THRESHOLD, 1024); // from pico_https hello_world
 
@@ -78,64 +68,30 @@ void setup() {
         html_gz = flashHTML.html_data_p();
     }
 
+#ifndef DISABLE_PICOW
     if (cyw43_arch_init() != 0) {
         printf("cyw43_arch_init failed\n");
         return;
     }
     cyw43ok = true;
-
-    setled(1);
-    sleep_ms(500);
-    setled(0);
-
-#if WIFI_AP
-    cyw43_arch_enable_ap_mode(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK);
-
-    ip4_addr_t ip;
-    ip4_addr_t mask;
-    IP4_ADDR(ip_2_ip4(&ip), 192, 168, 4, 1);
-    IP4_ADDR(ip_2_ip4(&mask), 255, 255, 255, 0);
-
-    // Start the dhcp server
-    dhcp_server_init(&dhcp_server, &ip, &mask);
-
-    // Start the dns server
-    dns_server_init(&dns_server, &ip);
-#else
-    cyw43_arch_enable_sta_mode();
-
-    printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("failed to connect.\n");
-        return;
-    }
-    printf("Connected.\n");
 #endif
 
-    cyw43_wifi_pm(&cyw43_state, cyw43_pm_value(CYW43_NO_POWERSAVE_MODE, 2000, 1, 1, 1));
+    setled(1);
+    sleep_ms(100);
+    setled(0);
 
-    start_logging_server("build/" PICO_BOARD "/docker/hello_world/hello_world_https", PICO_BOARD, "1.0", 15000);
-    trace("Starting");
-    // Listens on 433 for https
-    //TLSListener *tls_listener = new TLSListener();
-    //tls_listener->listen(443, RequestHandler::create);
-
-    // Listens on 80 for http
-    Listener *tcp_listener = new Listener();
-    tcp_listener->listen(80, RequestHandler::create);
-
-    connected = true;
+#ifndef DISABLE_PICOW
+    wifi.init(WIFI_STA_PIN);
+#endif
+    fraise.init(FRAISE_DISABLE_PIN);
 }
 
 void loop() {
     process_count();
-    if(cyw43ok) {
-        cyw43_arch_lwip_begin();
-        cyw43_arch_poll();
-        sys_check_timeouts();
-        update_watchdog();
-        cyw43_arch_lwip_end();
-    }
+#ifndef DISABLE_PICOW
+    wifi.update();
+#endif
+    fraise.update();
 }
 
 int ledPeriod;

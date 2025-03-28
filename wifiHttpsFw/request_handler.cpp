@@ -22,6 +22,7 @@ SOFTWARE.
 */
 #include <string.h>
 #include <time.h>
+#include <string>
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
@@ -80,46 +81,61 @@ bool RequestHandler::onHttpData(u8_t *data, size_t len)
     return true;
 }
 
+static void send_broadcast_detected();
+
 bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
 {
     char *indata = (char*)data;
     indata[len] = 0; // terminate string
     //trace("RH::onWebSocketData: this=%p len=%d data=[%.*s]", this, len, len, data);
-    if(indata[0] == 'f') {
-        indata += 2; // remove "f "
-        char *token = strsep(&indata, " ");
-        if(token) {
-            int fruit_id;
-            fruit_id = atoi(token);
-            if(fruit_id > 0 && fruit_id < 127) {
-                char buf[64];
-                int buflen = 0;
-                while(indata && (token = strsep(&indata, " "))) {
-                    buf[buflen++] = atoi(token);
+    switch(indata[0]) {
+    case 'f': {
+            indata += 2; // remove "f "
+            char *token = strsep(&indata, " ");
+            if(token) {
+                int fruit_id;
+                fruit_id = atoi(token);
+                if(fruit_id > 0 && fruit_id < 127) {
+                    char buf[64];
+                    int buflen = 0;
+                    while(indata && (token = strsep(&indata, " "))) {
+                        buf[buflen++] = atoi(token);
+                    }
+                    fraise_master_sendbytes(fruit_id, buf, buflen);
                 }
-                fraise_master_sendbytes(fruit_id, buf, buflen);
             }
         }
-    }
-    if(indata[0] == 'F') {
-        indata += 2; // remove "F "
-        char *token = strsep(&indata, " ");
-        if(token) {
+        break;
+    case 'F': {
+            indata += 2; // remove "F "
+            char *token = strsep(&indata, " ");
+            if(token) {
+                int fruit_id;
+                fruit_id = atoi(token);
+                if(fruit_id > 0 && fruit_id < 127) {
+                    fraise_master_sendchars(fruit_id, indata);
+                }
+            }
+        }
+        break;
+    case 'D': send_broadcast_detected(); break;
+    case 'P': {
             int fruit_id;
-            fruit_id = atoi(token);
-            if(fruit_id > 0 && fruit_id < 127) {
-                fraise_master_sendchars(fruit_id, indata);
+            int poll;
+            int ret = sscanf((const char*)data, "P %d %d", &fruit_id, &poll);
+            if(ret == 2) fraise_master_set_poll(fruit_id, poll != 0);
+        }
+        break;
+    case 'v': { // test
+            char name[128];
+            int val;
+            int ret = sscanf((const char*)data, "%127s %d", name, &val);
+            if(ret == 2) fraise_printf("%s %d\n", name, val);
+            if(!strcmp(name, "volume")) {
+                led_ms = val;
             }
         }
-    }
-    else if(indata[0] == 'v') { // test
-        char name[128];
-        int val;
-        int ret = sscanf((const char*)data, "%127s %d", name, &val);
-        if(ret == 2) fraise_printf("%s %d\n", name, val);
-        if(!strcmp(name, "volume")) {
-            led_ms = val;
-        }
+        break;
     }
     return true;
 }
@@ -129,16 +145,29 @@ void RequestHandler::broadcastWebSocketData(u8_t *data, size_t len, RequestHandl
     for(auto handler: handlers) if(handler != except) handler->sendWebSocketData(data, len);
 }
 
+void RequestHandler::closeAll() {
+    for(auto handler: handlers) handler->close();
+}
+// -------------------------------------------------//
+std::set<uint8_t> detected_fruits;
+
+static void send_broadcast_detected() {
+    std::string outstring = "D";
+    for(auto f: detected_fruits) outstring += " " + std::to_string(f);
+    RequestHandler::broadcastWebSocketData((u8_t *)outstring.c_str(), outstring.length());
+}
+
 void fraise_master_fruit_detected(uint8_t fruit_id, bool detected) {
     printf("pied detect fruit %d %d\n", fruit_id, detected);
+    if(detected) detected_fruits.insert(fruit_id);
+    else detected_fruits.erase(fruit_id);
+    send_broadcast_detected();
 }
 
 void fraise_master_receivebytes(uint8_t fruit_id, const char *data, uint8_t len) {
-    char buf[256];
-    int buflen = 0;
-    buflen = snprintf(buf, sizeof(buf), "f %d", fruit_id);
-    for(int i = 0; i < len; i++) buflen += snprintf(buf + buflen, sizeof(buf) - buflen," %d", data[i]);
-    RequestHandler::broadcastWebSocketData((u8_t *)buf, buflen);
+    std::string outstring = "f " + std::to_string(fruit_id);
+    for(int i = 0; i < len; i++) outstring += " " + std::to_string(data[i]);
+    RequestHandler::broadcastWebSocketData((u8_t *)outstring.c_str(), outstring.length());
 }
 
 void fraise_master_receivechars(uint8_t fruit_id, const char *data, uint8_t len) {

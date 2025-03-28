@@ -32,6 +32,8 @@ class RequestHandler : public HTTPSession {
 public:
     static void create(void *arg, bool tls);
     static void broadcastWebSocketData(u8_t *data, size_t len, RequestHandler *except = nullptr);
+    static void closeAll();
+
     virtual bool onRequestReceived(HTTPHeader& header) override;
 
     bool onHttpData(u8_t *data, size_t len) override;

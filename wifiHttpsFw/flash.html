@@ -147,6 +147,11 @@ class WebSocketHandler {
             this.ws.send("hello from websocket");
         this.count++;
     }
+
+    get_current_state() {
+        ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
+    }
+
     constructor() {
         this.count = 0;
         if (window.location.protocol == "https:") {
@@ -164,7 +169,8 @@ class WebSocketHandler {
         };
 
         this.ws.onopen = (event) => {
-            ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
+            this.ws.send("P 1 1"); // poll fruit ID 1
+            this.get_current_state();
         };
 
         this.ws.onmessage = (event) => {
@@ -177,6 +183,7 @@ class WebSocketHandler {
                     case "volume": volume.value = words[0]; break;
                     case "F": get_fraise_chars(words); break;
                     case "f": get_fraise_bytes(words); break;
+                    case "D": this.get_current_state(); break; // fruit is detected, get its state
                 }
             });
         };
