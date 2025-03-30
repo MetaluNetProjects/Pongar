@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
 #include <malloc.h>
+#include "stdio_tcp.h"
 
 #include "flash_html.h"
 
@@ -18,7 +19,10 @@ FraiseManager fraise;
     #include "wifi_manager.h"
     #define WIFI_STA_PIN 4
     WifiManager wifi;
+    #include "stdio_tcp.h"
 #endif
+
+stdio_driver_t *stdio_tcp_p;
 
 unsigned char empty_html_gz[] = {
   0x1f, 0x8b, 0x08, 0x08, 0x66, 0x46, 0xdd, 0x67, 0x02, 0x03, 0x65, 0x6d,
@@ -82,6 +86,8 @@ void setup() {
 
 #ifndef DISABLE_PICOW
     wifi.init(WIFI_STA_PIN);
+    stdio_tcp_p = stdio_tcp_init();
+    stdio_set_driver_enabled(stdio_tcp_p, true);
 #endif
     fraise.init(FRAISE_DISABLE_PIN);
 }
@@ -147,6 +153,12 @@ void fraise_receivechars(const char *data, uint8_t len){
 	        html_gz_len = flashHTML.get_html_size();
             html_gz = flashHTML.html_data_p();
             break;
-	}
+        case 'I': //enable tcp stdio
+            {
+                bool enabled = (data[1] != '0');
+                stdio_set_driver_enabled(stdio_tcp_p, enabled);
+            }
+            break;
+    }
 }
 

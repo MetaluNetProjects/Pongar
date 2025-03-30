@@ -10,16 +10,17 @@
 #include "pico/cyw43_arch.h"
 #include "lwip/timeouts.h"
 
+#ifndef WIFI_FORCE_STA
 // pico_ap
 extern "C" {
 #include "dhcpserver.h"
 #include "dnsserver.h"
 }
+#endif
 
 #if __has_include ("wifi_config.h")
 #include "wifi_config.h"
 #else
-//#define WIFI_AP 1
 #define WIFI_AP_SSID "picow_test"
 #define WIFI_AP_PASS "password"
 #define WIFI_STA_SSID "picow_test"
@@ -34,8 +35,10 @@ private:
     int sta_switch_pin;
     bool last_pin;
     absolute_time_t pin_timeout = at_the_end_of_time;
+#ifndef WIFI_FORCE_STA
     dhcp_server_t dhcp_server;
     dns_server_t dns_server;
+#endif
     //Listener tcp_listener;
 
     enum {NONE, AP, STA} state = NONE;
@@ -57,6 +60,7 @@ private:
             break;
         }*/
         state = NONE;
+#ifndef WIFI_FORCE_STA
         if(gpio_get(sta_switch_pin) == 1) { // switch isn't closed: go to AP mode
             printf("l switching to AP mode\n");
             cyw43_arch_enable_ap_mode(WIFI_AP_SSID, WIFI_AP_PASS, CYW43_AUTH_WPA2_AES_PSK);
@@ -71,7 +75,9 @@ private:
             // Start the dns server
             dns_server_init(&dns_server, &ip);
             state = AP;
-        } else { // station mode
+        } else 
+#endif
+        { // station mode
             printf("l switching to STATION mode\n");
             cyw43_arch_enable_sta_mode();
             printf("Connecting to Wi-Fi...\n");
@@ -121,11 +127,11 @@ public:
             last_pin = gpio_get(sta_switch_pin);
         }
 
-        cyw43_arch_lwip_begin();
+        //cyw43_arch_lwip_begin();
         cyw43_arch_poll();
         sys_check_timeouts();
         update_watchdog();
-        cyw43_arch_lwip_end();
+        //cyw43_arch_lwip_end();
     }
 };
 
