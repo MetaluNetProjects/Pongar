@@ -27,6 +27,25 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     pico_logger
 )
 
+set(STATIC_HTML_FILENAME "config.html")
+
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/static_html_hex.h
+    DEPENDS ${STATIC_HTML_PATH}
+    COMMAND gzip --best -c ${CMAKE_CURRENT_LIST_DIR}/${STATIC_HTML_FILENAME} > ${PROJECT_BINARY_DIR}/config.html.gz
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#ifndef STATIC_HTML_HEX" > ${PROJECT_BINARY_DIR}/config_html_hex.h
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#define STATIC_HTML_HEX" >> ${PROJECT_BINARY_DIR}/config_html_hex.h
+    COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR} xxd -i config.html.gz >> ${PROJECT_BINARY_DIR}/config_html_hex.h
+    #COMMAND ${CMAKE_COMMAND} -E echo "unsigned int html_gz_len = static_html_gz_len\\;" >> ${PROJECT_BINARY_DIR}/static_html_hex.h
+    #COMMAND ${CMAKE_COMMAND} -E echo "unsigned char *html_gz = static_html_gz\\;" >> ${PROJECT_BINARY_DIR}/static_html_hex.h
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#endif // STATIC_HTML_HEX" >> ${PROJECT_BINARY_DIR}/config_html_hex.h
+)
+add_custom_target(generate_static_html_hex ALL
+    DEPENDS ${PROJECT_BINARY_DIR}/static_html_hex.h
+)
+add_dependencies(${CMAKE_PROJECT_NAME} generate_static_html_hex)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${PROJECT_BINARY_DIR})
+
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR}/config)
 #target_include_directories(pico_ap PUBLIC ${CMAKE_CURRENT_LIST_DIR}/config)
 

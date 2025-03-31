@@ -31,6 +31,7 @@ SOFTWARE.
 //#include "pico_logger.h"
 
 #include "fraise_master.h"
+#include "config_html_hex.h"
 
 //#define trace(...) fraise_printf(__VA_ARGS__), fraise_printf("\n")
 #define trace(...)
@@ -54,6 +55,7 @@ RequestHandler::~RequestHandler()
     handlers.erase(this);
 }
 
+
 bool RequestHandler::onRequestReceived(HTTPHeader& header)
 {
     if (strcmp(header.getCommand(), "GET") != 0)
@@ -71,7 +73,13 @@ bool RequestHandler::onRequestReceived(HTTPHeader& header)
     else
     {
         trace("RH::onRequestReceived: this=%p sendReply[index.html]:", this);
-        return sendHttpReply("Content-Encoding: gzip\r\n", (const char*)html_gz, html_gz_len);
+        const char *html = (const char*)html_gz;
+        int len = html_gz_len;
+        if(!strcmp(header.getPath(), "/config")) {
+            html = (const char*)config_html_gz;
+            len = config_html_gz_len;
+        }
+        return sendHttpReply("Content-Encoding: gzip\r\n", html, len);
     }
 }
 
