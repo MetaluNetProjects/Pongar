@@ -41,7 +41,6 @@ unsigned int empty_html_gz_len = sizeof(empty_html_gz);
 unsigned int html_gz_len = empty_html_gz_len;
 unsigned char *html_gz = empty_html_gz;
 
-
 #define HTML_TABLE_FLASHSIZE (4096 * 8) // 32k
 #define HTML_TABLE_START (XIP_BASE + PICO_FLASH_SIZE_BYTES - HTML_TABLE_FLASHSIZE)
 FlashHTML flashHTML;

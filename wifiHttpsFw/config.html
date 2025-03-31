@@ -9,5 +9,144 @@
 <header>
   <h2>Pong config room</h2>
 </header>
+<div>
+    <input type="text" id="apssid" name="apssid" minlength="4" maxlength="20" size="20"/>
+    <label for="apssid">AP SSID (4 to 20 characters)</label>
+</div>
+<div>
+    <input type="text" id="appass" name="appass" minlength="4" maxlength="20" size="20"/>
+    <label for="appass">AP PASSWORD (4 to 20 characters)</label>
+</div>
+<br>
+<div>
+    <input type="text" id="stassid" name="stassid" minlength="4" maxlength="20" size="20"/>
+    <label for="stassid">STATION SSID (4 to 20 characters)</label>
+</div>
+<div>
+    <input type="text" id="stapass" name="stapass" minlength="4" maxlength="20" size="20"/>
+    <label for="stapass">STATION PASSWORD (4 to 20 characters)</label>
+</div>
+<br>
+<div>
+    <input type="text" id="hostname" name="hostname" minlength="4" maxlength="20" size="20"/>
+    <label for="hostname">HOSTNAME (4 to 20 characters)</label>
+</div>
+<br>
+<div>
+    <input type="text" id="tcpport" name="tcpport" minlength="4" maxlength="20" size="20" pattern='[0-9]{6}' />
+    <label for="tcpport">TCP PORT</label>
+</div>
+<br>
+<div>
+    <input type="button" class="button" id="save_eeprom" value="SAVE TO EEPROM"/>
+</div>
 </body>
+<script>
+function get_fraise_chars(words) {
+    const id = parseInt(words.shift());
+    if(id != 0) return;
+    command = words.shift();
+    switch(command) {
+        case "ap_ssid": 
+            document.getElementById("apssid").value = words.shift();
+            break;
+        case "ap_password":
+            document.getElementById("appass").value = words.shift();
+            break;
+        case "sta_ssid": 
+            document.getElementById("stassid").value = words.shift();
+            break;
+        case "sta_password":
+            document.getElementById("stapass").value = words.shift();
+            break;
+        case "hostname":
+            document.getElementById("hostname").value = words.shift();
+            break;
+        case "tcp_port":
+            document.getElementById("tcpport").value = parseInt(words.shift());
+            break;
+        case "l":
+            if(words[0] === 'eeprom' && words[1] === 'saved') {
+                alert("EEPROM saved!");
+            }
+            break;
+    }
+}
+
+function get_fraise_bytes(words) {
+}
+
+class WebSocketHandler {
+    periodic(event) {
+        if(this.count > 5)
+            this.ws.send("hello from websocket");
+        this.count++;
+    }
+
+    get_current_state() {
+        [1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
+    }
+
+    constructor() {
+        this.count = 0;
+        if (window.location.protocol == "https:") {
+            this.ws = new WebSocket("wss://" + location.hostname + ":443/websocket");
+        }
+        else if (window.location.protocol == "http:") {
+            this.ws = new WebSocket("ws://" + location.hostname + ":80/websocket");
+        }
+        else if (window.location.protocol == "file:") {
+            this.ws = new WebSocket("ws://127.0.0.1:80/websocket");
+        }
+
+        this.ws.onerror = (event) => {
+            console.log("WebSocket error: ", event);
+        };
+
+        this.ws.onopen = (event) => {
+            this.ws.send("P 1 1"); // poll fruit ID 1
+            this.get_current_state();
+        };
+
+        this.ws.onmessage = (event) => {
+            event.data.text().then(text => {
+                console.log("Message from server ", text);
+                const words = text.split(" ");
+                const command = words.shift();
+                switch(command) {
+                    case "volume": volume.value = words[0]; break;
+                    case "F": get_fraise_chars(words); break;
+                    case "f": get_fraise_bytes(words); break;
+                    case "D": this.get_current_state(); break; // fruit is detected, get its state
+                }
+            });
+        };
+    }
+}
+let handler = new WebSocketHandler();
+
+function send_setting_string(num, value) {
+    let outstr = "f 0 10 " + num;
+    for(i = 0; i < value.length; i++) outstr += " " + value.charCodeAt(i);
+    console.log("send setting: " + outstr);
+    handler.ws.send(outstr);
+}
+
+function send_setting_num16(num, value) {
+    let outstr = "f 0 10 " + num + " " + (value >> 8) + " " + (value & 255);
+    console.log("send setting: " + outstr);
+    handler.ws.send(outstr);
+}
+
+document.getElementById("apssid").onchange = function() {send_setting_string(1, this.value);}
+document.getElementById("appass").onchange = function() {send_setting_string(2, this.value);}
+document.getElementById("stassid").onchange = function() {send_setting_string(3, this.value);}
+document.getElementById("stapass").onchange = function() {send_setting_string(4, this.value);}
+document.getElementById("hostname").onchange = function() {send_setting_string(6, this.value);}
+
+document.getElementById("tcpport").onchange = function() {send_setting_num16(5, this.value);}
+
+document.getElementById("save_eeprom").onclick = function() {send_setting_string(255, "EEPROM_SAVE");}
+
+</script>
 </html>

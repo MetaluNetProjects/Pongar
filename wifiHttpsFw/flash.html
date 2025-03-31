@@ -60,6 +60,11 @@ footer {
   color: white;
 }
 
+/* Style the footer */
+div {
+  padding: 10px;
+}
+
 /* Responsive layout - makes the menu and the content (inside the section) sit on top of each other instead of next to each other */
 @media (max-width: 600px) {
   section {
@@ -89,7 +94,6 @@ footer {
         <label for="volume">Master volume</label>
         <input type="button" class="button" id="buzz" value="Buzz !"/>
     </div>
-    <br>
     <div>
         <input type="button" class="button" id="gamestop" value="STOP"/>
         <input type="button" class="button" id="gameprepare" value="PLAY"/>
@@ -150,7 +154,7 @@ class WebSocketHandler {
 
     get_current_state() {
         ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
-        [1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
+        //[1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
     }
 
     constructor() {
