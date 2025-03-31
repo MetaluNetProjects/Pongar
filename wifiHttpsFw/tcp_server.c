@@ -24,7 +24,7 @@ extern void fraise_printf(const char* fmt, ...);
 #define DEBUG_printf(...)
 #endif
 
-#define TCP_PORT 4242
+//#define TCP_PORT 4242
 #define BUF_SIZE 2048
 
 typedef struct TCP_SERVER_T_ {
@@ -146,9 +146,9 @@ static err_t tcp_server_accept(void *arg, struct tcp_pcb *client_pcb, err_t err)
     return ERR_OK;
 }
 
-static bool tcp_server_open(void *arg) {
+static bool tcp_server_open(void *arg, uint16_t port) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
-    DEBUG_printf("Starting server at %s on port %u\n", ip4addr_ntoa(netif_ip4_addr(netif_list)), TCP_PORT);
+    DEBUG_printf("Starting server at %s on port %u\n", ip4addr_ntoa(netif_ip4_addr(netif_list)), port);
 
     struct tcp_pcb *pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
     if (!pcb) {
@@ -156,9 +156,9 @@ static bool tcp_server_open(void *arg) {
         return false;
     }
 
-    err_t err = tcp_bind(pcb, NULL, TCP_PORT);
+    err_t err = tcp_bind(pcb, NULL, port);
     if (err) {
-        DEBUG_printf("failed to bind to port %u\n", TCP_PORT);
+        DEBUG_printf("failed to bind to port %u\n", port);
         return false;
     }
 
@@ -177,12 +177,12 @@ static bool tcp_server_open(void *arg) {
     return true;
 }
 
-void *run_tcp_server(void) {
+void *run_tcp_server(uint16_t port) {
     TCP_SERVER_T *state = tcp_server_init();
     if (!state) {
         return NULL;
     }
-    if (!tcp_server_open(state)) {
+    if (!tcp_server_open(state, port)) {
         return NULL;
     }
     DEBUG_printf("tcp_server is running\n");

@@ -95,7 +95,7 @@ bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
             if(token) {
                 int fruit_id;
                 fruit_id = atoi(token);
-                if(fruit_id > 0 && fruit_id < 127) {
+                if(fruit_id >= 0 && fruit_id < 127) {
                     char buf[64];
                     int buflen = 0;
                     while(indata && (token = strsep(&indata, " "))) {
@@ -112,7 +112,7 @@ bool RequestHandler::onWebSocketData(u8_t *data, size_t len)
             if(token) {
                 int fruit_id;
                 fruit_id = atoi(token);
-                if(fruit_id > 0 && fruit_id < 127) {
+                if(fruit_id >= 0 && fruit_id < 127) {
                     fraise_master_sendchars(fruit_id, indata);
                 }
             }

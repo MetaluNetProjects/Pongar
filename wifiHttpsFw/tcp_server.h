@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-void *run_tcp_server(void); // return the context, NULL on error
+void *run_tcp_server(uint16_t port); // return the context, NULL on error
 err_t tcp_server_close(void *context);
 bool tcp_server_is_running(void *context);
 

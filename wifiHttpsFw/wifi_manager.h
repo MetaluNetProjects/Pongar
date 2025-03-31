@@ -18,21 +18,23 @@ extern "C" {
 }
 #endif
 
-#if __has_include ("wifi_config.h")
+/*#if __has_include ("wifi_config.h")
 #include "wifi_config.h"
 #else
 #define WIFI_AP_SSID "picow_test"
 #define WIFI_AP_PASS "password"
 #define WIFI_STA_SSID "picow_test"
 #define WIFI_STA_PASS "password"
+#endif*/
 
-#endif
+
 
 #define printf fraise_printf
 
 class WifiManager {
 private:
     int sta_switch_pin;
+    Settings &settings;
     bool last_pin;
     absolute_time_t pin_timeout = at_the_end_of_time;
 #ifndef WIFI_FORCE_STA
@@ -63,7 +65,13 @@ private:
 #ifndef WIFI_FORCE_STA
         if(gpio_get(sta_switch_pin) == 1) { // switch isn't closed: go to AP mode
             printf("l switching to AP mode\n");
-            cyw43_arch_enable_ap_mode(WIFI_AP_SSID, WIFI_AP_PASS, CYW43_AUTH_WPA2_AES_PSK);
+            cyw43_arch_enable_ap_mode(settings.get_ap_ssid(), settings.get_ap_password(), CYW43_AUTH_WPA2_AES_PSK);
+
+            cyw43_arch_lwip_begin();
+            struct netif *n = &cyw43_state.netif[CYW43_ITF_STA];
+            netif_set_hostname(n, settings.get_hostname());
+            netif_set_up(n);
+            cyw43_arch_lwip_end();
 
             ip4_addr_t ip;
             ip4_addr_t mask;
@@ -80,8 +88,15 @@ private:
         { // station mode
             printf("l switching to STATION mode\n");
             cyw43_arch_enable_sta_mode();
+
+            cyw43_arch_lwip_begin();
+            struct netif *n = &cyw43_state.netif[CYW43_ITF_STA];
+            netif_set_hostname(n, settings.get_hostname());
+            netif_set_up(n);
+            cyw43_arch_lwip_end();
+
             printf("Connecting to Wi-Fi...\n");
-            if (cyw43_arch_wifi_connect_timeout_ms(WIFI_STA_SSID, WIFI_STA_PASS, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+            if (cyw43_arch_wifi_connect_timeout_ms(settings.get_sta_ssid(), settings.get_sta_password(), CYW43_AUTH_WPA2_AES_PSK, 30000)) {
                 printf("failed to connect.\n");
                 return;
             }
@@ -103,8 +118,8 @@ private:
         tcp_listener->listen(80, RequestHandler::create);
     }
 public:
-    void init(int pin) {
-        sta_switch_pin = pin;
+    WifiManager(int pin, Settings &s): sta_switch_pin(pin), settings(s) {}
+    void init() {
         gpio_init(sta_switch_pin);
         gpio_set_dir(sta_switch_pin, GPIO_IN);
         gpio_pull_up(sta_switch_pin);

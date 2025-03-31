@@ -24,6 +24,6 @@ SOFTWARE.
 #define STDIO_TCP
 
 #include "pico/stdio/driver.h"
-stdio_driver_t *stdio_tcp_init();
+stdio_driver_t *stdio_tcp_init(uint16_t port);
 
 #endif

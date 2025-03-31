@@ -150,6 +150,7 @@ class WebSocketHandler {
 
     get_current_state() {
         ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
+        [1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
     }
 
     constructor() {

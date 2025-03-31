@@ -67,8 +67,8 @@ stdio_driver_t stdio_tcp = {
     .in_chars = stdio_tcp_in_chars,
 };
 
-stdio_driver_t *stdio_tcp_init() {
-    if(!tcp_context) tcp_context = run_tcp_server();
+stdio_driver_t *stdio_tcp_init(uint16_t port) {
+    if(!tcp_context) tcp_context = run_tcp_server(port);
     return &stdio_tcp;
 }
 

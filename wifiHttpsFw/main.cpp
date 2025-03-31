@@ -11,6 +11,9 @@
 
 #define BOARD pico_w
 
+#include "settings.h"
+Settings settings;
+
 #include "fraise_manager.h"
 #define FRAISE_DISABLE_PIN 5
 FraiseManager fraise;
@@ -18,9 +21,10 @@ FraiseManager fraise;
 #ifndef DISABLE_PICOW
     #include "wifi_manager.h"
     #define WIFI_STA_PIN 4
-    WifiManager wifi;
+    WifiManager wifi(WIFI_STA_PIN, settings);
     #include "stdio_tcp.h"
 #endif
+
 
 stdio_driver_t *stdio_tcp_p;
 
@@ -63,6 +67,7 @@ void process_count() {
 }
 
 void setup() {
+    eeprom_load();
     mallopt(M_TRIM_THRESHOLD, 1024); // from pico_https hello_world
 
     flashHTML.init(HTML_TABLE_START, HTML_TABLE_FLASHSIZE);
@@ -85,8 +90,8 @@ void setup() {
     setled(0);
 
 #ifndef DISABLE_PICOW
-    wifi.init(WIFI_STA_PIN);
-    stdio_tcp_p = stdio_tcp_init();
+    wifi.init();
+    stdio_tcp_p = stdio_tcp_init(settings.get_tcp_port());
     stdio_set_driver_enabled(stdio_tcp_p, true);
 #endif
     fraise.init(FRAISE_DISABLE_PIN);
@@ -104,6 +109,8 @@ int ledPeriod;
 void fraise_receivebytes(const char *data, uint8_t len){
     uint8_t command = fraise_get_uint8();
     switch(command) {
+        case 10: settings.receivebytes(data + 1, len - 1);
+            break;
         case 100: { // HTML size
                 uint32_t size = fraise_get_uint32();
                 flashHTML.set_html_size(size);
@@ -160,5 +167,9 @@ void fraise_receivechars(const char *data, uint8_t len){
             }
             break;
     }
+}
+
+void eeprom_declare_main() {
+    settings.eeprom_declare();
 }
 
