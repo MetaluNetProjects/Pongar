@@ -43,3 +43,37 @@ public:
         else length = _length;
     }
 };
+
+class Reverb {
+private:
+    Echo<5011> echo1;
+    Echo<7529> echo2;
+    int32_t buf[AUDIO_SAMPLES_PER_BUFFER] = {0};
+    int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER] = {0};
+    uint16_t feedback = 3000;
+    uint16_t volume = 5000;
+    int16_t lop_last;
+
+public:
+    Reverb() {
+        echo1.config(0, 32767, 5011);
+        echo2.config(0, 32767, 7529);
+    }
+    void mix(int32_t *out_buffer) {
+        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            buf[i] = (volume * out_buffer[i] + (lastbuf[i] + lop_last) * feedback) >> 15;
+            lop_last = lastbuf[i];
+        }
+        echo1.filter(lastbuf, buf);
+        echo2.mix(lastbuf, buf);
+        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
+            out_buffer[i] += lastbuf[i];
+        }
+    }
+    void config(uint16_t _feedback, uint16_t _volume) {
+        feedback = _feedback / 2;
+        volume = _volume;
+    }
+};
+
+

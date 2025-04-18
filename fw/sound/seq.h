@@ -63,9 +63,7 @@ struct Harmony {
     ~Harmony() {}
 };
 
-class Voice {
-private:
-    SynthBp synth;
+class Voice: public SynthBp {
 public:
     int octave = 5;
     int silence_percent = 50;
@@ -73,10 +71,10 @@ public:
     bool force_base;
     int note_offset;
     int volume = 5000;
-    void play_step(int step, int ms, Melody &melody, uint8_t mastervol) {
+    void play_step(int step, int ms, Melody &melody, uint8_t mastervol, int sustain_ms) {
         if(!melody.size()) return;
         int note = melody[step % melody.size()];
-        if(note != -128) synth.play(note + note_offset, (volume * mastervol) / 256, ms / 2);
+        if(note != -128) play(note + note_offset, (volume * mastervol) / 256, ms / 2, sustain_ms);
     }
     Melody make_melody(int steps, Harmony &harm) {
         Melody melody;
@@ -113,21 +111,18 @@ public:
     void randomize(bool is_bass) {
         force_base = is_bass;
         if(!is_bass) {
-            synth.waveform = (Synth::Waveform)(random() % 3);
+            waveform = (Waveform)(random() % 3);
             force_chord = ((random() % 4) == 0);
             octave = 4 + (random() % 3);
             silence_percent = (random() % 40) + 10;
             volume = 5000;
         } else {
-            synth.waveform = (Synth::Waveform)((random() % 2) + 1);
+            waveform = (Waveform)((random() % 2) + 1);
             volume = 11000;
             octave = 2 + (random() % 3);
             silence_percent = 30 + (random() % 35);
         }
-        synth.randomize();
-    }
-    void mix(int32_t *out_buffer) {
-        synth.mix(out_buffer);
+        SynthBp::randomize();
     }
 };
 
@@ -185,39 +180,9 @@ public:
     }
 };
 
-class Reverb {
-private:
-    Echo<5011> echo1;
-    Echo<7529> echo2;
-    int32_t buf[AUDIO_SAMPLES_PER_BUFFER] = {0};
-    int32_t lastbuf[AUDIO_SAMPLES_PER_BUFFER] = {0};
-    uint16_t feedback = 3000;
-    uint16_t volume = 5000;
-    int16_t lop_last;
-
-public:
-    Reverb() {
-        echo1.config(0, 32767, 5011);
-        echo2.config(0, 32767, 7529);
-    }
-    void mix(int32_t *out_buffer) {
-        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
-            buf[i] = (volume * out_buffer[i] + (lastbuf[i] + lop_last) * feedback) >> 15;
-            lop_last = lastbuf[i];
-        }
-        echo1.filter(lastbuf, buf);
-        echo2.mix(lastbuf, buf);
-        for(int i = 0; i < AUDIO_SAMPLES_PER_BUFFER; i++) {
-            out_buffer[i] += lastbuf[i];
-        }
-    }
-    void config(uint16_t _feedback, uint16_t _volume) {
-        feedback = _feedback / 2;
-        volume = _volume;
-    }
-};
-
 class Piece {
+public:
+    using plan_t = std::vector<int>;
 private:
     static const int NB_VOICES = 4;
     static const int NB_DRUMS = 3;
@@ -231,15 +196,14 @@ private:
             for(int i = 0; i < NB_VOICES; i++) melodies[i] = voices[i].make_melody(16, harm);
             for(int i = 0; i < NB_DRUMS; i++) patterns[i] = drumvoices[i].make_pattern(16);
         }
-        void play_step(int step, int ms, Voice *voices, Drumvoice *drumvoices, uint8_t mastervol) {
-            for(int i = 0; i < NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i], mastervol);
-            for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].play_step(step, ms, patterns[i], mastervol);
+        void play_step(int step, int ms, Voice *voices, Drumvoice *drumvoices, uint8_t mastervol, int sustain_ms) {
+            for(int i = 0; i < NB_VOICES; i++) voices[i].play_step(step, ms, melodies[i], mastervol, sustain_ms);
+            if(drumvoices) for(int i = 0; i < NB_DRUMS; i++) drumvoices[i].play_step(step, ms, patterns[i], mastervol);
         }
     };
-
     std::array<Part, 6> parts;
-    std::vector<int> plan;
-    std::vector<std::vector<int>> plans = {
+    plan_t plan;
+    std::vector<plan_t> plans = {
         {0, 0, 3, 3, 0, 0, 4, 3},
         {0, 3, 0, 4},
         {5, 0, 1, 3, 5, 0, 2, 2, 5, 0, 1, 3, 5, 2, 5, 2},
@@ -257,8 +221,9 @@ private:
     Drumvoice drumvoices[NB_DRUMS] = {&hh, &snare, &kick};
     enum drumnames {HH = 0, SNARE, KICK};
     Reverb rev1;
-    uint8_t mastervol = 190;
+    uint8_t mastervol = 160;
     bool play_once = true;
+    int sustain_ms = 1000;
 public:
     Piece() {}
     ~Piece() {}
@@ -298,13 +263,17 @@ public:
         drumvoices[KICK].add_proba(1, 0, (kick_proba / 10) * (random() % 4 == 0));
         drumvoices[KICK].set_volume(60 + (random() % 50));
     }
-    void make() {
+
+    void make(int scale = -1) {
         randomize_voices();
         randomize_drumvoices();
         randomize_reverb();
 
-        int scale = random() % 5;
-        if(scale > 2) scale = 0;
+        if(scale == -1) {
+            scale = random() % 5;
+            if(scale > 2) scale = 0;
+        }
+
         for(int i = 0; i < (int)parts.size(); i++) {
             parts[i].harm.set_chord(i);
             parts[i].harm.set_scale(scale);
@@ -316,12 +285,19 @@ public:
         if(random() % 6 == 0) plan_steps = 12;
     }
 
-    void play_step(int step, int ms) {
+    void set_plan(int steps, plan_t &p) {
+        plan = p;
+        plan_steps = steps;
+    }
+
+    void play_step(int step, int ms, bool play_drums) {
         if(parts.empty() || plan.empty()) return;
         if(finished(step)) return;
         plan_index = (step / plan_steps) % plan.size();
         int current_part = plan[plan_index] % parts.size();
-        parts[current_part].play_step(step, ms, voices, drumvoices, mastervol);
+        int sustain = 0;
+        if(play_once && (step > get_total_steps() - 1)) sustain = sustain_ms;
+        parts[current_part].play_step(step, ms, voices, play_drums ? drumvoices : NULL, mastervol, sustain);
     }
 
     void mix(int32_t *out_buffer) {
@@ -336,23 +312,37 @@ public:
         play_once = once;
     }
     bool finished(int step) {
-        return play_once && (((step - 1)/ plan_steps) >= (int)plan.size());
+        return play_once && (((step - 1) / plan_steps) >= (int)plan.size());
     }
     void set_mastervol(uint8_t vol) {
         mastervol = vol;
+    }
+    int get_total_steps() {
+        return plan_steps * plan.size();
+    }
+    void set_sustain_ms(int ms) {
+        sustain_ms = ms;
+    }
+    Voice *get_voice(int num) {
+        return &voices[CLIP(num, 0, 3)];
     }
 };
 
 class Sequencer {
 private:
     int step;
-    int ms = 300;
+    int initial_ms = 300;
+    int final_ms = 300;
+    int current_ms;
+    int final_steps = 0;
     float shuffle = 0.5;
     bool playing = false;
+    bool play_drums = true;
     absolute_time_t next_beat;
     absolute_time_t next_half;
-    Piece piece;
 public:
+    Piece piece;
+
     inline Sequencer() {
         piece.make();
     };
@@ -362,8 +352,8 @@ public:
         if(playing) {
             if(time_reached(next_beat)) {
                 play_step();
-                next_beat = make_timeout_time_ms(ms);
-                next_half = make_timeout_time_ms(ms / 2 + ms * (shuffle / 5.0));
+                next_beat = make_timeout_time_ms(current_ms);
+                next_half = make_timeout_time_ms(current_ms / 2 + current_ms * (shuffle / 5.0));
             }
             if(time_reached(next_half)) {
                 play_step();
@@ -373,16 +363,28 @@ public:
     }
 
     void play_step() {
-        piece.play_step(step, ms);
+        piece.play_step(step, current_ms, play_drums);
         step++;
+        if(playing && piece.finished(step)) playing = false;
+        int total_steps = piece.get_total_steps();
+        int first_final = total_steps - final_steps;
+        if(final_steps && step >= first_final) {
+            current_ms = initial_ms + ((final_ms - initial_ms) * (step - first_final)) / final_steps;
+        }
     }
 
     void set_shuffle(float s) {
         shuffle = s;
     }
 
-    void set_tempo_ms(int m) {
-        ms = m;
+    void set_play_drums(bool p) {
+        play_drums = p;
+    }
+
+    void set_tempo_ms(int _ms, int _final_ms = 0, int _final_steps = 0) {
+        initial_ms = _ms;
+        final_ms = _final_ms ? _final_ms : initial_ms;
+        final_steps = _final_steps;
     }
 
     void set_playing(bool p, bool once = false) {
@@ -391,9 +393,11 @@ public:
         piece.set_once(once);
         next_half = at_the_end_of_time;
         next_beat = make_timeout_time_ms(0);
+        current_ms = initial_ms;
     }
 
     void make_new_piece() {
+        set_play_drums(true);
         piece.make();
         shuffle = (random() % 1000) / 1000.0;
         shuffle *= shuffle;
@@ -409,5 +413,37 @@ public:
 
     void set_mastervol(uint8_t vol) {
         piece.set_mastervol(vol);
+    }
+
+    void play_happy() {
+        piece.set_sustain_ms(800);
+        set_tempo_ms(290, 400, 4);
+        set_shuffle(0.6);
+        set_play_drums(true);
+        piece.make(0);
+        Piece::plan_t plan{0, 0, 0, 3, 3, 3, 4, 4, 0, 0, 0, 0};
+        piece.set_plan(2, plan);
+        for(int i = 0; i < 4; i++) {
+            piece.get_voice(i)->set_asr_ms(0, 400, 400);
+            piece.get_voice(i)->set_wf_lfo_porta(2, 5, 0.03, 40);
+            piece.get_voice(i)->set_filter(24, 0, 2, 50);
+        }
+        set_playing(true, true);
+    }
+
+    void play_sad() {
+        piece.set_sustain_ms(800);
+        set_tempo_ms(1500, 2000, 2);
+        set_shuffle(0);
+        set_play_drums(false);
+        piece.make(2);
+        Piece::plan_t plan{0, 4, 0, 0};
+        piece.set_plan(1, plan);
+        for(int i = 0; i < 4; i++) {
+            piece.get_voice(i)->set_asr_ms(150, 800, 400);
+            piece.get_voice(i)->set_wf_lfo_porta(1, 2.5, 0.15, 200);
+            piece.get_voice(i)->set_filter(20, 0, 8, 800);
+        }
+        set_playing(true, true);
     }
 };
