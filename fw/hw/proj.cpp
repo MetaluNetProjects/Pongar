@@ -15,11 +15,11 @@ void DMXProjCompens::move(float pan, float tilt) {
     target_pan = pan * (config.proj_pan_amp / 360.0);
     target_tilt = tilt * (27330 / 90.0) + 32768U;
 
-    fraise_put_init();
+    /*fraise_put_init();
     fraise_put_uint8(101);
     fraise_put_int16(pan * 32);
     fraise_put_int16(tilt * 32);
-    fraise_put_send();
+    fraise_put_send();*/
     if(!compens) {
         dmx_pan = target_pan;
         dmx_tilt = target_tilt;
@@ -62,6 +62,9 @@ void MaxiSpot60::color(Color col) {
     dmxBuf[dmx_address - 1 + 6] = vcol;
 }
 
+void MaxiSpot60::gobo(uint8_t g) {
+    dmxBuf[dmx_address - 1 + 7] = MIN(g, 7) * 8;
+}
 //---------------------------------------------------------
 
 void Movobeam100::move(float pan, float tilt) {
