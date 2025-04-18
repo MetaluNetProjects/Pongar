@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "game.h"
 #include "proj.h"
 #include "sound/audiolayer.h"
+#include "sound/main_patch.h"
 
 PongarConfig config;
 
@@ -279,6 +280,59 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         float f = atom_getfloat(&argv[0]);
         speaker.say_time(f);
     }
+    else if(s == gensym("make_piece")) {
+        if(argc < 3) return;
+        float scale = atom_getfloat(&argv[0]);
+        int steps = atom_getfloat(&argv[1]);
+        int nchords = argc - 2;
+        Piece &piece = ((MainPatch&)x->x_audio->get_patch()).seq.piece;
+        piece.make(scale);
+        Piece::plan_t plan;
+        for(int i = 0; i < nchords; i++) plan.push_back(atom_getfloat(&argv[i + 2]));
+        piece.set_plan(steps, plan);
+        printf("piece steps %d\n", piece.get_total_steps());
+        ((MainPatch&)x->x_audio->get_patch()).seq.set_playing(true, true);
+    }
+    else if(s == gensym("play_drums")) {
+        float play_drums = atom_getfloat(&argv[0]) != 0;
+        ((MainPatch&)x->x_audio->get_patch()).seq.set_play_drums(play_drums);
+    }
+    else if(s == gensym("sustain_ms")) {
+        int ms = atom_getfloat(&argv[0]);
+        ((MainPatch&)x->x_audio->get_patch()).seq.piece.set_sustain_ms(ms);
+    }
+    else if(s == gensym("play_happy")) {
+        ((MainPatch&)x->x_audio->get_patch()).seq.play_happy();
+    }
+    else if(s == gensym("play_sad")) {
+        ((MainPatch&)x->x_audio->get_patch()).seq.play_sad();
+    }
+    else if(s == gensym("wf_lfo_porta")) {
+        Piece &piece = ((MainPatch&)x->x_audio->get_patch()).seq.piece;
+        int wf = atom_getfloat(&argv[0]);
+        float lfo_f = atom_getfloat(&argv[1]);
+        float lfo_a = atom_getfloat(&argv[2]);
+        float porta_ms = atom_getfloat(&argv[3]);
+        for(int i = 0; i < 4; i++)
+            piece.get_voice(i)->set_wf_lfo_porta(wf, lfo_f, lfo_a, porta_ms);
+    }
+    else if(s == gensym("filter")) {
+        Piece &piece = ((MainPatch&)x->x_audio->get_patch()).seq.piece;
+        int f = atom_getfloat(&argv[0]);
+        int f_rnd = atom_getfloat(&argv[1]);
+        float q = atom_getfloat(&argv[2]);
+        int porta_ms = atom_getfloat(&argv[3]);
+        for(int i = 0; i < 4; i++)
+            piece.get_voice(i)->set_filter(f, f_rnd, q, porta_ms);
+    }
+    else if(s == gensym("asr")) {
+        Piece &piece = ((MainPatch&)x->x_audio->get_patch()).seq.piece;
+        int attack = atom_getfloat(&argv[0]);
+        int sustain = atom_getfloat(&argv[1]);
+        int release = atom_getfloat(&argv[2]);
+        for(int i = 0; i < 4; i++)
+            piece.get_voice(i)->set_asr_ms(attack, sustain, release);
+    }
 }
 
 static t_int *pongaremul_perform(t_int *w)
@@ -357,13 +411,22 @@ void FakeProj::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 
 /* -------------------------- pixels ------------------------------ */
 
-void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
+void set_ring_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
     t_atom at[4];
     SETFLOAT(&at[0], n);
     SETFLOAT(&at[1], r);
     SETFLOAT(&at[2], g);
     SETFLOAT(&at[3], b);
     outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);
+}
+
+void set_spot_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
+    t_atom at[4];
+    SETFLOAT(&at[0], n);
+    SETFLOAT(&at[1], r);
+    SETFLOAT(&at[2], g);
+    SETFLOAT(&at[3], b);
+    outlet_anything(instance->x_msgout, gensym("spot"), 4, at);
 }
 
 /* -------------------------- setup ------------------------------ */

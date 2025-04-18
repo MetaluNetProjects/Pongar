@@ -22,5 +22,8 @@ public:
     }
     void print_cpu();
     void set_volume(uint8_t vol) { volume = vol; }
+    Patch &get_patch() {
+        return patch;
+    }
 };
 

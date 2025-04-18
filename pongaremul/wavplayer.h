@@ -36,5 +36,6 @@ public:
     }
     void update() {}
     void receivebytes(const char* data, uint8_t len) {}
+    void set_volume(uint8_t vol) {}
 };
 
