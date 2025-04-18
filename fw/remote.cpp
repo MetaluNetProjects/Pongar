@@ -3,7 +3,7 @@
 #include "fraise.h"
 #include "string.h"
 #include "game/game.h"
-//#include "config.h"
+#include "config.h"
 
 #define printf fraise_printf
 
@@ -37,15 +37,24 @@ static void command_set_volume(char * command) {
     game.set_volume(val);
 }
 
+static void command_set_projlum(char * command) {
+    char *token = strsep(&command, " ");
+    int val;
+    if(!is_int(token, &val)) return;
+    config.proj_lum = val;
+}
+
 static void command_get(const char* command) {
     if(!strcmp(command, "state")) printf("R state %d\n", game.get_state());
     else if(!strcmp(command, "volume")) printf("R volume %d\n", game.get_volume());
+    else if(!strcmp(command, "projlum")) printf("R projlum %d\n", config.proj_lum);
 }
 
 static void command_set(char* command) {
     char *token = strsep(&command, " ");
     if(!strcmp(token, "state")) command_set_state(command);
     if(!strcmp(token, "volume")) command_set_volume(command);
+    if(!strcmp(token, "projlum")) command_set_projlum(command);
     command_get(token);
 }
 

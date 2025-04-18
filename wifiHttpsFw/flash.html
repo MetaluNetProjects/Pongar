@@ -95,6 +95,10 @@ div {
         <input type="button" class="button" id="buzz" value="Buzz !"/>
     </div>
     <div>
+        <input type="range" class="slider" id="projlum" name="projlum" min="10" max="255"/>
+        <label for="projlum">Projector intensity</label>
+    </div>
+    <div>
         <input type="button" class="button" id="gamestop" value="STOP"/>
         <input type="button" class="button" id="gameprepare" value="PLAY"/>
         <input type="button" class="button" id="gamestandby" value="STANDBY"/>
@@ -139,6 +143,9 @@ function get_fraise_chars(words) {
         case "volume":
             document.getElementById("volume").value = parseInt(words.shift());
             break;
+        case "projlum":
+            document.getElementById("projlum").value = parseInt(words.shift());
+            break;
     }
 }
 
@@ -153,7 +160,7 @@ class WebSocketHandler {
     }
 
     get_current_state() {
-        ["state", "volume"].forEach(el => this.ws.send("F 1 Rget " + el));
+        ["state", "volume", "projlum"].forEach(el => this.ws.send("F 1 Rget " + el));
         //[1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
     }
 
@@ -202,6 +209,11 @@ document.getElementById("buzz").onclick = (event) => {
 volume.addEventListener("input", (event) => {
     log(`volume ${event.target.value}`);
     handler.ws.send(`F 1 Rset volume ${event.target.value}`);
+});
+
+projlum.addEventListener("input", (event) => {
+    log(`projlum ${event.target.value}`);
+    handler.ws.send(`F 1 Rset projlum ${event.target.value}`);
 });
 
 document.getElementById("gamestop").onclick = () => handler.ws.send("F 1 Rset state 0");
