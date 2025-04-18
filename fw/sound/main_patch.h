@@ -224,7 +224,7 @@ public:
             seq.set_playing(p1, p2);
             break;
         case SoundCommand::seqms:
-            seq.set_tempo_ms(p1);
+            seq.set_tempo_ms(p1, p2, p3);
             break;
         case SoundCommand::seqvol:
             seq.set_mastervol(p1);
@@ -239,6 +239,15 @@ public:
             break;
        case SoundCommand::rev1:
             seq.config_reverb(p1, p2);
+            break;
+       case SoundCommand::seqshuffle:
+            seq.set_shuffle(p1 / 256.0);
+            break;
+       case SoundCommand::sad:
+            seq.play_sad();
+            break;
+       case SoundCommand::happy:
+            seq.play_happy();
             break;
         default:
             ;
