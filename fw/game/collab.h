@@ -79,6 +79,7 @@ class Collab : public GameMode {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::LOOSE, 2000);
         game.sfx(SoundCommand::buzz, 800);
+        game.sfx(SoundCommand::sad);
         speaker.silence(500);
         if(level == 1) {
             speaker.say(Words::perdu_niveau1);
@@ -121,11 +122,12 @@ class Collab : public GameMode {
                 break;
             case 3: say_win(); break;
         }
+        game.sfx(SoundCommand::happy);
         speaker.silence(1000);
         level = level + 1;
         end_of_game = true;
         is_winner = true;
-        game.sfx(SoundCommand::seqnew);
+        //game.sfx(SoundCommand::seqnew);
         score = 0;
     }
     void init_move(int difficulty) {
@@ -159,7 +161,7 @@ class Collab : public GameMode {
         //printf("update score %d\n", inc);
         if(inc) score++;
         else score--;
-        if(score <= 0) {
+        if(score < 0) {
             game_over();
             return true;
         }
@@ -176,15 +178,15 @@ class Collab : public GameMode {
         set_move(new MoveCross(game));
         switch(level) {
         case 1:
-            difficulty = score / 2;
+            difficulty = score / 3;
             break;
         case 2:
-            difficulty = 2 + (score * 2) / 3;
+            difficulty = 0 + (score / 2);
             if(score > 5 && (random() % 5 == 0)) set_move(new MoveBounce(game));
             if(score > 6 && (random() % 5 == 0)) set_move(new MoveArch(game));
             break;
         case 3:
-            difficulty = 4 + score;
+            difficulty = 0 + score;
             if(score > 2 && (random() % 3 == 0)) set_move(new MoveBounce(game));
             if(score > 3 && (random() % 4 == 0)) set_move(new MoveArch(game));
             if(score > 4 && (random() % 5 == 0)) set_move(new MoveZigzag(game));
@@ -206,7 +208,7 @@ public:
     virtual ~Collab() {};
     virtual int get_max_players() { return 4; }
     void init() {
-        period_ms = INIT_PERIOD - (level - 1) * 1500 + (random() % 30);
+        period_ms = INIT_PERIOD - (level - 1) * 750 + (random() % 30);
         score = 0;
         tilt = 0;
         pan = random() % 360;
@@ -215,8 +217,10 @@ public:
         init_move(0);
 
         proj.dimmer(0);
+        proj.gobo(level == 1 ? 0 : level == 2 ? 2 : 6);
         proj.color(DMXProj::white);
         proj.move(pan, 0);
+        for(int i = 0; i < 4; i++) set_spot_pixel(i, 0, 0, 0);
 
         if(level == 1) {
             speaker.say(Words::debut_partie);
@@ -230,6 +234,7 @@ public:
         is_winner = false;
         countdown.init(3);
         set_seq_tempo();
+        game.sfx(SoundCommand::seqnew);
     }
 
     virtual void start() {
@@ -239,7 +244,7 @@ public:
         faults = 0;
         total_time_ms = 0;
         init();
-        game.sfx(SoundCommand::seqnew);
+        //game.sfx(SoundCommand::seqnew);
     }
 
     virtual void restart() {
@@ -286,7 +291,7 @@ public:
             update_score(false);
         }
 
-        proj.dimmer(128);
+        proj.dimmer(config.proj_lum);
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
 
         move->fx_update();
@@ -296,7 +301,7 @@ public:
         if(countdown.pixel_update()) return;
         if(ringfx.pixel_update()) return;
 
-        int total_leds = MIN(config.total_leds, NUM_PIXELS);
+        int ring_leds = MIN(config.ring_leds, NUM_PIXELS);
 
         uint8_t col[3][3] = {{0, 0, 0}, {255, 0, 0}, {255, 255, 255}};
         uint8_t c = 0;
@@ -304,8 +309,8 @@ public:
             flash_count++;
             c = (flash_count / 8) % 2 + 1;
         }
-        for(int i = 0; i < total_leds; i++) {
-            set_pixel(i, col[0][0], col[0][1], col[0][2]);
+        for(int i = 0; i < ring_leds; i++) {
+            set_ring_pixel(i, col[0][0], col[0][1], col[0][2]);
         }
 
         c = 2;
@@ -320,17 +325,17 @@ public:
 
         int width = pad_width / 2;
         if(mirror_pad()) { // double the pad
-            for(int i = 0; i < total_leds; i++) {
-                int angle = (360 * i) / total_leds - config.leds_angle_offset;
-                if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);
-                else if(game.players.presence_at(angle + 180, width)) set_pixel(i, r, g, b);
-                else set_pixel(i, 0, 0, 0);
+            for(int i = 0; i < ring_leds; i++) {
+                int angle = (360 * i) / ring_leds - config.leds_angle_offset;
+                if(game.players.presence_at(angle, width)) set_ring_pixel(i, r, g, b);
+                else if(game.players.presence_at(angle + 180, width)) set_ring_pixel(i, r, g, b);
+                else set_ring_pixel(i, 0, 0, 0);
             }
         } else {
-            for(int i = 0; i < total_leds; i++) {
-                int angle = (360 * i) / total_leds - config.leds_angle_offset;
-                if(game.players.presence_at(angle, width)) set_pixel(i, r, g, b);
-                else set_pixel(i, 0, 0, 0);
+            for(int i = 0; i < ring_leds; i++) {
+                int angle = (360 * i) / ring_leds - config.leds_angle_offset;
+                if(game.players.presence_at(angle, width)) set_ring_pixel(i, r, g, b);
+                else set_ring_pixel(i, 0, 0, 0);
             }
         }
     }
