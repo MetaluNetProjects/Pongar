@@ -19,8 +19,8 @@ public:
     virtual ~ChaserMode() {};
     virtual void update() = 0;
     virtual void init() {};
-    inline void set_pixel_rgb(int n, rgb_t rgb) {
-        set_pixel(n, rgb >> 16, rgb >> 8, rgb);
+    inline void set_ring_pixel_rgb(int n, rgb_t rgb) {
+        set_ring_pixel(n, rgb >> 16, rgb >> 8, rgb);
     }
     rgb_t rgb_mulf(rgb_t col, float m) {
         uint8_t r = col >> 16, g = col >> 8, b = col;
@@ -34,22 +34,22 @@ public:
         static float rot = -1;
         static float speed;
         static uint8_t pixels[NUM_PIXELS][3];
-        int total_leds = config.total_leds;
+        int ring_leds = config.ring_leds;
         if(rot == -1) {
-            for(int i = 0; i < total_leds; i++) {
-                pixels[i][0] = (sin(5.0 * i * 6.28 / total_leds) + 1.0) * 255.0 * 0.5;
-                pixels[i][1] = (sin(3.0 * i * 6.28 / total_leds) + 1.0) * 255.0 * 0.5;
-                pixels[i][2] = (sin(2.0 * i * 6.28 / total_leds) + 1.0) * 255.0 * 0.5;
+            for(int i = 0; i < ring_leds; i++) {
+                pixels[i][0] = (sin(5.0 * i * 6.28 / ring_leds) + 1.0) * 255.0 * 0.5;
+                pixels[i][1] = (sin(3.0 * i * 6.28 / ring_leds) + 1.0) * 255.0 * 0.5;
+                pixels[i][2] = (sin(2.0 * i * 6.28 / ring_leds) + 1.0) * 255.0 * 0.5;
             }
         }
         speed += (random() % 2000 - 1000) / (15 * 1000.0);
         speed = CLIP(speed, -2, 2);
         rot += speed;
-        if(rot > total_leds) rot -= total_leds;
-        if(rot < 0) rot += total_leds;
-        for(int i = 0; i < total_leds; i++) {
-            int n = (int(i + rot)) % total_leds;
-            set_pixel(i, pixels[n][0], pixels[n][1], pixels[n][2]);
+        if(rot > ring_leds) rot -= ring_leds;
+        if(rot < 0) rot += ring_leds;
+        for(int i = 0; i < ring_leds; i++) {
+            int n = (int(i + rot)) % ring_leds;
+            set_ring_pixel(i, pixels[n][0], pixels[n][1], pixels[n][2]);
         }
     }
 };
@@ -65,19 +65,19 @@ private:
     float points_lop[NPOINTS];
     float points_speed[NPOINTS];
     static const rgb_t col_points[NPOINTS];// = {0xff0000, 0xffff00, 0xffffff, 0x00ff00, 0x0000ff, 0x00ffff, 0xff00ff};
-    int total_leds;
+    int ring_leds;
 public:
     virtual void init() {
-        total_leds = config.total_leds;
+        ring_leds = config.ring_leds;
         for(int i = 0; i < NPOINTS; i++) {
-            points_lop[i] = points[i] = random() % total_leds;
+            points_lop[i] = points[i] = random() % ring_leds;
             points_speed[i] = 0;
         }
 
         static rgb_t cols[3] = {0x200000, 0x002000, 0x000020};
-        for(int i = 0; i < total_leds; i++) {
-            //pixels[i] = rgb_mulf(col_points[(i * NPOINTS) / total_leds], 0.15);
-            int n = (i * 3 * 2) / total_leds;
+        for(int i = 0; i < ring_leds; i++) {
+            //pixels[i] = rgb_mulf(col_points[(i * NPOINTS) / ring_leds], 0.15);
+            int n = (i * 3 * 2) / ring_leds;
             /*if (n % 2) pixels[i] = 0x3f0000;
             else pixels[i] = 0;*/
             pixels[i] = cols[n % 3];
@@ -87,24 +87,24 @@ public:
         speed += (random() % 2000 - 1000) / (35 * 1000.0);
         speed = CLIP(speed, -.2, .2);
         rot += speed;
-        if(rot > total_leds) rot -= total_leds;
-        if(rot < 0) rot += total_leds;
-        for(int i = 0; i < total_leds; i++) {
-            int n = (int(i + rot)) % total_leds;
-            set_pixel_rgb(i, pixels[n]);
+        if(rot > ring_leds) rot -= ring_leds;
+        if(rot < 0) rot += ring_leds;
+        for(int i = 0; i < ring_leds; i++) {
+            int n = (int(i + rot)) % ring_leds;
+            set_ring_pixel_rgb(i, pixels[n]);
         }
         for(int i = 0; i < 5; i++) {
             points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
             points_speed[i] = CLIP(points_speed[i], -1.4, 1.4);
             points[i] += points_speed[i] * points_speed[i] * points_speed[i];
             points_lop[i] += (points[i] - points_lop[i]) * 0.1;
-            if(points[i] >= total_leds) {
-                points[i] -= total_leds;
-                points_lop[i] -= total_leds;
+            if(points[i] >= ring_leds) {
+                points[i] -= ring_leds;
+                points_lop[i] -= ring_leds;
             }
             if(points[i] < 0) {
-                points[i] += total_leds;
-                points_lop[i] += total_leds;
+                points[i] += ring_leds;
+                points_lop[i] += ring_leds;
             }
             int incr;
             if(points[i] < points_lop[i]) incr = 1;
@@ -112,7 +112,7 @@ public:
             int n = abs(points_lop[i] - points[i]) + 1;
             for(int j = 0; j < n; j++) {
                 float l = 1.0 - (float)j / n;
-                set_pixel_rgb(modulo(points[i] + j * incr, total_leds), rgb_mulf(0xffffff, l * l));
+                set_ring_pixel_rgb(modulo(points[i] + j * incr, ring_leds), rgb_mulf(0xffffff, l * l));
             }
         }
     }
@@ -125,31 +125,31 @@ private:
     float points[NPOINTS];
     float points_lop[NPOINTS];
     float points_speed[NPOINTS];
-    int total_leds;
 public:
     virtual void init() {
-        total_leds = config.total_leds;
+        int ring_leds = config.ring_leds;
         for(int i = 0; i < NPOINTS; i++) {
-            points_lop[i] = points[i] = random() % total_leds;
+            points_lop[i] = points[i] = random() % ring_leds;
             points_speed[i] = 0;
         }
     }
     virtual void update() {
-        for(int i = 0; i < total_leds; i++) {
-            set_pixel_rgb(i, 0);
+        int ring_leds = config.ring_leds;
+        for(int i = 0; i < ring_leds; i++) {
+            set_ring_pixel_rgb(i, 0);
         }
         for(int i = 0; i < 5; i++) {
             points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
             points_speed[i] = CLIP(points_speed[i], -1.4, 1.4);
             points[i] += points_speed[i] * points_speed[i] * points_speed[i];
             points_lop[i] += (points[i] - points_lop[i]) * 0.1;
-            if(points[i] >= total_leds) {
-                points[i] -= total_leds;
-                points_lop[i] -= total_leds;
+            if(points[i] >= ring_leds) {
+                points[i] -= ring_leds;
+                points_lop[i] -= ring_leds;
             }
             if(points[i] < 0) {
-                points[i] += total_leds;
-                points_lop[i] += total_leds;
+                points[i] += ring_leds;
+                points_lop[i] += ring_leds;
             }
             int incr;
             if(points[i] < points_lop[i]) incr = 1;
@@ -157,7 +157,7 @@ public:
             int n = abs(points_lop[i] - points[i]) + 1;
             for(int j = 0; j < n; j++) {
                 float l = 1.0 - (float)j / n;
-                set_pixel_rgb(modulo(points[i] + j * incr, total_leds), rgb_mulf(0xffffff, l * l));
+                set_ring_pixel_rgb(modulo(points[i] + j * incr, ring_leds), rgb_mulf(0xffffff, l * l));
             }
         }
     }

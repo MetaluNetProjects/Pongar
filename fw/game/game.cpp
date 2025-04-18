@@ -68,16 +68,16 @@ void Game::pixels_update() {
         game_mode->pixels_update();
         return;
     }
-    int total_leds = MIN(config.total_leds, NUM_PIXELS);
+    int ring_leds = MIN(config.ring_leds, NUM_PIXELS);
     if(state == PREPARE && players.get_steady_count() == 0) {
         chaser.update();
         return;
     }
 
-    for(int i = 0; i < total_leds; i++) {
-        int angle = (360 * i) / total_leds - config.leds_angle_offset;
-        if(players.presence_at(angle, 30 / 2)) set_pixel(i, 255, 10, 10);
-        else set_pixel(i, 0, 0, 0);
+    for(int i = 0; i < ring_leds; i++) {
+        int angle = (360 * i) / ring_leds - config.leds_angle_offset;
+        if(players.presence_at(angle, 30 / 2)) set_ring_pixel(i, 255, 10, 10);
+        else set_ring_pixel(i, 0, 0, 0);
     }
 }
 

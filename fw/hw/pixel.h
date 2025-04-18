@@ -27,6 +27,12 @@ inline void clear_pixels() {
 
 bool pixel_update(); // return true if frame was sent
 
+#define PIXEL_RING_START (config.spot_leds)
+#define PIXEL_SPOT_START 0
+
+#define set_ring_pixel(n, r, g, b) set_pixel((n) + PIXEL_RING_START, r, g, b)
+#define set_spot_pixel(n, r, g, b) set_pixel((n) + PIXEL_SPOT_START, r, g, b)
+
 #ifdef __cplusplus
 }
 #endif

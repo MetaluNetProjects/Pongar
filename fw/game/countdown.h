@@ -34,7 +34,7 @@ public:
             else {
                 game.speaker.saynumber(countdown);
                 timeout = make_timeout_time_ms(1000);
-                dim = 255.0;
+                dim = 255;//config.proj_lum;
                 countdown--;
             }
         }
@@ -42,7 +42,8 @@ public:
     }
     bool pixel_update() {
         if(!running() || waiting_not_saying) return false;
-        for(int i = 0; i < config.total_leds; i++) set_pixel(i, dim, dim, dim);
+        for(int i = 0; i < config.ring_leds; i++) set_ring_pixel(i, dim, dim, dim / 2);
+        for(int i = 0; i < 4; i++) set_spot_pixel(i, dim, dim, dim / 2);
         return true;
     }
     void init(int count) {
