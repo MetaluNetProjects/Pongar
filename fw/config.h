@@ -9,7 +9,7 @@ public:
     void eeprom_declare();
     void receivebytes(const char* data, uint8_t len);
     // data:
-    uint16_t total_leds = 212;
+    uint16_t ring_leds = 212;
     int16_t leds_angle_offset = 0; //112;
 
     int16_t distance_max = 1700;
@@ -20,6 +20,11 @@ public:
     uint16_t proj_pan_amp = 44850;
 
     int16_t game_distance_min = 700;
+
+    uint8_t volume = 120;
+    uint8_t spot_leds = 4;
+
+    uint8_t proj_lum = 150;
 };
 
 extern PongarConfig config;
