@@ -3,6 +3,7 @@
 #include "fraise.h"
 #include "wavplayer.h"
 #include "piotx.h"
+#include "sound/audiolayer.h" // for talkover control
 
 PioTx mp3tx;
 #define PUTC(c) mp3tx.putc(c)
@@ -87,11 +88,16 @@ bool WavPlayer::is_playing() {
     return !(time_reached(end_of_play) && waiting.empty());
 }
 
+bool WavPlayer::is_really_playing() {
+    return is_playing() && (last_command == 0);
+}
+
 int WavPlayer::get_duration_ms(uint8_t folder, uint8_t track) {
     return wavsDuration.get_item(((int)folder - 1) * 256 + track) * 10;
 }
 
 void WavPlayer::update() {
+    AudioLayer::set_talkover(is_really_playing());
     if((!time_reached(end_of_play)) || waiting.empty()) return;
     uint32_t next = waiting.front();
     waiting.pop_front();
@@ -99,19 +105,20 @@ void WavPlayer::update() {
     int duration_ms = 1;
     switch(command) {
     case 0:
-    {
-        uint8_t folder = next >> 16;
-        if(folder > 99) folder = 99;
-        if(folder < 1) folder = 1;
-        uint8_t track = next & 255;
-        mp3_folder_track(folder, track);
-        duration_ms = get_duration_ms(folder, track) + duration_offset;
-    }
-    break;
+        {
+            uint8_t folder = next >> 16;
+            if(folder > 99) folder = 99;
+            if(folder < 1) folder = 1;
+            uint8_t track = next & 255;
+            mp3_folder_track(folder, track);
+            duration_ms = get_duration_ms(folder, track) + duration_offset;
+        }
+        break;
     case 255:
         duration_ms = next & 0xffff;
         break;
     }
+    last_command = command;
     end_of_play = make_timeout_time_ms(duration_ms);
 }
 

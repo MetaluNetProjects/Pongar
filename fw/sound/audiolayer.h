@@ -10,6 +10,9 @@ private:
     float cpu_avg = 0;
     Patch &patch;
     uint8_t volume = 255;
+    uint8_t talkover_vol = 255;
+    static bool talkover;
+    const uint8_t TALKOVER_MIN_VOL = 80;
 public:
     AudioLayer();
     void init(int audio_pin);
@@ -24,6 +27,9 @@ public:
     void set_volume(uint8_t vol) { volume = vol; }
     Patch &get_patch() {
         return patch;
+    }
+    static void set_talkover(bool t) {
+        talkover = t;
     }
 };
 

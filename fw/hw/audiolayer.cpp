@@ -6,6 +6,7 @@
 #include "pico/audio_pwm.h"
 #include "pico/multicore.h"
 #include "sound/osc.h"
+#include "pico/util/queue.h"
 
 struct audio_buffer_pool *producer_pool;
 
@@ -39,8 +40,12 @@ void sound_init(uint sample_freq, int buffer_size, int nb_buffers, int pin) {
 
 #define clip(s) ((s) > 32767 ? 32767 : (s) < -32767 ? -32767 : (s))
 
+bool AudioLayer::talkover = false;
+
 static AudioLayer* core1_layer;
+
 static void core1_task() {
+    multicore_lockout_victim_init(); // allow core0 to lockout core1, for flash programming purpose.
     while(1) core1_layer->audio_task();
 }
 
@@ -48,11 +53,19 @@ MainPatch main_patch;
 
 AudioLayer::AudioLayer(): patch(main_patch) {}
 
+static queue_t to_audio_queue;
+
+struct queue_event_t {
+    SoundCommand c;
+    int p1, p2, p3;
+};
+
 void AudioLayer::init(int audio_pin) {
     Osc::setup();
     Blosc::setup();
     sound_init(AUDIO_SAMPLE_RATE, AUDIO_SAMPLES_PER_BUFFER, 3, audio_pin);
     core1_layer = this;
+    queue_init(&to_audio_queue, sizeof(queue_event_t), 64);
     multicore_launch_core1(core1_task);
 }
 
@@ -96,16 +109,19 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
         }
         break;
     case 5: set_volume(fraise_get_uint8()); break;
+    case 6: printf("audio volume %d %d %d\n", volume, talkover, talkover_vol); break;
     }
 }
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
 //    patch.command(c, p1, p2, p3);
-    const uint64_t timeout_us = 30000;
+    /*const uint64_t timeout_us = 30000;
     multicore_fifo_push_timeout_us(((int)c & 0x0fff) | 0x1000, timeout_us);
     multicore_fifo_push_timeout_us((p1 & 0x0fff), timeout_us);
     multicore_fifo_push_timeout_us((p2 & 0x0fff), timeout_us);
-    multicore_fifo_push_timeout_us((p3 & 0x0fff), timeout_us);
+    multicore_fifo_push_timeout_us((p3 & 0x0fff), timeout_us);*/
+    queue_event_t event{c, p1, p2, p3};
+    queue_add_blocking(&to_audio_queue, &event);
 }
 
 void AudioLayer::audio_task() {
@@ -115,9 +131,21 @@ void AudioLayer::audio_task() {
     int16_t *samples = (int16_t *) buffer->buffer->bytes;
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
     absolute_time_t start = get_absolute_time();
-    int vol = (volume * volume) / 16;
 
     mix(int_samples, 0);
+
+    if(talkover) {
+        static const int DECREASE_RATE = 5;
+        if(talkover_vol > (TALKOVER_MIN_VOL + DECREASE_RATE)) talkover_vol -= DECREASE_RATE;
+        else talkover_vol = TALKOVER_MIN_VOL;
+    } else {
+        static const int INCREASE_RATE = 1;
+        if(talkover_vol < (255 - INCREASE_RATE)) talkover_vol += INCREASE_RATE;
+        else talkover_vol = 255;
+    }
+
+    int vol = (volume * (int)volume * (int)talkover_vol) / (16 * 255);
+
     for (uint i = 0; i < buffer->max_sample_count; i++) {
         samples[i] = (clip(int_samples[i]) * vol) / (256 * 16);
     }
@@ -128,7 +156,11 @@ void AudioLayer::audio_task() {
     buffer->sample_count = buffer->max_sample_count;
     give_audio_buffer(producer_pool, buffer);
 
-    while(multicore_fifo_rvalid()) {
+    queue_event_t event;
+    if(queue_try_remove(&to_audio_queue, &event)) {
+        patch.command(event.c, event.p1, event.p2, event.p3);
+    }
+    /*while(multicore_fifo_rvalid()) {
         uint32_t word;
         if(! multicore_fifo_pop_timeout_us(1, &word)) break;
         if((word & 0xf000) == 0x1000) {
@@ -140,7 +172,7 @@ void AudioLayer::audio_task() {
                 patch.command((SoundCommand)buf[0], buf[1], buf[2], buf[3]);
             }
         }
-    }
+    }*/
 }
 
 void AudioLayer::print_cpu() {
