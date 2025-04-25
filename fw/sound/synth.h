@@ -72,7 +72,7 @@ public:
         return amp * (random() % 1024) / 1024.0;
     }
 
-    virtual void randomize() {
+    void randomize() {
         setLfo(4 + randf(4), randf(0.2));
         float a = randf();
         A = a * a * a * 50.0;
@@ -125,7 +125,7 @@ public:
         Synth::do_play(note, volume, ms, sustain_ms);
     }
 
-    virtual void randomize() {
+    void randomize() {
         Synth::randomize();
         bpf_offset = 15 + (random() % 24);
         bpf_random = (random() % 36) + 1;
