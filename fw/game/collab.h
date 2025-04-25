@@ -77,14 +77,18 @@ class Collab : public GameMode {
     void game_over() {
         lives = lives - 1;
         game.sfx(SoundCommand::seqplay, 0);
-        set_ring_mode(RingFx::LOOSE, 2000);
+        set_ring_mode(RingFx::LOOSE, 800);
         game.sfx(SoundCommand::buzz, 800);
         game.sfx(SoundCommand::sad);
-        speaker.silence(500);
+        speaker.silence(2000);
         if(level == 1) {
             speaker.say(Words::perdu_niveau1);
+            speaker.silence(10000); // wait 10s before next game
         } else switch(lives) {
-            case 0: speaker.say(Words::perdu_partie); break;
+            case 0:
+                speaker.say(Words::perdu_partie);
+                speaker.silence(10000); // wait 10s before next game
+                break;
             case 1: speaker.say(Words::perdu_niveau_derniere); break;
             case 2: speaker.say(Words::perdu_niveau); break;
         }
@@ -92,10 +96,14 @@ class Collab : public GameMode {
         end_of_game = true;
         is_winner = false;
         score = 0;
+        set_move(new MoveEnd(game));
+        move->init(pan, tilt, 100, 0);
     }
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
-        set_ring_mode(RingFx::WIN, 2000);
+        set_ring_mode(RingFx::WIN, 800);
+        game.sfx(SoundCommand::happy);
+        speaker.silence(2000);
         switch(level) {
             case 1:
                 speaker.say(Words::gagne_niveau_1);
@@ -120,15 +128,18 @@ class Collab : public GameMode {
                 speaker.say(Words::temps_intermediaire);
                 speaker.say_time(total_time_ms);
                 break;
-            case 3: say_win(); break;
+            case 3:
+                say_win();
+                speaker.silence(10000); // wait 10s before next game
+                break;
         }
-        game.sfx(SoundCommand::happy);
         speaker.silence(1000);
         level = level + 1;
         end_of_game = true;
         is_winner = true;
-        //game.sfx(SoundCommand::seqnew);
         score = 0;
+        set_move(new MoveEnd(game));
+        move->init(pan, tilt, 100, 0);
     }
     void init_move(int difficulty) {
         move->init(pan, tilt, period_ms + (random() % 20), difficulty);
@@ -150,7 +161,7 @@ class Collab : public GameMode {
         if(touched) game.sfx(SoundCommand::bounce, tilt > 0);
         else {
             game.sfx(SoundCommand::buzz, 400);
-            set_ring_mode(RingFx::FAULT, 200);
+            set_ring_mode(RingFx::FAULT, 400);
             faults++;
         }
         speaker.silence(300); // waits end of sfx before saying smth
@@ -178,10 +189,10 @@ class Collab : public GameMode {
         set_move(new MoveCross(game));
         switch(level) {
         case 1:
-            difficulty = score / 3;
+            difficulty = score / 2;
             break;
         case 2:
-            difficulty = 0 + (score / 2);
+            difficulty = 1 + (score / 2);
             if(score > 5 && (random() % 5 == 0)) set_move(new MoveBounce(game));
             if(score > 6 && (random() % 5 == 0)) set_move(new MoveArch(game));
             break;
@@ -196,7 +207,17 @@ class Collab : public GameMode {
             period_ms = period_ms * 0.85;
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
-        //set_move(new MoveZigzag(game)); // DEBUG!!
+        //set_move(new MoveBounce(game));   // DEBUG!!
+        #if 0                               // DEBUG!!
+            static int mvcount = 0;
+            switch(mvcount) {
+                case 0: set_move(new MoveCross(game)); break;
+                case 1: set_move(new MoveBounce(game)); break;
+                case 2: set_move(new MoveArch(game)); break;
+                case 3: set_move(new MoveZigzag(game)); break;
+            }
+            mvcount = (mvcount + 1) % 4;
+        #endif
         init_move(difficulty);
         set_seq_tempo();
     }
@@ -229,7 +250,7 @@ public:
         }
         speaker.silence(1500);
         pad_width = 30;
-        set_ring_mode(RingFx::START, 400);
+        set_ring_mode(RingFx::START, 1000);
         end_of_game = false;
         is_winner = false;
         countdown.init(3);
@@ -274,8 +295,14 @@ public:
                 else if(level == MAX_LEVEL + 1) game.prepare();
                 else game.prepare_restart();
             }
+            else {
+                move->update(pan, tilt);
+                proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
+            }
             return;
         }
+
+        proj.dimmer(config.proj_lum);
         //if(game.get_players_count() == 1) {}
         total_time_ms += Game::PERIOD_MS;
         if(move->update(pan, tilt)) {
@@ -291,10 +318,7 @@ public:
             update_score(false);
         }
 
-        proj.dimmer(config.proj_lum);
         proj.move(pan, CLIP(tilt, -config.proj_tilt_amp, config.proj_tilt_amp));
-
-        move->fx_update();
     }
 
     virtual void pixels_update() {
@@ -305,16 +329,13 @@ public:
 
         uint8_t col[3][3] = {{0, 0, 0}, {255, 0, 0}, {255, 255, 255}};
         uint8_t c = 0;
-        if(score > 8) {
-            flash_count++;
-            c = (flash_count / 8) % 2 + 1;
-        }
+
         for(int i = 0; i < ring_leds; i++) {
             set_ring_pixel(i, col[0][0], col[0][1], col[0][2]);
         }
 
         c = 2;
-        if(score > 8) {
+        if(score > 9) {
             flash_count++;
             c = (flash_count / 8) % 2 + 1;
         }
@@ -338,6 +359,8 @@ public:
                 else set_ring_pixel(i, 0, 0, 0);
             }
         }
+
+        move->pixel_update();
     }
 };
 

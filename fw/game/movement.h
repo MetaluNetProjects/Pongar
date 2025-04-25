@@ -12,7 +12,7 @@ public:
     virtual ~Movement() {}
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) = 0;
     virtual bool update(float &pan, float &tilt) = 0; // return true if finished
-    virtual void fx_update() = 0;
+    virtual void pixel_update() {}
 };
 
 class MoveCross: public Movement {
@@ -48,11 +48,16 @@ public:
         if(pan_delta > 0 && pan > new_pan) pan = new_pan;
         tilt += tilt_delta;
         bool finished = ((tilt_delta > 0 && tilt >= config.proj_tilt_amp) || (tilt_delta < 0 && tilt <= -config.proj_tilt_amp));
+
+        proj.color(DMXProj::white);
+
         return finished;
     }
 
-    virtual void fx_update() {
-        proj.color(DMXProj::white);
+    virtual void pixel_update() {
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, 0, 0, 0);
+        }
     }
 };
 
@@ -65,7 +70,7 @@ public:
     MoveBounce(Game &_game): MoveCross(_game) {}
 
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
-        MoveCross::init(pan, tilt, period_ms, difficulty);
+        MoveCross::init(pan, tilt, period_ms * 1.5, difficulty);
         tilt_bounce = true;
         ms = sfxcount = 0;
     }
@@ -75,16 +80,22 @@ public:
             tilt_delta = -tilt_delta;
             tilt_bounce = false;
         }
-        return MoveCross::update(pan, tilt);
-    }
+        bool finished = MoveCross::update(pan, tilt);
 
-    virtual void fx_update() {
         proj.color(DMXProj::red);
         if(sfxcount != ms / 75) {
             sfxcount = ms / 75;
             if((sfxcount % 5) != 0) game.sfx(SoundCommand::tut, 1500, 50);
         }
         ms += Game::PERIOD_MS;
+
+        return finished;
+    }
+
+    virtual void pixel_update() {
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, abs(sin((ms * 3.0 / 1000.0 + i / 4.0) * 3.14)) * 150.0, 0, 0);
+        }
     }
 };
 
@@ -101,6 +112,7 @@ public:
     MoveArch(Game &_game): Movement(_game) {}
 
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
+        period_ms = (period_ms * 1.2);
         init_tilt = tilt;
         init_pan = pan;
         inc = (1.0 * Game::PERIOD_MS) / period_ms;
@@ -118,16 +130,21 @@ public:
         tilt = init_tilt * (0.3 + 0.7 * (index * 2.0 - 1.0) * (index * 2.0 - 1.0));
         pan = init_pan + (1.0 - cos(index * 3.14159)) * 0.5 * (new_pan - init_pan);
         bool finished = (index > 1.0);
-        return finished;
-    }
 
-    virtual void fx_update() {
         proj.color(DMXProj::blue);
         if(sfxcount != ms / 40) {
             sfxcount = ms / 40;
             if((sfxcount % 7) == 0) game.sfx(SoundCommand::tut, 350, 150);
         }
         ms += Game::PERIOD_MS;
+
+        return finished;
+    }
+
+    virtual void pixel_update() {
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, 0, 0, abs(sin((ms * 2.0 / 1000.0 + i / 4.0) * 3.14)) * 150.0);
+        }
     }
 };
 
@@ -141,6 +158,7 @@ public:
     MoveZigzag(Game &_game): MoveCross(_game) {}
 
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
+        period_ms = (period_ms * 1.8);
         MoveCross::init(pan, tilt, period_ms, difficulty);
         inc = (1.0 * Game::PERIOD_MS) / period_ms;
         index = 0;
@@ -155,14 +173,59 @@ public:
         index += inc;
         pan += sin(index * 3.14158 * 3) * sin(index * 3.14158) * 20;
         pan = CLIP(pan, 0.0, 360.0);
+
+        proj.color(DMXProj::green);
+        uint8_t val = (((10 * ms) / 1000) % 2) * config.proj_lum;
+        proj.dimmer(val);
+        game.sfx(SoundCommand::tut, 700 + 250 * sinf((ms * 8.0 * 3.14) / 1000.0), 80);
+        ms += Game::PERIOD_MS;
+
         return finished;
     }
 
-    virtual void fx_update() {
-        proj.color(DMXProj::green);
-        game.sfx(SoundCommand::tut, 700 + 250 * sinf((ms * 8.0 * 3.14) / 1000.0), 80);
-        ms += Game::PERIOD_MS;
+    virtual void pixel_update() {
+        uint8_t val = (((13 * ms) / 1000) % 2) * 200;
+        for(int i = 0; i < 4; i++) {
+            //set_spot_pixel(i, 0, abs(sin((ms * 4.0 / 1000.0 + i / 4.0) * 3.14)) * 150.0, 0);
+            set_spot_pixel(i, 0, val, 0);
+        }
     }
 };
 
+class MoveEnd: public Movement {
+protected:
+    int ms;
+    float panf, tiltf;
+public:
+    MoveEnd(Game &_game): Movement(_game) {}
+
+    virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
+        panf = pan;
+        tiltf = tilt;
+        ms = 0;
+    }
+
+    virtual bool update(float &pan, float &tilt) {
+        panf += (180.0 - panf) * 0.01;
+        tiltf = tiltf * 0.99;
+        pan = panf;
+        tilt = tiltf;
+        int c = ((ms * 10) / 1000) % 6;
+        proj.color((DMXProj::Color)c);
+        proj.dimmer((0.5 + 0.5 * sin((ms * 1.5 / 1000.0) * 6.28)) * 255 / (1 + ms / 2000));
+        ms += Game::PERIOD_MS;
+        return false;
+    }
+
+    inline int sinval(float offset) {
+        return abs(sin((ms * 1.0 / 1000.0 + offset) * 3.14)) * 255.0;
+    }
+
+    virtual void pixel_update() {
+        int val[3] = { sinval(0.0), sinval(0.3), sinval(0.7) };
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, val[(i + 0) % 3], val[(i + 1) % 3], val[(i + 2) % 3]);
+        }
+    }
+};
 
