@@ -161,8 +161,8 @@ public:
     Blosc osc1;
     enum WF {SIN, SAW, SQU, BLSAW, BLSQU} osc1_waveform = BLSAW;
     MainPatch() {
-        buzzer_too_close.configOsc(340, 20000, 343, -20000, 3);
-        buzzer_too_close.configFilt(600, /*2468*/ 1867, 200, 200);
+        buzzer_too_close.configOsc(340, 5000, 343, -5000, 3);
+        buzzer_too_close.configFilt(600, /*2468*/ 1867, 200, 100);
         buzzer_too_close.randf = 50;
     }
     virtual void mix(int32_t *out_buffer, int32_t *in_buffer = 0) {
