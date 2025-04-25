@@ -5,6 +5,7 @@
 #include "game/scorelog.h"
 #include "hardware/flash.h"
 #include "pico/sync.h"
+#include "fraise_eeprom.h" // for locking out the other core
 #include "lidar.h"
 
 class Logger: public Scorelog {
@@ -24,9 +25,11 @@ class Logger: public Scorelog {
     virtual void clear_all() {
         lidar_stop();
         sleep_ms(500);
+        lockout_other_core();
         uint32_t status = save_and_disable_interrupts();
         flash_range_erase(start_address - (intptr_t)XIP_BASE, size);
         restore_interrupts(status);
+        unlockout_other_core();
         lidar_start();
         event_count = 0;
     }
@@ -75,9 +78,11 @@ class Logger: public Scorelog {
 
         lidar_stop();
         sleep_ms(500);
+        lockout_other_core();
         uint32_t status = save_and_disable_interrupts();
         flash_range_program(intptr_t(start_address + blockstart) - (intptr_t)XIP_BASE, buffer, 256);
         restore_interrupts(status);
+        unlockout_other_core();
         event_count++;
         lidar_start();
         //printf("l logger added: index=%d count=%d\n", (int)index, event_count);
