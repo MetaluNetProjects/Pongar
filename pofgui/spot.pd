@@ -1,4 +1,4 @@
-#N canvas 439 88 450 605 12;
+#N canvas 1306 338 450 605 12;
 #X obj 24 41 r \$2;
 #X obj 24 198 poftranslate, f 23;
 #X obj 76 15 loadbang;
@@ -10,8 +10,8 @@
 #X obj 76 65 / 4;
 #X obj 76 165 * \$3;
 #X obj 129 164 * \$3;
-#X obj 67 282 r \$2_col;
-#X obj 67 307 route \$1;
+#X obj 58 259 r \$2_col;
+#X obj 58 284 route \$1;
 #X obj 67 332 unpack f f f;
 #X obj 24 408 pofcolor 1 1 1 0.3, f 25;
 #X obj 67 370 / 255;
@@ -20,6 +20,12 @@
 #X floatatom 235 416 5 0 0 0 - - - 0;
 #X obj 24 437 pofimage spot.png \$4;
 #X msg 226 290 255 0 0;
+#X obj 232 126 r \$2-update;
+#X obj 232 151 f \$1;
+#X obj 232 176 * 3;
+#X obj 327 126 loadbang;
+#X obj 336 155 bng 20 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 232 202 array get spotRGB 0 3;
 #X connect 0 0 1 0;
 #X connect 1 0 14 0;
 #X connect 2 0 3 0;
@@ -33,7 +39,6 @@
 #X connect 9 0 1 1;
 #X connect 10 0 1 2;
 #X connect 11 0 12 0;
-#X connect 12 0 13 0;
 #X connect 13 0 15 0;
 #X connect 13 1 16 0;
 #X connect 13 2 17 0;
@@ -43,3 +48,9 @@
 #X connect 17 0 14 3;
 #X connect 18 0 19 1;
 #X connect 20 0 13 0;
+#X connect 21 0 22 0;
+#X connect 22 0 23 0;
+#X connect 23 0 26 0;
+#X connect 24 0 22 0;
+#X connect 25 0 22 0;
+#X connect 26 0 13 0;

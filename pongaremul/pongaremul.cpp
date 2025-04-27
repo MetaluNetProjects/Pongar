@@ -93,6 +93,12 @@ typedef struct _pongaremul
     Logger *x_scorelog;
     AudioLayer *x_audio;
     Game *x_game;
+    //t_symbol *pix_ring_tabsym;
+    //t_symbol *pix_spot_tabsym;
+    t_word *ring_vec;
+    int ring_npoints;
+    t_word *spot_vec;
+    int spot_npoints;
 } t_pongaremul;
 
 t_pongaremul *instance;
@@ -108,6 +114,8 @@ static void *pongaremul_new(void)
     x->x_audio = new AudioLayer;
     x->x_game = new Game(*x->x_scorelog, *x->x_audio);
     x->x_game->init(0);
+    x->ring_vec = x->spot_vec = NULL;
+    x->ring_npoints = x->spot_npoints = 0;
     return (x);
 }
 
@@ -333,6 +341,35 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         for(int i = 0; i < 4; i++)
             piece.get_voice(i)->set_asr_ms(attack, sustain, release);
     }
+    else if(s == gensym("pixtables")) {
+        x->ring_vec = x->spot_vec = NULL;
+        x->ring_npoints = x->spot_npoints = 0;
+        t_symbol *tabname = atom_getsymbol(&argv[0]);
+        t_garray *a;
+        int npoints;
+        if (!(a = (t_garray *)pd_findbyclass(tabname, garray_class))) {
+            pd_error(x, "%s: no such array", tabname->s_name);
+            return;
+        }
+        else if (!garray_getfloatwords(a, &npoints, &x->ring_vec)) {
+            pd_error(x, "%s: bad template for ring table", tabname->s_name);
+            return;
+        }
+        x->ring_npoints = npoints / 3;
+        tabname = atom_getsymbol(&argv[1]);
+        if (!(a = (t_garray *)pd_findbyclass(tabname, garray_class))) {
+            pd_error(x, "%s: no such array", tabname->s_name);
+            return;
+        }
+        else if (!garray_getfloatwords(a, &npoints, &x->spot_vec)) {
+            pd_error(x, "%s: bad template for ring table", tabname->s_name);
+            return;
+        }
+        x->spot_npoints = npoints / 3;
+        printf("ring_npoints %d spot_npoints %d\n", x->ring_npoints, x->spot_npoints);
+        //x->pix_ring_tabsym = atom_getsymbol(&argv[0]);
+        //x->pix_spot_tabsym = atom_getsymbol(&argv[1]);
+    }
 }
 
 static t_int *pongaremul_perform(t_int *w)
@@ -411,22 +448,61 @@ void FakeProj::color(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 
 /* -------------------------- pixels ------------------------------ */
 
+inline void set_pixel(t_word *vec, int npoints, int n, uint8_t r, uint8_t g, uint8_t b) {
+    if(n >= 0 && n < npoints) {
+        vec[n * 3 + 0].w_float = r;
+        vec[n * 3 + 1].w_float = g;
+        vec[n * 3 + 2].w_float = b;
+    }
+}
+
 void set_ring_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
-    t_atom at[4];
+    if((instance->ring_vec == NULL) || (instance->ring_npoints == 0)) return;
+    set_pixel(instance->ring_vec, instance->ring_npoints, n, r, g, b);
+    /*t_atom at[4];
     SETFLOAT(&at[0], n);
     SETFLOAT(&at[1], r);
     SETFLOAT(&at[2], g);
     SETFLOAT(&at[3], b);
-    outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);
+    outlet_anything(instance->x_msgout, gensym("pixel"), 4, at);*/
 }
 
 void set_spot_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
-    t_atom at[4];
+    if((instance->spot_vec == NULL) || (instance->spot_npoints == 0)) return;
+    set_pixel(instance->spot_vec, instance->spot_npoints, n, r, g, b);
+    /*t_atom at[4];
     SETFLOAT(&at[0], n);
     SETFLOAT(&at[1], r);
     SETFLOAT(&at[2], g);
     SETFLOAT(&at[3], b);
-    outlet_anything(instance->x_msgout, gensym("spot"), 4, at);
+    outlet_anything(instance->x_msgout, gensym("spot"), 4, at);*/
+}
+
+inline uint8_t blend_color(uint8_t col, uint8_t prev_col, uint8_t alpha) {
+    return ((int)col * alpha + (int)prev_col * (255 - alpha)) / 255;
+}
+
+inline void get_pixel(t_word *vec, int npoints, int n, uint8_t &r, uint8_t &g, uint8_t &b) {
+    n = MIN(npoints, MAX(0, n));
+    r = vec[n * 3 + 0].w_float;
+    g = vec[n * 3 + 1].w_float;
+    b = vec[n * 3 + 2].w_float;
+}
+
+inline void blend_pixel(t_word *vec, int npoints, int n, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha) {
+    uint8_t prev_r, prev_g, prev_b;
+    get_pixel(vec, npoints, n, prev_r, prev_g, prev_b);
+    set_pixel(vec, npoints, n, blend_color(r, prev_r, alpha), blend_color(g, prev_g, alpha), blend_color(b, prev_b, alpha));
+}
+
+void blend_ring_pixel(int n, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha) {
+    if((instance->ring_vec == NULL) || (instance->ring_npoints == 0)) return;
+    blend_pixel(instance->ring_vec, instance->ring_npoints, n, r, g, b, alpha);
+}
+
+void blend_spot_pixel(int n, uint8_t r, uint8_t g, uint8_t b, uint8_t alpha) {
+    if((instance->spot_vec == NULL) || (instance->spot_npoints == 0)) return;
+    blend_pixel(instance->spot_vec, instance->spot_npoints, n, r, g, b, alpha);
 }
 
 /* -------------------------- setup ------------------------------ */
