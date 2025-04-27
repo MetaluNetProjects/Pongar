@@ -39,7 +39,9 @@ class Collab : public GameMode {
     }
 
     void set_ring_mode(RingFx::MODE mode, int ms) {
-        ringfx.set_mode(mode, ms);
+        int p = (int)pan;
+        if(tilt < 0) p = (p + 180) % 360;
+        ringfx.set_mode(mode, ms, p);
     }
 
     int get_rank(int ms) {
@@ -158,10 +160,13 @@ class Collab : public GameMode {
         if(tilt < 0) p = (p + 180) % 360;
         touched = game.players.presence_at(p, pad_width / 2 + 1);
         if(mirror_pad()) touched |= game.players.presence_at(p + 180, pad_width / 2 + 1);
-        if(touched) game.sfx(SoundCommand::bounce, tilt > 0);
+        if(touched) {
+            game.sfx(SoundCommand::bounce, tilt > 0);
+            set_ring_mode(RingFx::GOOD, 800);
+        }
         else {
             game.sfx(SoundCommand::buzz, 400);
-            set_ring_mode(RingFx::FAULT, 400);
+            set_ring_mode(RingFx::FAULT, 800);
             faults++;
         }
         speaker.silence(300); // waits end of sfx before saying smth
@@ -323,7 +328,7 @@ public:
 
     virtual void pixels_update() {
         if(countdown.pixel_update()) return;
-        if(ringfx.pixel_update()) return;
+        //if(ringfx.pixel_update()) return;
 
         int ring_leds = MIN(config.ring_leds, NUM_PIXELS);
 
@@ -361,6 +366,7 @@ public:
         }
 
         move->pixel_update();
+        ringfx.pixel_update();
     }
 };
 
