@@ -9,7 +9,7 @@ public:
     void eeprom_declare();
     void receivebytes(const char* data, uint8_t len);
     // data:
-    uint16_t ring_leds = 212;
+    uint16_t ring_leds = 234;
     int16_t leds_angle_offset = 0; //112;
 
     int16_t distance_max = 1700;
