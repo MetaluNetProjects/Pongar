@@ -125,6 +125,8 @@ private:
     float points[NPOINTS];
     float points_lop[NPOINTS];
     float points_speed[NPOINTS];
+    float spots_speed = 0;
+    float spots_pos = 0;
 public:
     virtual void init() {
         int ring_leds = config.ring_leds;
@@ -137,9 +139,6 @@ public:
         int ring_leds = config.ring_leds;
         for(int i = 0; i < ring_leds; i++) {
             set_ring_pixel_rgb(i, 0);
-        }
-        for(int i = 0; i < 4; i++) {
-            set_spot_pixel(i, 0, 0, 0);
         }
         for(int i = 0; i < 5; i++) {
             points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
@@ -162,6 +161,14 @@ public:
                 float l = 1.0 - (float)j / n;
                 set_ring_pixel_rgb(modulo(points[i] + j * incr, ring_leds), rgb_mulf(0xffffff, l * l));
             }
+        }
+        spots_speed += (random() % 2000 - 1000) / (20 * 1000.0);
+        spots_speed = CLIP(spots_speed, -1.0, 1.0);
+        spots_pos += 0.2 * spots_speed * abs(spots_speed);
+        if(spots_pos > M_PI * 2) spots_pos -= M_PI * 2;
+        else if(spots_pos < 0) spots_pos += M_PI * 2;
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, 0, 0, MAX(0, 255 * sin(spots_pos + i * M_PI / 2)));
         }
     }
 };
