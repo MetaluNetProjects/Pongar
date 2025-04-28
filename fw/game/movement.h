@@ -26,7 +26,6 @@ protected:
     static const int INC_PAN = 6;
 public:
     MoveCross(Game &_game): Movement(_game) {}
-
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         tilt_delta = (2.0 * config.proj_tilt_amp * Game::PERIOD_MS) / period_ms;
         if(tilt > 0) tilt_delta = -tilt_delta;
@@ -192,12 +191,12 @@ public:
     }
 };
 
-class MoveEnd: public Movement {
+class MoveEndWin: public Movement {
 protected:
     int ms;
     float panf, tiltf;
 public:
-    MoveEnd(Game &_game): Movement(_game) {}
+    MoveEndWin(Game &_game): Movement(_game) {}
 
     virtual void init(float &pan, float &tilt, int period_ms, int difficulty) {
         panf = pan;
@@ -210,7 +209,7 @@ public:
         tiltf = tiltf * 0.99;
         pan = panf;
         tilt = tiltf;
-        int c = ((ms * 10) / 1000) % 6;
+        int c = ((ms * 2) / 1000) % 6;
         proj.color((DMXProj::Color)c);
         proj.dimmer((0.5 + 0.5 * sin((ms * 1.5 / 1000.0) * 6.28)) * 255 / (1 + ms / 2000));
         ms += Game::PERIOD_MS;
@@ -218,13 +217,34 @@ public:
     }
 
     inline int sinval(float offset) {
-        return abs(sin((ms * 1.0 / 1000.0 + offset) * 3.14)) * 255.0;
+        float val = 10.0 * sin((ms * 2.0 / 1000.0 + offset) * 6.28);
+        val = CLIP(val, -1, 1);
+        val = 255.0 * 0.5 * (val + 1.0);
+        return val;
     }
 
     virtual void pixel_update() {
-        int val[3] = { sinval(0.0), sinval(0.3), sinval(0.7) };
+        int val[4] = { sinval(0.0), sinval(0.25), sinval(0.50), sinval(0.75) };
         for(int i = 0; i < 4; i++) {
-            set_spot_pixel(i, val[(i + 0) % 3], val[(i + 1) % 3], val[(i + 2) % 3]);
+            set_spot_pixel(i, val[(i + 0) % 4], val[((i * 3) / 2 + 1) % 4], val[((i * 5) / 2 + 2) % 4]);
+        }
+    }
+};
+
+class MoveEndLoose: public MoveEndWin {
+public:
+    MoveEndLoose(Game &_game): MoveEndWin(_game) {}
+
+    virtual bool update(float &pan, float &tilt) {
+        MoveEndWin::update(pan, tilt);
+        proj.color(DMXProj::red);
+        return false;
+    }
+
+    virtual void pixel_update() {
+        int val[4] = { sinval(0.0), sinval(0.25), sinval(0.50), sinval(0.75) };
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, val[i], 0, 0);
         }
     }
 };
