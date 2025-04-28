@@ -17,6 +17,9 @@ public:
         count_end = ms / PIXEL_PERIOD_MS;
         pan = _pan;
     }
+    int led_distance(int led, int from_led, int total_leds) {
+        return abs(((led - from_led + (total_leds * 3) / 2) % total_leds) - total_leds / 2);
+    }
     bool pixel_update() {
         if(mode == OFF) return false;
         int ring_leds = config.ring_leds;
@@ -33,30 +36,32 @@ public:
         }
         break;
         case GOOD: {
-            int pan_led = deg_to_ring(pan); //(pan * ring_leds) / 360;
+            int pan_led = deg_to_ring(pan);
             float index = count / (float)count_end;
+            float index2 = index * index;
             for(int i = 0; i < ring_leds; i++) {
-                int distance = abs(((i - pan_led + (ring_leds * 3) / 2) % ring_leds) - ring_leds / 2);
-                int val = 0;
-                int alpha = 255.0 * (1.0 - index) / (distance / 20.0 + 1.0);
-                if(((int)(distance + (1.0 - index) * 20.0) % 4) != 0) {
-                    distance = MAX(0, distance - 2) * 2;
-                    val = 255.0 / (distance / (index * 30.0 + 1.0) + 1.0);
-                    //alpha = 255.0 * (1.0 - index) / (distance / 20.0 + 1.0);
-                }
+                int distance = led_distance(i, pan_led, ring_leds);
+                int val = 500 * (1.0 - index2) / (2.0 * abs(distance - index * 10.0) / (index * 10.0 + 1) + 1.0);
+                int alpha = 500 * (1.0 - index2) / (distance / 20.0 + 1.0);
+                alpha = MIN(255, MAX(alpha, val));
+                val = MIN(255, val);
                 blend_ring_pixel(i, 0, val, 0, alpha);
             }
         }
         break;
         case FAULT: {
             int rot = (count * ring_leds) / count_end;
-            int pan_led = deg_to_ring(pan); //(pan * ring_leds) / 360;
+            int pan_led = deg_to_ring(pan);
             float index = count / (float)count_end;
+            float index2 = index * index;
             for(int i = 0; i < ring_leds; i++) {
-                int distance = abs(((i - pan_led + (ring_leds * 3) / 2) % ring_leds) - ring_leds / 2);
-                distance = MAX(0, distance - 2) * 2;
-                int val = 255.0 / (distance / (index * 30.0 + 1.0) + 1.0);
-                int alpha = 255.0 * (1.0 - index) / (distance / 20.0 + 1.0);
+                int distance = led_distance(i, pan_led, ring_leds);
+                int val = 500 * (1.0 - index2) / (2.0 * abs(distance - index * 10.0) / (index * 10.0 + 1) + 1.0);
+                int val2 = abs(distance - 40.0 * index) < 0.5 ? 255 : 0;
+                val = MAX(val2, val);
+                int alpha = 500 * (1.0 - index2) / (distance / 20.0 + 1.0);
+                alpha = MIN(255, MAX(alpha, val));
+                val = MIN(255, val);
                 blend_ring_pixel(i, val, 0, 0, alpha);
             }
             for(int i = 0; i < 4; i++) {
