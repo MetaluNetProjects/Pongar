@@ -79,6 +79,9 @@ void Game::pixels_update() {
         if(players.presence_at(angle, 30 / 2)) set_ring_pixel(i, 255, 10, 10);
         else set_ring_pixel(i, 0, 0, 0);
     }
+    for(int i = 0; i < 4; i++) {
+        set_spot_pixel(i, 0, 0, 0);
+    }
 }
 
 bool Game::update() {

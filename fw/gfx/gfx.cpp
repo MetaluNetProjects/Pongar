@@ -138,6 +138,9 @@ public:
         for(int i = 0; i < ring_leds; i++) {
             set_ring_pixel_rgb(i, 0);
         }
+        for(int i = 0; i < 4; i++) {
+            set_spot_pixel(i, 0, 0, 0);
+        }
         for(int i = 0; i < 5; i++) {
             points_speed[i] += (random() % 2000 - 1000) / (10 * 1000.0);
             points_speed[i] = CLIP(points_speed[i], -1.4, 1.4);
