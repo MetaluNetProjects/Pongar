@@ -104,7 +104,10 @@ div {
         <input type="button" class="button" id="gamestandby" value="STANDBY"/>
         <nobr> Game state: <b id="gamestate" >Unknown</b> </nobr>
     </div>
-    <br>
+    </br>
+    <div>
+        <input type="button" class="button" id="snap" value="SNAP BACKGROUND"/>
+    </div>
     </ul>
   </nav>
 
@@ -219,6 +222,7 @@ projlum.addEventListener("input", (event) => {
 document.getElementById("gamestop").onclick = () => handler.ws.send("F 1 Rset state 0");
 document.getElementById("gameprepare").onclick = () => handler.ws.send("F 1 Rset state 1");
 document.getElementById("gamestandby").onclick = () => handler.ws.send("F 1 Rset state 5");
+document.getElementById("snap").onclick = () => handler.ws.send("f 1 4 4");
 
 chatbox.value='';
 log("c'est parti mon kiki!");
