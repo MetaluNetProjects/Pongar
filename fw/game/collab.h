@@ -6,6 +6,7 @@
 #include "countdown.h"
 #include "ring_fx.h"
 #include "movement.h"
+#include <memory>
 
 class Collab : public GameMode {
     static const int MAX_LEVEL = 3;
@@ -27,15 +28,16 @@ class Collab : public GameMode {
     int faults = 0;
     Countdown countdown;
     RingFx ringfx;
-    Movement *move = nullptr;
+    std::unique_ptr<Movement> move;
     int total_time_ms = 0;
     std::set<int> time_results;
     absolute_time_t too_close_timeout = at_the_end_of_time;
     bool too_close = false;
 
-    void set_move(Movement *newmove) {
-        if(move) delete move;
-        move = newmove;
+    template <class T>
+    void set_move(int difficulty = 0) { 
+        move = std::make_unique<T>(game);
+        move->init(pan, tilt, period_ms + (random() % 20), difficulty);
     }
 
     void set_ring_mode(RingFx::MODE mode, int ms) {
@@ -82,14 +84,14 @@ class Collab : public GameMode {
         set_ring_mode(RingFx::LOOSE, 800);
         game.sfx(SoundCommand::buzz, 800);
         game.sfx(SoundCommand::sad);
-        speaker.silence(2000);
+        speaker.silence(4000);
         if(level == 1) {
             speaker.say(Words::perdu_niveau1);
-            speaker.silence(10000); // wait 10s before next game
+            speaker.silence(5000); // wait a few seconds before next game
         } else switch(lives) {
             case 0:
                 speaker.say(Words::perdu_partie);
-                speaker.silence(10000); // wait 10s before next game
+                speaker.silence(5000); // wait a few seconds before next game
                 break;
             case 1: speaker.say(Words::perdu_niveau_derniere); break;
             case 2: speaker.say(Words::perdu_niveau); break;
@@ -98,14 +100,13 @@ class Collab : public GameMode {
         end_of_game = true;
         is_winner = false;
         score = 0;
-        set_move(new MoveEnd(game));
-        move->init(pan, tilt, 100, 0);
+        set_move<MoveEndLoose>();
     }
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 800);
         game.sfx(SoundCommand::happy);
-        speaker.silence(2000);
+        speaker.silence(3000);
         switch(level) {
             case 1:
                 speaker.say(Words::gagne_niveau_1);
@@ -132,7 +133,7 @@ class Collab : public GameMode {
                 break;
             case 3:
                 say_win();
-                speaker.silence(10000); // wait 10s before next game
+                speaker.silence(5000); // wait a few seconds before next game
                 break;
         }
         speaker.silence(1000);
@@ -140,11 +141,7 @@ class Collab : public GameMode {
         end_of_game = true;
         is_winner = true;
         score = 0;
-        set_move(new MoveEnd(game));
-        move->init(pan, tilt, 100, 0);
-    }
-    void init_move(int difficulty) {
-        move->init(pan, tilt, period_ms + (random() % 20), difficulty);
+        set_move<MoveEndWin>();
     }
     void set_seq_tempo() {
         game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
@@ -190,46 +187,48 @@ class Collab : public GameMode {
     }
 
     void next_move(bool touched) {
-        int difficulty = score;
-        set_move(new MoveCross(game));
-        switch(level) {
-        case 1:
-            difficulty = score / 2;
-            break;
-        case 2:
-            difficulty = 1 + (score / 2);
-            if(score > 5 && (random() % 5 == 0)) set_move(new MoveBounce(game));
-            if(score > 6 && (random() % 5 == 0)) set_move(new MoveArch(game));
-            break;
-        case 3:
-            difficulty = 0 + score;
-            if(score > 2 && (random() % 3 == 0)) set_move(new MoveBounce(game));
-            if(score > 3 && (random() % 4 == 0)) set_move(new MoveArch(game));
-            if(score > 4 && (random() % 5 == 0)) set_move(new MoveZigzag(game));
-            break;
-        }
+        int penalty = MAX(0, game.get_players_count() - 2) * 2;
+        int difficulty = score + penalty;
         if(touched) {
             period_ms = period_ms * 0.85;
             if(period_ms < MIN_PERIOD) period_ms = MIN_PERIOD;
         }
-        //set_move(new MoveBounce(game));   // DEBUG!!
+        switch(level) {
+        case 1:
+            difficulty = score / 2 + penalty;
+            set_move<MoveCross>(difficulty);
+            break;
+        case 2:
+            difficulty = 1 + (score / 2) + penalty;
+            if(score > 5 && (random() % 5 == 0)) set_move<MoveBounce>(difficulty);
+            else if(score > 6 && (random() % 5 == 0)) set_move<MoveArch>(difficulty);
+            else set_move<MoveCross>(difficulty);
+            break;
+        case 3:
+            difficulty = 0 + score + penalty;
+            if(score > 2 && (random() % 3 == 0)) set_move<MoveBounce>(difficulty);
+            else if(score > 3 && (random() % 4 == 0)) set_move<MoveArch>(difficulty);
+            else if(score > 4 && (random() % 5 == 0)) set_move<MoveZigzag>(difficulty);
+            else set_move<MoveCross>(difficulty);
+            break;
+        }
+        //set_move<MoveBounce>(difficulty);   // DEBUG!!
         #if 0                               // DEBUG!!
             static int mvcount = 0;
             switch(mvcount) {
-                case 0: set_move(new MoveCross(game)); break;
-                case 1: set_move(new MoveBounce(game)); break;
-                case 2: set_move(new MoveArch(game)); break;
-                case 3: set_move(new MoveZigzag(game)); break;
+                case 0: set_move<MoveCross>(difficulty); break;
+                case 1: set_move<MoveBounce>(difficulty); break;
+                case 2: set_move<MoveArch>(difficulty); break;
+                case 3: set_move<MoveZigzag>(difficulty); break;
             }
             mvcount = (mvcount + 1) % 4;
         #endif
-        init_move(difficulty);
         set_seq_tempo();
     }
 
 public:
     Collab(Game &_game) : GameMode(_game), countdown(_game) {
-        set_move(new MoveCross(game));
+        set_move<MoveCross>();
     }
     virtual ~Collab() {};
     virtual int get_max_players() { return 4; }
@@ -239,8 +238,7 @@ public:
         tilt = 0;
         pan = random() % 360;
 
-        set_move(new MoveCross(game));
-        init_move(0);
+        set_move<MoveCross>();
 
         proj.dimmer(0);
         proj.gobo(level == 1 ? 0 : level == 2 ? 2 : 6);
@@ -277,7 +275,6 @@ public:
         //printf("collab::restart level=%d\n", level);
         init();
     }
-
 
     virtual void update() {
         if(game.players.get_too_close() != too_close) {
@@ -328,7 +325,6 @@ public:
 
     virtual void pixels_update() {
         if(countdown.pixel_update()) return;
-        //if(ringfx.pixel_update()) return;
 
         int ring_leds = MIN(config.ring_leds, NUM_PIXELS);
 
