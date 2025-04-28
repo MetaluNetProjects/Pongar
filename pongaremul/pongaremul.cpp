@@ -158,6 +158,9 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
     else if(s == gensym("stop")) {
         x->x_game->stop();
     }
+    else if(s == gensym("standby")) {
+        x->x_game->standby();
+    }
     else if(s == gensym("wav_playing")) {
         x->x_wav_is_playing = argc > 0 ? atom_getfloat(&argv[0]) : 0;
     }
