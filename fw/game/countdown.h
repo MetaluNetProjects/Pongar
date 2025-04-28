@@ -27,8 +27,9 @@ public:
         if(waiting_not_saying && !game.speaker.is_playing()) {
             waiting_not_saying = false;
         }
-        if(countdown > 1) proj.dimmer(dim = dim * 0.5);
-        else proj.dimmer(dim = dim * 0.8);
+        /*if(countdown > 1) proj.dimmer(dim = dim * 0.95);
+        else proj.dimmer(dim = dim * 0.95);*/
+        proj.dimmer(dim = dim * 0.95);
         if(!game.speaker.is_playing() && time_reached(timeout)) {
             if(!game.players.get_steady_count()) game.prepare();
             else {
@@ -42,8 +43,8 @@ public:
     }
     bool pixel_update() {
         if(!running() || waiting_not_saying) return false;
-        for(int i = 0; i < config.ring_leds; i++) set_ring_pixel(i, dim, dim, dim / 2);
-        for(int i = 0; i < 4; i++) set_spot_pixel(i, dim, dim, dim / 2);
+        for(int i = 0; i < config.ring_leds; i++) set_ring_pixel(i, dim, dim, 0);
+        for(int i = 0; i < 4; i++) set_spot_pixel(i, dim, dim, 0);
         return true;
     }
     void init(int count) {
