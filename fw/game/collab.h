@@ -15,6 +15,7 @@ class Collab : public GameMode {
 
     static const int SCORE_MAX = 12;
     static const int TOO_CLOSE_MS = 1000;
+    static const int MAX_TIME_MS = 5 * 60 * 1000;
 
     int period_ms = INIT_PERIOD;
     float pan = 0, tilt = 0;
@@ -78,6 +79,20 @@ class Collab : public GameMode {
         game.scorelog.write(total_time_cents);
     }
 
+    void timeout_game_over() {
+        game.sfx(SoundCommand::seqplay, 0);
+        set_ring_mode(RingFx::LOOSE, 1200);
+        game.sfx(SoundCommand::buzz, 1200);
+        game.sfx(SoundCommand::sad);
+        speaker.silence(3000);
+        speaker.say(Words::temps_ecoule);
+        speaker.silence(5000); // wait a few seconds before next game
+        end_of_game = true;
+        is_winner = false;
+        score = 0;
+        set_move<MoveEndLoose>();
+    }
+
     void game_over() {
         lives = lives - 1;
         game.sfx(SoundCommand::seqplay, 0);
@@ -102,6 +117,7 @@ class Collab : public GameMode {
         score = 0;
         set_move<MoveEndLoose>();
     }
+
     void win() {
         game.sfx(SoundCommand::seqplay, 0);
         set_ring_mode(RingFx::WIN, 800);
@@ -143,6 +159,7 @@ class Collab : public GameMode {
         score = 0;
         set_move<MoveEndWin>();
     }
+
     void set_seq_tempo() {
         game.sfx(SoundCommand::seqms, 100 + period_ms / 8);
     }
@@ -307,6 +324,11 @@ public:
         proj.dimmer(config.proj_lum);
         //if(game.get_players_count() == 1) {}
         total_time_ms += Game::PERIOD_MS;
+        if(total_time_ms > MAX_TIME_MS) {
+            timeout_game_over();
+            return; // end of game
+        }
+
         if(move->update(pan, tilt)) {
             bool touched = test_touched();
             if(update_score(touched)) return; // end of game
