@@ -50,7 +50,7 @@ WORDS_MACRO(parmi,      38)
 
 WORDS_MACRO(vous_etes_trop_pres     , WORDS_MULTIPLE(0))    // Attention, il est interdit de vous approcher trop près du Pong, ne franchissez pas la limite
 WORDS_MACRO(trop_pres               , WORDS_MULTIPLE(1))    // "Trop près !" "Vous avez mordu la ligne" (doit être court)
-WORDS_MACRO(temps_ecoule            , WORDS_MULTIPLE(2))    // Vous avez dépassé le temps maximum imparti.
+WORDS_MACRO(temps_ecoule            , WORDS_MULTIPLE(2))    // Vous avez dépassé le temps maximum imparti. Vous avez perdu la partie.
 WORDS_MACRO(pas_extra_balle         , WORDS_MULTIPLE(3))    // Vous avez fait trop de fautes lors de cette première manche, vous n'avez droit à aucune extra balle.
 WORDS_MACRO(une_extra_balle         , WORDS_MULTIPLE(4))    // Votre performance moyenne lors de cette manche de qualification vous donne droit à une extra balle.
 WORDS_MACRO(deux_extra_balles       , WORDS_MULTIPLE(5))    // Bravo, votre bonne performance lors de cette manche de qualification vous donne droit à deux extra balles.
