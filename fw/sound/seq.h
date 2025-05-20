@@ -183,9 +183,9 @@ public:
 class Piece {
 public:
     using plan_t = std::vector<int>;
-private:
     static const int NB_VOICES = 4;
     static const int NB_DRUMS = 3;
+private:
     class Part {
         Melody melodies[NB_VOICES];
         Melody patterns[NB_DRUMS];
@@ -417,13 +417,14 @@ public:
 
     void play_happy() {
         piece.set_sustain_ms(800);
+
         set_tempo_ms(290, 400, 4);
         set_shuffle(0.6);
         set_play_drums(true);
         piece.make(0);
         Piece::plan_t plan{0, 0, 0, 3, 3, 3, 4, 4, 0, 0, 0, 0};
         piece.set_plan(2, plan);
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < Piece::NB_VOICES; i++) {
             piece.get_voice(i)->set_asr_ms(0, 400, 400);
             piece.get_voice(i)->set_wf_lfo_porta(2, 5, 0.03, 40);
             piece.get_voice(i)->set_filter(24, 0, 2, 50);
@@ -439,7 +440,7 @@ public:
         piece.make(2);
         Piece::plan_t plan{0, 4, 0, 0};
         piece.set_plan(1, plan);
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < Piece::NB_VOICES; i++) {
             piece.get_voice(i)->set_asr_ms(150, 800, 400);
             piece.get_voice(i)->set_wf_lfo_porta(1, 2.5, 0.15, 200);
             piece.get_voice(i)->set_filter(20, 0, 8, 800);

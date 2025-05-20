@@ -2,13 +2,10 @@
 
 #include "sound/audiolayer.h"
 #include "sound/main_patch.h"
-#include "sound/osc.h"
 
 MainPatch main_patch;
 
-AudioLayer::AudioLayer(): patch(main_patch){
-    Osc::setup();
-    Blosc::setup();
+AudioLayer::AudioLayer(): patch(main_patch) {
 }
 
 void AudioLayer::init(int audio_pin) {}

@@ -5,8 +5,9 @@
 #include "sound/main_patch.h"
 #include "pico/audio_pwm.h"
 #include "pico/multicore.h"
-#include "sound/osc.h"
 #include "pico/util/queue.h"
+
+#define printf fraise_printf
 
 struct audio_buffer_pool *producer_pool;
 
@@ -61,8 +62,6 @@ struct queue_event_t {
 };
 
 void AudioLayer::init(int audio_pin) {
-    Osc::setup();
-    Blosc::setup();
     sound_init(AUDIO_SAMPLE_RATE, AUDIO_SAMPLES_PER_BUFFER, 3, audio_pin);
     core1_layer = this;
     queue_init(&to_audio_queue, sizeof(queue_event_t), 64);
@@ -114,19 +113,11 @@ void AudioLayer::receivebytes(const char* data, uint8_t len) {
 }
 
 void AudioLayer::command(SoundCommand c, int p1, int p2, int p3) {
-//    patch.command(c, p1, p2, p3);
-    /*const uint64_t timeout_us = 30000;
-    multicore_fifo_push_timeout_us(((int)c & 0x0fff) | 0x1000, timeout_us);
-    multicore_fifo_push_timeout_us((p1 & 0x0fff), timeout_us);
-    multicore_fifo_push_timeout_us((p2 & 0x0fff), timeout_us);
-    multicore_fifo_push_timeout_us((p3 & 0x0fff), timeout_us);*/
     queue_event_t event{c, p1, p2, p3};
     queue_add_blocking(&to_audio_queue, &event);
 }
 
 void AudioLayer::audio_task() {
-    static uint32_t buf[4];
-    static int bufcount = 0;
     struct audio_buffer *buffer = take_audio_buffer(producer_pool, true);
     int16_t *samples = (int16_t *) buffer->buffer->bytes;
     int32_t int_samples[AUDIO_SAMPLES_PER_BUFFER] = {0};
@@ -160,19 +151,6 @@ void AudioLayer::audio_task() {
     if(queue_try_remove(&to_audio_queue, &event)) {
         patch.command(event.c, event.p1, event.p2, event.p3);
     }
-    /*while(multicore_fifo_rvalid()) {
-        uint32_t word;
-        if(! multicore_fifo_pop_timeout_us(1, &word)) break;
-        if((word & 0xf000) == 0x1000) {
-            buf[0] = word & 0x0fff;
-            bufcount = 1;
-        } else if(bufcount < 4) {
-            buf[bufcount++] = word & 0x0fff;
-            if(bufcount == 4) {
-                patch.command((SoundCommand)buf[0], buf[1], buf[2], buf[3]);
-            }
-        }
-    }*/
 }
 
 void AudioLayer::print_cpu() {

@@ -1,16 +1,27 @@
 #pragma once
 
-#include <math.h>
-#include <string.h>
 #include "sound.h"
+#include <cmath>
+#include <string>
+#include <array>
 
 #define CLIP(x, min, max) MAX(MIN((x), (max)), (min))
+
+template<int SIZE, typename T, typename Lambda> std::array<T, SIZE> build_lut(Lambda lambda) {
+    std::array<T, SIZE> array{};
+    for (int i = 0; i < SIZE; i++) array[i] = lambda(i);
+    return array;
+}
 
 class Osc {
 private:
     static const int mtof_table_div = 8;
     static const int mtof_table_len = 135 * mtof_table_div;
-    static uint32_t mtof8_table[mtof_table_len];
+    inline static auto mtof8_table = build_lut<mtof_table_len, uint32_t>(
+        [](int i) {
+            return 256 * 8.1758 * pow(2, i / 12.0 / (float)mtof_table_div);
+        }
+    );
 
     uint16_t release;
     uint16_t lfoamp;
@@ -18,7 +29,11 @@ private:
     uint32_t lfopos = 0;
 protected:
     static const int sin_table_len = 2048;
-    static int16_t sine_wave_table[sin_table_len];
+    inline static auto sin_table = build_lut<sin_table_len, int16_t>(
+        [](int i) {
+            return 32767 * sinf(i * 2.0f * M_PI / sin_table_len);
+        }
+    );
     static const int32_t pos_max = 0x10000 * sin_table_len;
     int32_t increment = 0;
     int32_t pos = 0;
@@ -41,7 +56,7 @@ public:
             pos += increment + lfoval;
             if (pos >= pos_max) pos -= pos_max;
             else if(pos < 0) pos += pos_max;
-            *buffer++ += ((vol * sine_wave_table[(pos >> 16u) % sin_table_len]) >> 15u);
+            *buffer++ += ((vol * sin_table[(pos >> 16u) % sin_table_len]) >> 15u);
         }
     }
 
@@ -70,7 +85,7 @@ public:
         }
         lfopos += lfofreq << 12;
         if (lfopos >= pos_max) lfopos -= pos_max;
-        lfoval = ((int32_t)lfoamp * sine_wave_table[(lfopos >> 16u) % sin_table_len]) >> 8u;
+        lfoval = ((int32_t)lfoamp * sin_table[(lfopos >> 16u) % sin_table_len]) >> 8u;
         lfoval = (lfoval * (increment >> 12)) >> 8; // make lfo amp proportional of osc freq
         return (vol > 64);
     }
@@ -98,21 +113,17 @@ public:
         lfofreq = freq * (sin_table_len * 16 * AUDIO_SAMPLES_PER_BUFFER) / AUDIO_SAMPLE_RATE;
         lfoamp = CLIP(amp, 0, 1) * 1000;
     }
-
-    static void setup() {
-        for (int i = 0; i < sin_table_len; i++) {
-            sine_wave_table[i] = 32767 * cosf((i + sin_table_len / 4) * 2 * (float) (M_PI / sin_table_len));
-        }
-        for(int i = 0; i < mtof_table_len; i++) {
-            mtof8_table[i] = 256 * 8.1758 * pow(2, i / 12.0 / (float)mtof_table_div);
-        }
-    }
 };
 
 class Blosc : public Osc {
 private:
     static const int transition_table_len = 1024;
-    static int16_t transition_table[transition_table_len];
+    inline static auto transition_table = build_lut<transition_table_len, int16_t>(
+        [](int i) {
+            float x = M_PI * i / (float)transition_table_len;
+            return 32767 * (0.75 * (0.3333 * cos(3 * x) - cosf(x)));
+        }
+    );
     float bandlimit = 1.0;
 
 public:
@@ -143,7 +154,7 @@ public:
             pos += increment + lfoval;
             if (pos >= pos_max) pos -= pos_max;
             else if(pos < 0) pos += pos_max;
-            int phase = sine_wave_table[(pos >> 16u) % sin_table_len] + thres; // -32768 32767
+            int phase = sin_table[(pos >> 16u) % sin_table_len] + thres; // -32768 32767
             int trans_index = ((phase * mult) >> 7u);
             trans_index = ((CLIP(trans_index, -32768, 32767) + 32768) * transition_table_len) >> 16u;
             trans_index = CLIP(trans_index, 0, transition_table_len - 1);
@@ -154,13 +165,6 @@ public:
 
     void set_bandlimit(float b) {
         bandlimit = b;
-    }
-
-    static void setup() {
-        for (int i = 0; i < transition_table_len; i++) {
-            float x = M_PI * i / (float)transition_table_len;
-            transition_table[i] = 32767 * (0.75 * (0.3333 * cos(3 * x) - cosf(x)));
-        }
     }
 };
 
