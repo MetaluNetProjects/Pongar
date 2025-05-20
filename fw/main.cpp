@@ -83,7 +83,7 @@ void setup() {
     lidar_change_state(START);
 
     proj.color(DMXProj::white);
-    game.set_volume(192);
+    game.set_volume(100);
 }
 
 void game_pixels_update() {
