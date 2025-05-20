@@ -20,7 +20,7 @@ inline void set_pixel(int n, uint8_t r, uint8_t g, uint8_t b) {
 
 inline void get_pixel(int n, uint8_t &r, uint8_t &g, uint8_t &b) {
     n = MIN(NUM_PIXELS, MAX(0, n));
-    u32_urgb(framebuffer[n], r, g, b);
+    u32_urgb(framebuffer[n], &r, &g, &b);
 }
 
 inline void clear_pixels() {
