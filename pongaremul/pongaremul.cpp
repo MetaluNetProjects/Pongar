@@ -133,9 +133,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
         x->x_game->update();
         x->x_game->pixels_update();
     }
-    else if(s == gensym("players")) {
-        /*players_count = argc;
-        for(int i = 0; i < argc; i++) players_pos[i] = atom_getfloat(&argv[i]);*/
+    /*else if(s == gensym("players")) {
         int count = argc;
         Position pos[Players::PLAYERS_MAX];
         for(int i = 0; i < argc; i++) pos[i].angle = atom_getfloat(&argv[i]);
@@ -148,7 +146,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
             SETFLOAT(&at[3 * i + 2], x->x_game->players.get_pos(i).size);
         }
         outlet_anything(instance->x_msgout, gensym("fplayers"), x->x_game->players.get_count() * 3, at);
-    }
+    }*/
     else if(s == gensym("prepare")) {
         x->x_game->prepare();
     }
@@ -205,7 +203,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
             //x->x_game->players.find_players(x->x_lidar);
             x->x_game->players.find_players_light(x->x_lidar);
 
-            t_atom at[4 * Players::PLAYERS_MAX];
+            /*t_atom at[4 * Players::PLAYERS_MAX];
             if(x->x_game->players.get_object_set().size() >= Players::PLAYERS_MAX) {
                 pd_error(x, "too many objects!");
             } else {
@@ -248,6 +246,7 @@ static void pongaremul_anything(t_pongaremul *x, t_symbol *s, int argc, t_atom *
                 }
                 outlet_anything(instance->x_msgout, gensym("fplayers"), n, at);
             }
+            */
         }
     }
     else if(s == gensym("testrand")) {
