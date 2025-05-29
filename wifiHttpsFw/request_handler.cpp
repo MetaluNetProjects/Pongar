@@ -173,8 +173,14 @@ void fraise_master_fruit_detected(uint8_t fruit_id, bool detected) {
 }
 
 void fraise_master_receivebytes(uint8_t fruit_id, const char *data, uint8_t len) {
-    std::string outstring = "f " + std::to_string(fruit_id);
-    for(int i = 0; i < len; i++) outstring += " " + std::to_string(data[i]);
+    std::string outstring = "f";
+    char hexbuf[3];
+    snprintf(hexbuf, 3, "%02X", fruit_id);
+    outstring += hexbuf;
+    for(int i = 0; i < len; i++) {
+        snprintf(hexbuf, 3, "%02X", (unsigned char)data[i]);
+        outstring += hexbuf;
+    }
     RequestHandler::broadcastWebSocketData((u8_t *)outstring.c_str(), outstring.length());
 }
 
