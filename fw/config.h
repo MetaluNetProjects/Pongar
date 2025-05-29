@@ -25,6 +25,11 @@ public:
     uint8_t spot_leds = 4;
 
     uint8_t proj_lum = 150;
+
+    uint8_t disable_wait_stable = 0;
+    uint8_t disable_too_close = 0;
+    uint8_t disable_too_close_alarm = 0;
+    uint8_t disable_too_many = 0;
 };
 
 extern PongarConfig config;

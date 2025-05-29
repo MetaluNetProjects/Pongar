@@ -61,13 +61,25 @@ void PongarConfig::receivebytes(const char* data, uint8_t len) {
     case 11:
         proj_lum = fraise_get_uint8();
         break;
-    case 100:
+    case 12:
+        disable_wait_stable = fraise_get_uint8();
+        break;
+    case 13:
+        disable_too_close = fraise_get_uint8();
+        break;
+    case 14:
+        disable_too_close_alarm = fraise_get_uint8();
+        break;
+    case 15:
+        disable_too_many = fraise_get_uint8();
+        break;
+    /*case 100:
         printf("cfg %d %d %d %d %d %d %d %d %d %d\n",
                ring_leds, leds_angle_offset,
                distance_max, distance_min,
                lidar_angle_offset, proj_tilt_amp, proj_pan_amp,
-               volume, spot_leds, proj_lum);
-        break;
+               volume, spot_leds, proj_lum, disable_wait_stable, disable_too_close, disable_too_close_alarm);
+        break;*/
     case 101:
         fraise_put_init();
         fraise_put_uint8(200);
@@ -82,6 +94,12 @@ void PongarConfig::receivebytes(const char* data, uint8_t len) {
         fraise_put_uint8(volume);
         fraise_put_uint8(spot_leds);
         fraise_put_uint8(proj_lum);
+
+        fraise_put_uint8(disable_wait_stable);
+        fraise_put_uint8(disable_too_close);
+        fraise_put_uint8(disable_too_close_alarm);
+        fraise_put_uint8(disable_too_many);
+
         fraise_put_send();
         break;
     }

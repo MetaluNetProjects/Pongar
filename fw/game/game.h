@@ -44,6 +44,7 @@ public:
     void prepare();
     void prepare_restart();
     void start();
+    void start_if_not_too_many();
     void restart();
     void stop();
     void standby();

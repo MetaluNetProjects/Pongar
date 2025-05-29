@@ -84,6 +84,18 @@ void Game::pixels_update() {
     }
 }
 
+void Game::start_if_not_too_many() {
+    int max_players = game_mode->get_max_players();
+    if(config.disable_too_many && game_players_count > max_players) {
+        game_players_count = max_players;
+    }
+    if(game_players_count <= max_players) start();
+    else {
+        speaker.say(Words::trop_nombreux);
+        speaker.silence(1000);
+    }
+}
+
 bool Game::update() {
     if(!time_reached(update_time)) return false;
     update_time = make_timeout_time_ms(PERIOD_MS);
@@ -92,7 +104,7 @@ bool Game::update() {
     players.update();
     proj.update();
 
-    if(state != STANDBY && players.get_too_close()) sfx(SoundCommand::tooclose, 20);
+    if(state != STANDBY && players.get_too_close() && (!config.disable_too_close_alarm)) sfx(SoundCommand::tooclose, 20);
 
     if(wait_saying) {
         if(speaker.is_playing()) return true;
@@ -133,6 +145,15 @@ bool Game::update() {
             state = PREPARE;
             break;
         }
+
+        if(config.disable_wait_stable) {
+            if(!speaker.is_playing()) {
+                game_players_count = players.get_steady_count();
+                start_if_not_too_many();
+            }
+            break;
+        }
+
         if(players.count_is_steady()) {
             if(game_players_count != players.get_steady_count()) {
                 players_ready_timeout = make_timeout_time_ms(PLAYERS_READY_SECONDS * 1000);
@@ -148,12 +169,7 @@ bool Game::update() {
         }
 
         if(game_players_count && time_reached(players_ready_timeout) && !speaker.is_playing() && !players.get_too_close()) {
-            int max_players = game_mode->get_max_players();
-            if(game_players_count <= max_players) start();
-            else {
-                speaker.say(Words::trop_nombreux);
-                speaker.silence(1000);
-            }
+            start_if_not_too_many();
         }
         break;
     case RESTART:

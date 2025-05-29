@@ -90,7 +90,7 @@ void game_pixels_update() {
     game.pixels_update();
 }
 
-void send_positions() {
+/*void send_positions() {
     fraise_put_init();
     fraise_put_uint8(100);
     fraise_put_send();
@@ -120,7 +120,7 @@ void send_positions() {
             fraise_put_send();
         }
     }
-}
+}*/
 
 void loop() {
     static absolute_time_t nextLed;
@@ -333,12 +333,12 @@ void fraise_receivebytes(const char *data, uint8_t len) {
     case 153:
         game.prepare();
         break;
-    case 154:
+    /*case 154:
         game.players.find_players(lidar_distance_masked);
         break;
     case 155:
         send_positions();
-        break;
+        break;*/
 
     case 200:
     {

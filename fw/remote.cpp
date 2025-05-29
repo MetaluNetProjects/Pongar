@@ -1,12 +1,13 @@
 // Remote control
 
+#include <map>
+#include <string>
 #include "fraise.h"
 #include "string.h"
 #include "game/game.h"
 #include "config.h"
 
 #define printf fraise_printf
-
 
 extern Game game;
 
@@ -37,24 +38,32 @@ static void command_set_volume(char * command) {
     game.set_volume(val);
 }
 
-static void command_set_projlum(char * command) {
-    char *token = strsep(&command, " ");
-    int val;
-    if(!is_int(token, &val)) return;
-    config.proj_lum = val;
-}
+static std::map<std::string, uint8_t*> uint8_map{
+    {"projlum", &config.proj_lum},
+    {"disStable", &config.disable_wait_stable},
+    {"disClose", &config.disable_too_close},
+    {"disAlarm", &config.disable_too_close_alarm},
+    {"disMany", &config.disable_too_many},
+};
 
 static void command_get(const char* command) {
     if(!strcmp(command, "state")) printf("R state %d\n", game.get_state());
     else if(!strcmp(command, "volume")) printf("R volume %d\n", game.get_volume());
-    else if(!strcmp(command, "projlum")) printf("R projlum %d\n", config.proj_lum);
+    else if(uint8_map.count(command)) {
+        printf("R %s %d\n", command, *uint8_map[command]);
+    }
 }
 
 static void command_set(char* command) {
     char *token = strsep(&command, " ");
     if(!strcmp(token, "state")) command_set_state(command);
-    if(!strcmp(token, "volume")) command_set_volume(command);
-    if(!strcmp(token, "projlum")) command_set_projlum(command);
+    else if(!strcmp(token, "volume")) command_set_volume(command);
+    else if(uint8_map.count(token)) {
+        char *token2 = strsep(&command, " ");
+        int val;
+        if(!is_int(token2, &val)) return;
+        *uint8_map[token] = val;
+    }
     command_get(token);
 }
 
