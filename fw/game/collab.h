@@ -267,6 +267,8 @@ public:
             speaker.say(Words::debut_partie);
             speaker.saynumber(game.get_players_count());
             speaker.say(Words::joueur, 0);
+            speaker.silence(500);
+            speaker.say(Words::mode_emploi);
         }
         speaker.silence(1500);
         pad_width = 30;

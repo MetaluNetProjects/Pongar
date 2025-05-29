@@ -80,5 +80,6 @@ WORDS_MACRO(perdu_partie            , WORDS_MULTIPLE(26))   // Zut, c'était vot
 
 WORDS_MACRO(temps_intermediaire     , WORDS_MULTIPLE(27))    // Votre temps de parcours est pour l'instant de:
 WORDS_MACRO(nombre_vainqueurs       , WORDS_MULTIPLE(28))    // Le nombre total de joueurs ayant gagné la partie est de:
+WORDS_MACRO(mode_emploi             , WORDS_MULTIPLE(29))    // Vous devrez vous déplacer autour du pong sans le toucher, de manière à être positionné à l'endroit où la balle arrive, sans quoi vous perdrez un point. 
 
 #undef WORDS_MACRO // need to redefine WORDS_MACRO each time
