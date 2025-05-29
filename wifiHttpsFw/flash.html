@@ -77,6 +77,12 @@ div {
   padding: 10px;
   font-size: 16px;
 }
+.switch {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
     </style>
 </head>
 <body>
@@ -104,12 +110,28 @@ div {
         <input type="button" class="button" id="gamestandby" value="STANDBY"/>
         <nobr> Game state: <b id="gamestate" >Unknown</b> </nobr>
     </div>
+    <div>
+        <input type="checkbox" class="switch" id="disStable"/><label for="run">NO wait stable</label>
+        <input type="checkbox" class="switch" id="disMany"/><label for="run">NO too many</label>
+    </div>
+    <div>
+        <input type="checkbox" class="switch" id="disClose"/><label for="run">NO too close</label>
+        <input type="checkbox" class="switch" id="disAlarm"/><label for="run">NO too close alarm</label>
+    </div>
     </br>
     <div>
         <input type="button" class="button" id="snap" value="SNAP BACKGROUND"/>
     </div>
+    <div class="ctldiv">
+      <input type="button" class="button" id="save_eeprom" value="SAVE TO EEPROM"/>
+    </div>
     </ul>
   </nav>
+
+  <article id='monitor'>
+      <h1>Monitor</h1>
+      <canvas id='moncanvas' width="300" height="300"> </textarea>
+  </article>
 
   <article>
       <h1>Log</h1>
@@ -125,6 +147,45 @@ div {
 
 document.getElementById("gamestate").textContent = "unknown";
 
+const switches = ["disStable", "disClose", "disMany", "disAlarm"];
+let distances = [];
+const canvas = document.getElementById("moncanvas");
+
+function draw(now) {
+    if (!canvas.getContext) return;
+    const ctx = canvas.getContext("2d");
+    const order = [0,1,3,2];
+    let w = canvas.width, h = canvas.height;
+    let R = w / 2;
+    ctx.save();
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = "18px system-ui";
+    ctx.textAlign = "center";
+    //ctx.fillText("elapsed: " + Math.floor(elapsed) + " ms", w / 2, 15);
+    ctx.translate(w/2, h/2);
+    ctx.fillStyle = "orange";
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    for(let i = 0; i <= 360; i++) {
+        let alpha = i * Math.PI / 180;
+        let dist = distances[i % 360]; //1700 * (1 + 0.2 * Math.sin(20 * alpha));
+        if(dist > 2400) dist = 2400;
+        let r = dist / 2400 * R;
+        let x = r * Math.cos(alpha);
+        let y = r * Math.sin(alpha);
+        if(i == 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.fill();
+    ctx.restore();
+    //requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
 function log(text) {
     const logbox = document.getElementById("chatbox");
     logbox.value += text + '\n';
@@ -135,9 +196,15 @@ function get_fraise_chars(words) {
     const id = parseInt(words.shift());
     if(id != 1) return;
     let command = words.shift();
+    if(command === "l") {
+        if(words[0] === 'saving' && words[1] === 'eeprom') {
+            alert("EEPROM saved!");
+        }
+        return;
+    }
     if(command !== "R") return;
-    command = words.shift();
-    switch(command) {
+    let control = words.shift();
+    switch(control) {
         case "state": 
             const state = parseInt(words.shift());
             const statenames = ["Stop", "Prepare", "Wait stable", "Playing", "Restart", "Stand by"];
@@ -149,10 +216,61 @@ function get_fraise_chars(words) {
         case "projlum":
             document.getElementById("projlum").value = parseInt(words.shift());
             break;
+        case "l":
+            if(words[0] === 'saving' && words[1] === 'eeprom') {
+                alert("EEPROM saved!");
+            }
+            break;
+        default:
+            if(switches.includes(control)) {
+                let val = parseInt(words.shift());
+                document.getElementById(control).checked = (val != 0);
+                //update_label(control, val);
+            }
     }
 }
 
-function get_fraise_bytes(words) {
+function from16bits(vals) {
+    let out = [];
+    while(vals.length) {
+        out.push(vals.shift() * 256 + vals.shift());
+    }
+    return out;
+}
+
+function get_lidar_frame(vals) {
+    //console.log(vals);
+    let line = vals[0];
+    let index = line * 10;
+    vals.shift();
+    let dists = from16bits(vals);
+    //log("dist" + line + dists);
+    for (const element of dists) {
+        distances[index++] = element;
+    }
+    if(line == 35) {
+        log("lidar frame complete! Redrawing.");
+        requestAnimationFrame(draw);
+    }
+}
+
+function hex_to_nums(str) {
+    let byteArray = [];
+    for (let i = 0; i < str.length; i += 2) {
+        byteArray[i / 2] = parseInt(str.substring(i, i + 2), 16);
+    }
+    return byteArray;
+}
+
+function get_fraise_bytes(text) {
+    const bytes = hex_to_nums(text);
+    //console.log(bytes);
+    if(bytes[0] != 1) return;
+    if(bytes[1] == 22) {
+        bytes.shift();
+        bytes.shift();
+        get_lidar_frame(bytes);
+    }
 }
 
 class WebSocketHandler {
@@ -164,7 +282,7 @@ class WebSocketHandler {
 
     get_current_state() {
         ["state", "volume", "projlum"].forEach(el => this.ws.send("F 1 Rget " + el));
-        //[1,2,3,4,5,6].forEach(el => this.ws.send("f 0 10 200 " + el));
+        switches.forEach(el => this.ws.send("F 1 Rget " + el));
     }
 
     constructor() {
@@ -190,6 +308,10 @@ class WebSocketHandler {
 
         this.ws.onmessage = (event) => {
             event.data.text().then(text => {
+                if(text.charCodeAt(0) === "f".charCodeAt(0)) {
+                    get_fraise_bytes(text.substring(1));
+                    return;
+                }
                 console.log("Message from server ", text);
                 log("Message: " + text);
                 const words = text.split(" ");
@@ -197,7 +319,7 @@ class WebSocketHandler {
                 switch(command) {
                     case "volume": volume.value = words[0]; break;
                     case "F": get_fraise_chars(words); break;
-                    case "f": get_fraise_bytes(words); break;
+                    //case "f": get_fraise_bytes(text); break;
                     case "D": this.get_current_state(); break; // fruit is detected, get its state
                 }
             });
@@ -209,6 +331,7 @@ let handler = new WebSocketHandler();
 document.getElementById("buzz").onclick = (event) => {
     handler.ws.send("f 1 33 0 1 244");
 }
+
 volume.addEventListener("input", (event) => {
     log(`volume ${event.target.value}`);
     handler.ws.send(`F 1 Rset volume ${event.target.value}`);
@@ -224,8 +347,30 @@ document.getElementById("gameprepare").onclick = () => handler.ws.send("F 1 Rset
 document.getElementById("gamestandby").onclick = () => handler.ws.send("F 1 Rset state 5");
 document.getElementById("snap").onclick = () => handler.ws.send("f 1 4 4");
 
-chatbox.value='';
-log("c'est parti mon kiki!");
+switches.forEach(control => {
+    let c = document.getElementById(control);
+    c.oninput = function() {
+        log("checked:" + this.checked);
+        //update_label_func(control, event.target.value)
+        handler.ws.send(`F 1 Rset ${control} ${(this.checked ? "1" : "0")}`);
+    };
+});
+
+document.getElementById("save_eeprom").onclick = function() {
+    handler.ws.send("F 1 SAVE_EEPROM");
+}
+
+function startup() {
+    canvas.addEventListener("click", () => {
+        log("refresh lidar...");
+        handler.ws.send("f 1 7");
+    });
+    chatbox.value='';
+    log("Pong control room loaded!");
+}
+
+document.addEventListener("DOMContentLoaded", startup);
+
 </script>
 </body>
 </html>
