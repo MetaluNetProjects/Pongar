@@ -101,7 +101,7 @@ int start_logging_server(const char *binary_name, const char *hardware_name, con
 
     strncpy(address, ip4addr_ntoa(netif_ip4_addr(netif_list)), ADDRESS_SIZE-1);
 
-    /*if (watchdog_ms != 0)
+    if (watchdog_ms != 0)
     {
         watchdog_timeout_us = watchdog_ms * 1000;
 
@@ -112,8 +112,8 @@ int start_logging_server(const char *binary_name, const char *hardware_name, con
         timer_hw->alarm[ALARM_NUM] = timer_hw->timerawl + watchdog_timeout_us;
 
         // start watchdog just in case everything else fails 1 second after a IRQ would trigger
-        //watchdog_enable(watchdog_ms + 1000, 1);
-    }*/
+        watchdog_enable(watchdog_ms + 1000, 1);
+    }
     
     report_saved_crash();
     return 1;
@@ -121,11 +121,11 @@ int start_logging_server(const char *binary_name, const char *hardware_name, con
 
 void update_watchdog()
 {
-    //timer_hw->alarm[ALARM_NUM] = timer_hw->timerawl + watchdog_timeout_us;
-    //watchdog_update();
+    timer_hw->alarm[ALARM_NUM] = timer_hw->timerawl + watchdog_timeout_us;
+    watchdog_update();
 }
 
-    
+
 static void send_message(const char *category, const char *format, va_list args)
 {
     int time = to_us_since_boot(get_absolute_time())/1000;
