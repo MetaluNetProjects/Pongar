@@ -76,3 +76,8 @@
 // In case someone wants to use frame-pointers
 #define MULADDC_CANNOT_USE_R7
 
+// save some memory and avoid potentially oom
+#define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE 0
+#define MBEDTLS_MPI_MAX_SIZE 512
+#define MBEDTLS_MPI_WINDOW_SIZE 1
+

@@ -9,6 +9,8 @@
 
 #include "flash_html.h"
 
+#include "free_heap.h"
+
 #define BOARD pico_w
 
 #include "settings.h"
@@ -17,6 +19,8 @@ Settings settings;
 #include "fraise_manager.h"
 #define FRAISE_DISABLE_PIN 5
 FraiseManager fraise;
+
+//#define DISABLE_PICOW
 
 #ifndef DISABLE_PICOW
     #include "wifi_manager.h"
@@ -108,6 +112,12 @@ int ledPeriod;
 void fraise_receivebytes(const char *data, uint8_t len){
     uint8_t command = fraise_get_uint8();
     switch(command) {
+        case 5: wifi.print_status();
+            break;
+        case 6: wifi.reconnect();
+            break;
+        case 9: printf("l free heap: %d\n", getFreeHeap());
+            break;
         case 10: settings.receivebytes(data + 1, len - 1);
             break;
         case 100: { // HTML size
